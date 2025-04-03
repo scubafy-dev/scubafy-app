@@ -1,3 +1,5 @@
+"use client"
+
 import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { FinancialOverview } from "@/components/financial-overview"

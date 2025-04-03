@@ -5,6 +5,10 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SidebarProvider } from "@/components/sidebar-provider"
 import { inter } from "@/app/fonts"
 
+export const metadata = {
+  generator: 'v0.dev'
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -12,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
           <SidebarProvider>
             {children}
@@ -23,11 +27,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };
