@@ -27,8 +27,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
               <MobileNav />
             </div>
             <div className="hidden md:flex items-center gap-2">
-              <SidebarToggle />
-              <h1 className="text-xl font-bold">Scubafy</h1>
+              <img src="/logo scubafy.png" alt="Scubafy Logo" className="h-10  w-auto" />
             </div>
           </div>
           <div className="hidden md:flex items-center relative max-w-sm w-full">

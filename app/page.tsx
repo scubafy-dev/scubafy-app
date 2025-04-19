@@ -2,6 +2,7 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { RecentBookings } from "@/components/recent-bookings"
 import { UpcomingDives } from "@/components/upcoming-dives"
 import { QuickActions } from "@/components/quick-actions"
+import Link from "next/link"
 
 export default function DashboardPage() {
   return (
@@ -13,13 +14,13 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <div className="dashboard-card">
+          <Link href="/customers" className="dashboard-card hover:bg-accent transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="dashboard-card-title">Total Bookings</h3>
             </div>
             <div className="dashboard-card-value">128</div>
             <p className="dashboard-card-subtitle">+14% from last month</p>
-          </div>
+          </Link>
           <div className="dashboard-card">
             <div className="flex items-center justify-between mb-2">
               <h3 className="dashboard-card-title">Active Divers</h3>
@@ -27,20 +28,20 @@ export default function DashboardPage() {
             <div className="dashboard-card-value">42</div>
             <p className="dashboard-card-subtitle">+8 new this week</p>
           </div>
-          <div className="dashboard-card">
+          <Link href="/dive-trips" className="dashboard-card hover:bg-accent transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="dashboard-card-title">Upcoming Dives</h3>
             </div>
             <div className="dashboard-card-value">12</div>
             <p className="dashboard-card-subtitle">Next 7 days</p>
-          </div>
-          <div className="dashboard-card">
+          </Link>
+          <Link href="/finances" className="dashboard-card hover:bg-accent transition-colors">
             <div className="flex items-center justify-between mb-2">
               <h3 className="dashboard-card-title">Revenue</h3>
             </div>
             <div className="dashboard-card-value">$12,234</div>
             <p className="dashboard-card-subtitle">+19% from last month</p>
-          </div>
+          </Link>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

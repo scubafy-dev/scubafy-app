@@ -25,9 +25,13 @@ const formSchema = z.object({
   certificationLevel: z.string({
     required_error: "Please select a certification level.",
   }),
-  totalDives: z.coerce.number().min(0, {
-    message: "Total dives must be a positive number.",
-  }),
+  room: z.string().optional(),
+  numberOfNights: z.coerce.number().min(0, {
+    message: "Number of nights must be a positive number.",
+  }).optional(),
+  roomCost: z.coerce.number().min(0, {
+    message: "Room cost must be a positive number.",
+  }).optional(),
 })
 
 export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
@@ -41,7 +45,9 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
       name: "",
       email: "",
       phone: "",
-      totalDives: 0,
+      room: "",
+      numberOfNights: 0,
+      roomCost: 0,
     },
   })
 
@@ -139,12 +145,42 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
 
           <FormField
             control={form.control}
-            name="totalDives"
+            name="room"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Dives</FormLabel>
+                <FormLabel>Room Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g. 101" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="numberOfNights"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Number of Nights</FormLabel>
                 <FormControl>
                   <Input type="number" min={0} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="roomCost"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Room Cost</FormLabel>
+                <FormControl>
+                  <Input type="number" min={0} step="0.01" placeholder="0.00" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

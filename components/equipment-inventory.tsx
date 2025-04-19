@@ -52,119 +52,248 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
+
+interface Customer {
+  id: string
+  name: string
+  email: string
+  phone: string
+  avatar: string
+}
+
+interface Equipment {
+  id: string
+  type: string
+  sku: string
+  make: string
+  model: string
+  serialNumber: string
+  size: string
+  location: string
+  lastInspection: string
+  nextInspection: string
+  quantity: number
+  minQuantity: number
+  itemValue: string
+  status: "available" | "in-use" | "maintenance" | "rented"
+  condition: "excellent" | "good" | "fair" | "poor"
+  rentalRate: string
+  rentalRateValue: number
+  rentalTimeframe: string
+  rentedTo?: string
+  rentedUntil?: string
+  trackUsage: boolean
+  usageCount?: number
+  usageLimit?: number
+  needsMaintenance?: boolean
+}
 
 export function EquipmentInventory() {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [selectedEquipment, setSelectedEquipment] = useState(null)
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null)
   const [rentalDuration, setRentalDuration] = useState("1")
   const [selectedCustomer, setSelectedCustomer] = useState("")
 
-  const equipment = [
+  const equipment: Equipment[] = [
     {
       id: "EQ-1001",
       type: "Scuba Tank",
+      sku: "TANK-80-001",
+      make: "ScubaPro",
+      model: "S80",
       serialNumber: "ST-12345",
       size: "80 cu ft",
+      location: "Main Storage Room A3",
       lastInspection: "2025-01-15",
       nextInspection: "2025-07-15",
+      quantity: 5,
+      minQuantity: 2,
+      itemValue: "$450.00",
       status: "available",
       condition: "good",
       rentalRate: "$15.00",
       rentalRateValue: 15,
+      rentalTimeframe: "per dive",
+      trackUsage: true,
+      usageCount: 56,
+      usageLimit: 100,
+      needsMaintenance: false,
     },
     {
       id: "EQ-1002",
       type: "Scuba Tank",
+      sku: "TANK-80-002",
+      make: "ScubaPro",
+      model: "S80",
       serialNumber: "ST-12346",
       size: "80 cu ft",
+      location: "Main Storage Room A3",
       lastInspection: "2025-01-15",
       nextInspection: "2025-07-15",
+      quantity: 3,
+      minQuantity: 2,
+      itemValue: "$450.00",
       status: "in-use",
       condition: "good",
       rentalRate: "$15.00",
       rentalRateValue: 15,
+      rentalTimeframe: "per dive",
+      trackUsage: true,
+      usageCount: 78,
+      usageLimit: 100,
+      needsMaintenance: false,
     },
     {
       id: "EQ-1003",
       type: "Scuba Tank",
+      sku: "TANK-63-001",
+      make: "Faber",
+      model: "F63",
       serialNumber: "ST-12347",
       size: "63 cu ft",
+      location: "Main Storage Room A4",
       lastInspection: "2025-01-20",
       nextInspection: "2025-07-20",
+      quantity: 2,
+      minQuantity: 1,
+      itemValue: "$380.00",
       status: "maintenance",
       condition: "fair",
       rentalRate: "$12.00",
       rentalRateValue: 12,
+      rentalTimeframe: "per dive",
+      trackUsage: true,
+      usageCount: 105,
+      usageLimit: 100,
+      needsMaintenance: true,
     },
     {
       id: "EQ-1004",
       type: "BCD",
+      sku: "BCD-MED-001",
+      make: "Aqua Lung",
+      model: "Wave",
       serialNumber: "BCD-5001",
       size: "Medium",
+      location: "Main Storage Room B2",
       lastInspection: "2025-02-10",
       nextInspection: "2025-08-10",
+      quantity: 4,
+      minQuantity: 2,
+      itemValue: "$320.00",
       status: "available",
       condition: "excellent",
       rentalRate: "$20.00",
       rentalRateValue: 20,
+      rentalTimeframe: "per dive",
+      trackUsage: false,
+      needsMaintenance: false,
     },
     {
       id: "EQ-1005",
       type: "BCD",
+      sku: "BCD-LRG-001",
+      make: "Aqua Lung",
+      model: "Wave",
       serialNumber: "BCD-5002",
       size: "Large",
+      location: "Main Storage Room B2",
       lastInspection: "2025-02-10",
       nextInspection: "2025-08-10",
+      quantity: 3,
+      minQuantity: 2,
+      itemValue: "$320.00",
       status: "rented",
       condition: "good",
       rentalRate: "$20.00",
       rentalRateValue: 20,
+      rentalTimeframe: "per dive",
       rentedTo: "John Smith",
       rentedUntil: "2025-03-28",
+      trackUsage: true,
+      usageCount: 45,
+      usageLimit: 50,
+      needsMaintenance: false,
     },
     {
       id: "EQ-1006",
       type: "Regulator",
+      sku: "REG-PRO-001",
+      make: "Mares",
+      model: "Prestige",
       serialNumber: "REG-3001",
       size: "N/A",
+      location: "Main Storage Room C1",
       lastInspection: "2025-03-01",
       nextInspection: "2025-09-01",
+      quantity: 6,
+      minQuantity: 3,
+      itemValue: "$550.00",
       status: "available",
       condition: "good",
       rentalRate: "$25.00",
       rentalRateValue: 25,
+      rentalTimeframe: "per dive",
+      trackUsage: false,
+      needsMaintenance: false,
     },
     {
       id: "EQ-1007",
       type: "Wetsuit",
+      sku: "WS-MED-001",
+      make: "O'Neill",
+      model: "Reactor",
       serialNumber: "WS-2001",
       size: "Medium",
+      location: "Gear Room A1",
       lastInspection: "2025-02-15",
       nextInspection: "2025-08-15",
+      quantity: 2,
+      minQuantity: 1,
+      itemValue: "$180.00",
       status: "maintenance",
       condition: "poor",
       rentalRate: "$18.00",
       rentalRateValue: 18,
+      rentalTimeframe: "per dive",
+      trackUsage: true,
+      usageCount: 98,
+      usageLimit: 90,
+      needsMaintenance: true,
     },
     {
       id: "EQ-1008",
       type: "Wetsuit",
+      sku: "WS-LRG-001",
+      make: "O'Neill",
+      model: "Reactor",
       serialNumber: "WS-2002",
       size: "Large",
+      location: "Gear Room A1",
       lastInspection: "2025-02-15",
       nextInspection: "2025-08-15",
+      quantity: 1,
+      minQuantity: 1,
+      itemValue: "$180.00",
       status: "rented",
       condition: "fair",
       rentalRate: "$18.00",
       rentalRateValue: 18,
+      rentalTimeframe: "per dive",
       rentedTo: "Sarah Johnson",
       rentedUntil: "2025-03-30",
+      trackUsage: true,
+      usageCount: 86,
+      usageLimit: 90,
+      needsMaintenance: false,
     },
   ]
 
-  const customers = [
+  const customers: Customer[] = [
     {
       id: "C-1001",
       name: "John Smith",
@@ -205,7 +334,8 @@ export function EquipmentInventory() {
   const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
       item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase())
+      item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.sku.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = typeFilter === "all" || item.type.toLowerCase().includes(typeFilter.toLowerCase())
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
@@ -219,7 +349,7 @@ export function EquipmentInventory() {
   const rentedEquipment = equipment.filter((item) => item.status === "rented").length
 
   // Handle equipment rental
-  const handleRentEquipment = (item) => {
+  const handleRentEquipment = (item: Equipment) => {
     setSelectedEquipment(item)
     setRentalDuration("1")
     setSelectedCustomer("")
@@ -230,6 +360,53 @@ export function EquipmentInventory() {
     if (!selectedEquipment) return "$0.00"
     const total = selectedEquipment.rentalRateValue * Number.parseInt(rentalDuration)
     return `$${total.toFixed(2)}`
+  }
+
+  // Increment usage count
+  const handleIncrementUsage = (item: Equipment) => {
+    // Skip if usage tracking is disabled
+    if (!item.trackUsage) return;
+
+    // In a real app, this would update the database
+    // For demo purposes, we'll just update the local state
+    if (item.usageCount !== undefined) {
+      item.usageCount += 1;
+    } else {
+      item.usageCount = 1;
+    }
+    
+    // Check if the equipment now needs maintenance
+    if (item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit) {
+      item.needsMaintenance = true;
+      alert(`${item.type} ${item.make} ${item.model} has reached its usage limit and needs maintenance!`);
+    } else if (item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit * 0.9 && !item.needsMaintenance) {
+      alert(`${item.type} ${item.make} ${item.model} is approaching its usage limit (${item.usageCount}/${item.usageLimit})`);
+    }
+    
+    // Force a re-render
+    setSearchTerm(searchTerm);
+  }
+
+  // Mark equipment as maintained
+  const handleMarkAsMaintained = (item: Equipment) => {
+    // Skip if usage tracking is disabled
+    if (!item.trackUsage) return;
+
+    // In a real app, this would update the database
+    // For demo purposes, we'll just update the local state
+    item.usageCount = 0;
+    item.needsMaintenance = false;
+    
+    // If the item is in maintenance status, make it available
+    if (item.status === "maintenance") {
+      item.status = "available";
+    }
+    
+    // Show confirmation
+    alert(`${item.type} ${item.make} ${item.model} has been marked as maintained. Usage count reset to 0.`);
+    
+    // Force a re-render
+    setSearchTerm(searchTerm);
   }
 
   return (
@@ -244,7 +421,8 @@ export function EquipmentInventory() {
             <Progress value={100} className="h-2 mt-2" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:border-green-500 transition-colors" 
+              onClick={() => router.push("/equipment/available")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Available</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -254,7 +432,8 @@ export function EquipmentInventory() {
             <Progress value={(availableEquipment / totalEquipment) * 100} className="h-2 mt-2 text-green-500" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:border-blue-500 transition-colors" 
+              onClick={() => router.push("/equipment/in-use")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Use</CardTitle>
             <History className="h-4 w-4 text-blue-500" />
@@ -264,7 +443,8 @@ export function EquipmentInventory() {
             <Progress value={(inUseEquipment / totalEquipment) * 100} className="h-2 mt-2 text-blue-500" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:border-primary transition-colors" 
+              onClick={() => router.push("/equipment/rented")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rented</CardTitle>
             <DollarSign className="h-4 w-4 text-primary" />
@@ -274,7 +454,8 @@ export function EquipmentInventory() {
             <Progress value={(rentedEquipment / totalEquipment) * 100} className="h-2 mt-2 text-primary" />
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:border-amber-500 transition-colors" 
+              onClick={() => router.push("/equipment/maintenance")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Maintenance</CardTitle>
             <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -289,86 +470,11 @@ export function EquipmentInventory() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="invisible" aria-hidden="true">
               <CardTitle>Equipment Inventory</CardTitle>
               <CardDescription>Manage all your dive equipment.</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Add Equipment
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Equipment</DialogTitle>
-                    <DialogDescription>Enter the details for the new equipment item.</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="type" className="text-right">
-                        Type
-                      </Label>
-                      <Select>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="scuba-tank">Scuba Tank</SelectItem>
-                          <SelectItem value="bcd">BCD</SelectItem>
-                          <SelectItem value="regulator">Regulator</SelectItem>
-                          <SelectItem value="wetsuit">Wetsuit</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="serial" className="text-right">
-                        Serial Number
-                      </Label>
-                      <Input id="serial" className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="size" className="text-right">
-                        Size
-                      </Label>
-                      <Input id="size" className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="condition" className="text-right">
-                        Condition
-                      </Label>
-                      <Select>
-                        <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select condition" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="excellent">Excellent</SelectItem>
-                          <SelectItem value="good">Good</SelectItem>
-                          <SelectItem value="fair">Fair</SelectItem>
-                          <SelectItem value="poor">Poor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="rental-rate" className="text-right">
-                        Rental Rate
-                      </Label>
-                      <div className="col-span-3 flex items-center">
-                        <span className="mr-2">$</span>
-                        <Input id="rental-rate" type="number" min="0" step="0.01" />
-                        <span className="ml-2">per day</span>
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit">Save Equipment</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+            <div className="flex gap-2 ml-auto">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -388,7 +494,7 @@ export function EquipmentInventory() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
             <div className="flex flex-1 items-center">
               <Input
-                placeholder="Search by ID or serial number..."
+                placeholder="Search by ID, SKU or serial number..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full md:w-[300px]"
@@ -426,12 +532,17 @@ export function EquipmentInventory() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
+                  <TableHead>SKU</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Make/Model</TableHead>
                   <TableHead>Serial Number</TableHead>
                   <TableHead>Size</TableHead>
+                  <TableHead>Quantity</TableHead>
                   <TableHead>Rental Rate</TableHead>
+                  <TableHead>Usage</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Condition</TableHead>
+                  <TableHead>Location</TableHead>
                   <TableHead>Rental Info</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -440,10 +551,51 @@ export function EquipmentInventory() {
                 {filteredEquipment.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.id}</TableCell>
+                    <TableCell>{item.sku}</TableCell>
                     <TableCell>{item.type}</TableCell>
+                    <TableCell>{item.make} {item.model}</TableCell>
                     <TableCell>{item.serialNumber}</TableCell>
                     <TableCell>{item.size}</TableCell>
-                    <TableCell>{item.rentalRate}/day</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span>{item.quantity}</span>
+                        {item.quantity <= item.minQuantity && (
+                          <span className="text-xs text-red-500">Low stock!</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>{item.rentalRate}/{item.rentalTimeframe}</TableCell>
+                    <TableCell>
+                      {item.trackUsage ? (
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1">
+                            <span className={item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit ? "font-medium text-amber-500" : ""}>
+                              {item.usageCount}/{item.usageLimit}
+                            </span>
+                            {item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit && (
+                              <AlertTriangle className="h-3 w-3 text-amber-500" />
+                            )}
+                          </div>
+                          {item.usageCount !== undefined && item.usageLimit !== undefined && (
+                            <Progress 
+                              value={(item.usageCount / item.usageLimit) * 100} 
+                              className={`h-1 mt-1 ${
+                                item.usageCount >= item.usageLimit 
+                                  ? "text-amber-500" 
+                                  : item.usageCount >= item.usageLimit * 0.8 
+                                    ? "text-orange-400" 
+                                    : ""
+                              }`}
+                            />
+                          )}
+                          {item.needsMaintenance && (
+                            <span className="text-xs text-amber-500 mt-1">Needs maintenance</span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Not tracked</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -488,6 +640,7 @@ export function EquipmentInventory() {
                         {item.condition}
                       </Badge>
                     </TableCell>
+                    <TableCell>{item.location}</TableCell>
                     <TableCell>
                       {item.status === "rented" ? (
                         <div className="text-xs">
@@ -526,9 +679,19 @@ export function EquipmentInventory() {
                               <History className="mr-2 h-4 w-4" /> Maintenance History
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            {item.status === "available" && item.trackUsage && (
+                              <DropdownMenuItem onClick={() => handleIncrementUsage(item)}>
+                                <Plus className="mr-2 h-4 w-4 text-blue-500" /> Record Usage
+                              </DropdownMenuItem>
+                            )}
                             {item.status === "rented" && (
                               <DropdownMenuItem>
                                 <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark as Returned
+                              </DropdownMenuItem>
+                            )}
+                            {item.trackUsage && item.needsMaintenance && (
+                              <DropdownMenuItem onClick={() => handleMarkAsMaintained(item)}>
+                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Mark as Maintained
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem>
@@ -565,12 +728,16 @@ export function EquipmentInventory() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div className="font-medium">ID:</div>
                       <div>{selectedEquipment.id}</div>
+                      <div className="font-medium">SKU:</div>
+                      <div>{selectedEquipment.sku}</div>
                       <div className="font-medium">Type:</div>
                       <div>{selectedEquipment.type}</div>
+                      <div className="font-medium">Make/Model:</div>
+                      <div>{selectedEquipment.make} {selectedEquipment.model}</div>
                       <div className="font-medium">Size:</div>
                       <div>{selectedEquipment.size}</div>
                       <div className="font-medium">Rental Rate:</div>
-                      <div>{selectedEquipment.rentalRate}/day</div>
+                      <div>{selectedEquipment.rentalRate}/{selectedEquipment.rentalTimeframe}</div>
                     </div>
                   </div>
                 </div>

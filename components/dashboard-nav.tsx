@@ -4,21 +4,23 @@ import type React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Calendar, LifeBuoy, Settings, Users, Wallet, Anchor } from "lucide-react"
+import { BarChart3, Calendar, LifeBuoy, Settings, Users, Wallet, Anchor, ClipboardList, FileText, GraduationCap } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/components/sidebar-provider"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+interface NavLink {
+  title: string
+  label?: string
+  icon: React.ComponentType<{ className?: string }>
+  variant: "default" | "ghost"
+  href: string
+}
+
 interface NavProps {
-  links: {
-    title: string
-    label?: string
-    icon: React.ComponentType<{ className?: string }>
-    variant: "default" | "ghost"
-    href: string
-  }[]
+  links: NavLink[]
 }
 
 export function Nav({ links }: NavProps) {
@@ -80,7 +82,7 @@ export function DashboardNav() {
   const pathname = usePathname()
   const { collapsed, setCollapsed } = useSidebar()
 
-  const links = [
+  const links: NavLink[] = [
     {
       title: "Overview",
       icon: BarChart3,
@@ -112,6 +114,25 @@ export function DashboardNav() {
       icon: Users,
       variant: pathname === "/staff" ? "default" : "ghost",
       href: "/staff",
+    },
+    {
+      title: "Tasks",
+      icon: ClipboardList,
+      variant: pathname === "/tasks" ? "default" : "ghost",
+      href: "/tasks",
+      label: "3",
+    },
+    {
+      title: "Reports",
+      icon: FileText,
+      variant: pathname === "/reports" ? "default" : "ghost",
+      href: "/reports",
+    },
+    {
+      title: "Course Tracker",
+      icon: GraduationCap,
+      variant: pathname === "/course-tracker" ? "default" : "ghost",
+      href: "/course-tracker",
     },
     {
       title: "Calendar",

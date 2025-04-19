@@ -22,7 +22,7 @@ export default function EquipmentPage() {
       <EquipmentInventory />
 
       <Dialog open={isAddEquipmentOpen} onOpenChange={setIsAddEquipmentOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Equipment</DialogTitle>
           </DialogHeader>

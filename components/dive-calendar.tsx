@@ -100,7 +100,7 @@ export function DiveCalendar() {
   ]
 
   // Check if a day has events
-  const getEventsForDay = (day) => {
+  const getEventsForDay = (day: number | null) => {
     if (!day) return []
 
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
@@ -131,11 +131,7 @@ export function DiveCalendar() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button>
-            <Plus className="mr-2 h-4 w-4" /> Add Event
-          </Button>
         </div>
-        <CardDescription>View and manage your dive center schedule.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-7 gap-1">

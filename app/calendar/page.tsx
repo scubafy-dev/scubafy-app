@@ -14,7 +14,7 @@ export default function CalendarPage() {
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="Calendar" text="View and manage your dive center schedule.">
+      <DashboardHeader heading="Calendar">
         <Button onClick={() => setIsAddEventOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> Add Event
         </Button>
