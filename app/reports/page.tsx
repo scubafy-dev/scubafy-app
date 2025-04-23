@@ -18,7 +18,7 @@ export default function ReportsPage() {
   const { currentCenter, isAllCenters, getCenterSpecificData } = useDiveCenter()
 
   // Get reports based on selected dive center
-  const reports = getCenterSpecificData(reportsByCenter, allCentersReports)
+  const reports = getCenterSpecificData(reportsByCenter, allCentersReports) || []
 
   return (
     <DashboardShell>
@@ -44,7 +44,7 @@ export default function ReportsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report) => (
+                {Array.isArray(reports) && reports.map((report) => (
                   <TableRow key={report.id}>
                     <TableCell>
                       <div className="font-medium">{report.tripName}</div>
@@ -76,12 +76,19 @@ export default function ReportsPage() {
                     {isAllCenters && (
                       <TableCell>
                         <span className="text-sm font-medium">
-                          {(report as any).center}
+                          {report.center}
                         </span>
                       </TableCell>
                     )}
                   </TableRow>
                 ))}
+                {(!Array.isArray(reports) || reports.length === 0) && (
+                  <TableRow>
+                    <TableCell colSpan={isAllCenters ? 7 : 6} className="text-center py-6">
+                      No reports found
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </div>
