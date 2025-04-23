@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -15,90 +15,129 @@ import {
   RevenueDistributionChart,
   ExpenseDistributionChart,
 } from "@/components/financial-charts"
+import { useDiveCenter } from "@/lib/dive-center-context"
+import { financialByCenter, allCentersFinancialData, FinancialData } from "@/lib/mock-data/financial-data"
+import { FinancialCenterComparison } from "@/components/financial-center-comparison"
 
 export function FinancialOverview() {
   const [period, setPeriod] = useState("month")
+  const { currentCenter, isAllCenters, getCenterSpecificData } = useDiveCenter()
+  const [financialData, setFinancialData] = useState<FinancialData>(allCentersFinancialData)
 
-  // Sample financial data
-  const financialSummary = {
-    totalRevenue: "$24,850.00",
-    totalExpenses: "$12,430.00",
-    netProfit: "$12,420.00",
-    profitMargin: "49.98%",
-    revenueChange: "+15.3%",
-    expenseChange: "+8.2%",
-    profitChange: "+22.5%",
+  // Update financial data when center changes
+  useEffect(() => {
+    // Use the financial data for the selected center or all centers aggregated data
+    const centerData = getCenterSpecificData(financialByCenter, allCentersFinancialData)
+    if (centerData) {
+      setFinancialData(centerData)
+    }
+  }, [currentCenter, isAllCenters, getCenterSpecificData])
+
+  // Destructure the financial data for easier access
+  const { summary, revenueByCategory, expensesByCategory, recentTransactions } = financialData
+
+  // If viewing all centers, show the center comparison component
+  if (isAllCenters) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">
+            Financial Overview (All Centers)
+          </h2>
+          <div className="flex gap-2">
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="quarter">This Quarter</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm">
+              <FileText className="mr-2 h-4 w-4" />
+              Report
+            </Button>
+            <Button variant="outline" size="sm">
+              <Download className="mr-2 h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        </div>
+        
+        {/* Key financial metrics summary */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summary.totalRevenue}</div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
+                <span className="text-green-500 font-medium">{summary.revenueChange}</span>
+                <span className="ml-1">from previous {period}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summary.totalExpenses}</div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <TrendingUp className="mr-1 h-4 w-4 text-amber-500" />
+                <span className="text-amber-500 font-medium">{summary.expenseChange}</span>
+                <span className="ml-1">from previous {period}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summary.netProfit}</div>
+              <div className="flex items-center text-xs text-muted-foreground">
+                <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
+                <span className="text-green-500 font-medium">{summary.profitChange}</span>
+                <span className="ml-1">from previous {period}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profit Margin</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{summary.profitMargin}</div>
+              <p className="text-xs text-muted-foreground">Healthy profit margin</p>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Center comparison component */}
+        <FinancialCenterComparison />
+      </div>
+    )
   }
 
-  const revenueByCategory = [
-    { category: "Dive Trips", amount: "$12,500.00", percentage: "50.3%", value: 12500 },
-    { category: "Equipment Rentals", amount: "$5,200.00", percentage: "20.9%", value: 5200 },
-    { category: "Training Courses", amount: "$4,800.00", percentage: "19.3%", value: 4800 },
-    { category: "Equipment Sales", amount: "$2,350.00", percentage: "9.5%", value: 2350 },
-  ]
-
-  const expensesByCategory = [
-    { category: "Staff Salaries", amount: "$6,500.00", percentage: "52.3%", value: 6500 },
-    { category: "Equipment Maintenance", amount: "$2,100.00", percentage: "16.9%", value: 2100 },
-    { category: "Boat Operations", amount: "$1,800.00", percentage: "14.5%", value: 1800 },
-    { category: "Utilities", amount: "$1,200.00", percentage: "9.7%", value: 1200 },
-    { category: "Marketing", amount: "$830.00", percentage: "6.7%", value: 830 },
-  ]
-
-  const recentTransactions = [
-    {
-      id: "T-1001",
-      date: "2025-03-22",
-      description: "Coral Reef Dive Trip - 8 participants",
-      amount: "$960.00",
-      type: "income",
-    },
-    {
-      id: "T-1002",
-      date: "2025-03-21",
-      description: "Equipment Maintenance - Regulator Service",
-      amount: "$350.00",
-      type: "expense",
-    },
-    {
-      id: "T-1003",
-      date: "2025-03-20",
-      description: "Advanced Open Water Course - 3 students",
-      amount: "$1,200.00",
-      type: "income",
-    },
-    {
-      id: "T-1004",
-      date: "2025-03-19",
-      description: "Boat Fuel",
-      amount: "$280.00",
-      type: "expense",
-    },
-    {
-      id: "T-1005",
-      date: "2025-03-18",
-      description: "Equipment Rental - Full Set (2 days)",
-      amount: "$180.00",
-      type: "income",
-    },
-    {
-      id: "T-1006",
-      date: "2025-03-17",
-      description: "Staff Wages - Weekly",
-      amount: "$1,500.00",
-      type: "expense",
-    },
-    {
-      id: "T-1007",
-      date: "2025-03-16",
-      description: "Night Dive Trip - 6 participants",
-      amount: "$720.00",
-      type: "income",
-    },
-  ]
-
+  // Individual dive center view (original view)
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold">
+          {`Financial Overview - ${currentCenter?.name}`}
+        </h2>
+      </div>
+      
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-full md:w-[180px]">
@@ -134,10 +173,10 @@ export function FinancialOverview() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{financialSummary.totalRevenue}</div>
+            <div className="text-2xl font-bold">{summary.totalRevenue}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-              <span className="text-green-500 font-medium">{financialSummary.revenueChange}</span>
+              <span className="text-green-500 font-medium">{summary.revenueChange}</span>
               <span className="ml-1">from previous {period}</span>
             </div>
           </CardContent>
@@ -148,10 +187,10 @@ export function FinancialOverview() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{financialSummary.totalExpenses}</div>
+            <div className="text-2xl font-bold">{summary.totalExpenses}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="mr-1 h-4 w-4 text-amber-500" />
-              <span className="text-amber-500 font-medium">{financialSummary.expenseChange}</span>
+              <span className="text-amber-500 font-medium">{summary.expenseChange}</span>
               <span className="ml-1">from previous {period}</span>
             </div>
           </CardContent>
@@ -162,10 +201,10 @@ export function FinancialOverview() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{financialSummary.netProfit}</div>
+            <div className="text-2xl font-bold">{summary.netProfit}</div>
             <div className="flex items-center text-xs text-muted-foreground">
               <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-              <span className="text-green-500 font-medium">{financialSummary.profitChange}</span>
+              <span className="text-green-500 font-medium">{summary.profitChange}</span>
               <span className="ml-1">from previous {period}</span>
             </div>
           </CardContent>
@@ -176,7 +215,7 @@ export function FinancialOverview() {
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{financialSummary.profitMargin}</div>
+            <div className="text-2xl font-bold">{summary.profitMargin}</div>
             <p className="text-xs text-muted-foreground">Healthy profit margin</p>
           </CardContent>
         </Card>
@@ -258,15 +297,15 @@ export function FinancialOverview() {
         </TabsContent>
         <TabsContent value="charts">
           <div className="grid gap-4 md:grid-cols-2">
-            <RevenueDistributionChart />
-            <ExpenseDistributionChart />
+            <RevenueDistributionChart data={revenueByCategory} />
+            <ExpenseDistributionChart data={expensesByCategory} />
           </div>
         </TabsContent>
         <TabsContent value="transactions">
           <Card>
             <CardHeader>
               <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Most recent financial transactions.</CardDescription>
+              <CardDescription>Your recent financial transactions.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -280,16 +319,20 @@ export function FinancialOverview() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentTransactions.map((transaction) => (
-                    <TableRow key={transaction.id}>
+                  {recentTransactions.map((transaction, index) => (
+                    <TableRow key={index}>
                       <TableCell className="font-medium">{transaction.id}</TableCell>
                       <TableCell>{transaction.date}</TableCell>
                       <TableCell>{transaction.description}</TableCell>
                       <TableCell>{transaction.amount}</TableCell>
                       <TableCell>
                         <Badge
-                          variant={transaction.type === "income" ? "default" : "outline"}
-                          className={transaction.type === "expense" ? "border-amber-500 text-amber-500" : ""}
+                          variant={transaction.type === "income" ? "default" : "destructive"}
+                          className={
+                            transaction.type === "income"
+                              ? "bg-green-500 text-white hover:bg-green-600"
+                              : ""
+                          }
                         >
                           {transaction.type === "income" ? "Income" : "Expense"}
                         </Badge>

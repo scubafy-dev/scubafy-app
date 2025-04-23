@@ -7,15 +7,182 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Users, Clock, AlertTriangle, CheckCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { useDiveCenter } from "@/lib/dive-center-context"
 
 interface QuickActionsProps {
   className?: string
 }
 
-export function QuickActions({ className }: QuickActionsProps) {
-  const [activeTab, setActiveTab] = useState("upcoming")
+// Mock data for each dive center
+const diveCenterActions = {
+  dauin: {
+    upcomingDives: [
+      {
+        id: "D-1001",
+        title: "Coral Reef Exploration",
+        date: "Today",
+        time: "9:00 AM",
+        participants: 8,
+        maxParticipants: 12,
+        status: "confirmed",
+      },
+      {
+        id: "D-1002",
+        title: "Muck Diving Adventure",
+        date: "Tomorrow",
+        time: "8:00 AM",
+        participants: 6,
+        maxParticipants: 8,
+        status: "pending",
+      },
+    ],
+    equipmentAlerts: [
+      {
+        id: "EQ-1003",
+        type: "Tank",
+        code: "DT-12347",
+        issue: "needs inspection",
+        priority: "high",
+      },
+      {
+        id: "EQ-2104",
+        type: "BCD",
+        code: "BCD-5002",
+        issue: "strap damaged",
+        priority: "medium",
+      },
+    ],
+    rentalReturns: [
+      {
+        id: "R-1001",
+        customer: "John Smith",
+        equipment: "Full Gear Set",
+        dueDate: "Today",
+        status: "on-time",
+      },
+      {
+        id: "R-1002",
+        customer: "Sarah Johnson",
+        equipment: "Wetsuit",
+        dueDate: "Tomorrow",
+        status: "on-time",
+      },
+    ],
+  },
+  malapascua: {
+    upcomingDives: [
+      {
+        id: "M-1001",
+        title: "Thresher Shark Dive",
+        date: "Today",
+        time: "5:00 AM",
+        participants: 7,
+        maxParticipants: 10,
+        status: "confirmed",
+      },
+      {
+        id: "M-1002",
+        title: "Reef Conservation Dive",
+        date: "Tomorrow",
+        time: "10:00 AM",
+        participants: 5,
+        maxParticipants: 8,
+        status: "pending",
+      },
+    ],
+    equipmentAlerts: [
+      {
+        id: "EQ-M1003",
+        type: "Regulator",
+        code: "REG-8765",
+        issue: "leaking",
+        priority: "high",
+      },
+    ],
+    rentalReturns: [
+      {
+        id: "RM-1001",
+        customer: "Michael Brown",
+        equipment: "Camera Housing",
+        dueDate: "Today",
+        status: "on-time",
+      },
+    ],
+  },
+  siquijor: {
+    upcomingDives: [
+      {
+        id: "S-1001",
+        title: "Wall Dive Adventure",
+        date: "Today",
+        time: "9:30 AM",
+        participants: 6,
+        maxParticipants: 8,
+        status: "confirmed",
+      },
+    ],
+    equipmentAlerts: [
+      {
+        id: "EQ-S1001",
+        type: "Wetsuit",
+        code: "WS-4432",
+        issue: "tear in seam",
+        priority: "medium",
+      },
+      {
+        id: "EQ-S1002",
+        type: "Tank",
+        code: "ST-6677",
+        issue: "valve issue",
+        priority: "high",
+      },
+    ],
+    rentalReturns: [
+      {
+        id: "RS-1001",
+        customer: "Emily Wilson",
+        equipment: "Dive Computer",
+        dueDate: "Tomorrow",
+        status: "on-time",
+      },
+    ],
+  },
+  sipalay: {
+    upcomingDives: [
+      {
+        id: "SP-1001",
+        title: "Shipwreck Dive",
+        date: "Today",
+        time: "8:00 AM",
+        participants: 5,
+        maxParticipants: 8,
+        status: "confirmed",
+      },
+    ],
+    equipmentAlerts: [
+      {
+        id: "EQ-SP1001",
+        type: "Fins",
+        code: "FN-2211",
+        issue: "strap broken",
+        priority: "medium",
+      },
+    ],
+    rentalReturns: [
+      {
+        id: "RSP-1001",
+        customer: "David Chen",
+        equipment: "Full Gear Set",
+        dueDate: "Today",
+        status: "on-time",
+      },
+    ],
+  },
+};
 
-  const upcomingDives = [
+// Aggregated data for "All Centers" view
+const allCentersActions = {
+  upcomingDives: [
     {
       id: "D-1001",
       title: "Coral Reef Exploration",
@@ -24,51 +191,93 @@ export function QuickActions({ className }: QuickActionsProps) {
       participants: 8,
       maxParticipants: 12,
       status: "confirmed",
+      center: "Sea Explorers Dauin",
     },
     {
-      id: "D-1002",
-      title: "Wreck Dive Adventure",
-      date: "Tomorrow",
-      time: "8:00 AM",
+      id: "M-1001",
+      title: "Thresher Shark Dive",
+      date: "Today",
+      time: "5:00 AM",
+      participants: 7,
+      maxParticipants: 10,
+      status: "confirmed",
+      center: "Sea Explorers Malapascua",
+    },
+    {
+      id: "S-1001",
+      title: "Wall Dive Adventure",
+      date: "Today",
+      time: "9:30 AM",
       participants: 6,
       maxParticipants: 8,
-      status: "pending",
+      status: "confirmed",
+      center: "Sea Explorers Siquijor",
     },
-  ]
-
-  const equipmentAlerts = [
+  ],
+  equipmentAlerts: [
     {
       id: "EQ-1003",
       type: "Tank",
-      code: "ST-12347",
+      code: "DT-12347",
       issue: "needs inspection",
       priority: "high",
+      center: "Sea Explorers Dauin",
     },
     {
-      id: "EQ-2104",
-      type: "BCD",
-      code: "BCD-5002",
-      issue: "strap damaged",
-      priority: "medium",
+      id: "EQ-M1003",
+      type: "Regulator",
+      code: "REG-8765",
+      issue: "leaking",
+      priority: "high",
+      center: "Sea Explorers Malapascua",
     },
-  ]
-
-  const rentalReturns = [
+    {
+      id: "EQ-S1002",
+      type: "Tank",
+      code: "ST-6677",
+      issue: "valve issue",
+      priority: "high",
+      center: "Sea Explorers Siquijor",
+    },
+  ],
+  rentalReturns: [
     {
       id: "R-1001",
       customer: "John Smith",
       equipment: "Full Gear Set",
       dueDate: "Today",
       status: "on-time",
+      center: "Sea Explorers Dauin",
     },
     {
-      id: "R-1002",
-      customer: "Sarah Johnson",
-      equipment: "Wetsuit",
-      dueDate: "Tomorrow",
+      id: "RM-1001",
+      customer: "Michael Brown",
+      equipment: "Camera Housing",
+      dueDate: "Today",
       status: "on-time",
+      center: "Sea Explorers Malapascua",
     },
-  ]
+    {
+      id: "RSP-1001",
+      customer: "David Chen",
+      equipment: "Full Gear Set",
+      dueDate: "Today",
+      status: "on-time",
+      center: "Sea Explorers Sipalay",
+    },
+  ],
+};
+
+export function QuickActions({ className }: QuickActionsProps) {
+  const [activeTab, setActiveTab] = useState("upcoming")
+  const { currentCenter, isAllCenters } = useDiveCenter();
+  
+  // Select data based on current center or show aggregated data
+  const actionsData = isAllCenters 
+    ? allCentersActions 
+    : currentCenter ? diveCenterActions[currentCenter.id as keyof typeof diveCenterActions] : diveCenterActions.dauin;
+
+  const { upcomingDives, equipmentAlerts, rentalReturns } = actionsData;
 
   return (
     <Card className={cn("col-span-1", className)}>
@@ -76,7 +285,11 @@ export function QuickActions({ className }: QuickActionsProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Important items that need your attention</CardDescription>
+            <CardDescription>
+              {isAllCenters 
+                ? "Important items across all dive centers" 
+                : "Important items that need your attention"}
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -109,6 +322,11 @@ export function QuickActions({ className }: QuickActionsProps) {
                       <Users className="mr-1 h-3 w-3" />
                       {dive.participants}/{dive.maxParticipants}
                     </div>
+                    {isAllCenters && (
+                      <div className="w-full mt-1">
+                        <span className="text-xs font-medium">{(dive as any).center}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -152,6 +370,9 @@ export function QuickActions({ className }: QuickActionsProps) {
                       {alert.type} {alert.code}
                     </h3>
                     <p className="text-xs text-muted-foreground">{alert.issue}</p>
+                    {isAllCenters && (
+                      <p className="text-xs font-medium mt-1">{(alert as any).center}</p>
+                    )}
                   </div>
                 </div>
                 <Button size="sm" className="h-7 text-xs px-2">
@@ -174,6 +395,11 @@ export function QuickActions({ className }: QuickActionsProps) {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
                     <div>{rental.equipment}</div>
                     <div>Due: {rental.dueDate}</div>
+                    {isAllCenters && (
+                      <div className="w-full mt-1">
+                        <span className="text-xs font-medium">{(rental as any).center}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <Button size="sm" className="h-7 text-xs px-2">

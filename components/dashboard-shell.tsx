@@ -6,6 +6,7 @@ import { UserNav } from "@/components/user-nav"
 import { MobileNav } from "@/components/mobile-nav"
 import { SidebarToggle } from "@/components/sidebar-toggle"
 import { useSidebar } from "@/components/sidebar-provider"
+import { DiveCenterSelector } from "@/components/dive-center-selector"
 import { cn } from "@/lib/utils"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -27,7 +28,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
               <MobileNav />
             </div>
             <div className="hidden md:flex items-center gap-2">
-              <img src="/logo scubafy.png" alt="Scubafy Logo" className="h-10  w-auto" />
+              <DiveCenterSelector />
             </div>
           </div>
           <div className="hidden md:flex items-center relative max-w-sm w-full">

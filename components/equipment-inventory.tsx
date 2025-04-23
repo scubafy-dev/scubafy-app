@@ -53,6 +53,7 @@ import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
 
 interface Customer {
   id: string
@@ -331,7 +332,7 @@ export function EquipmentInventory() {
     },
   ]
 
-  const filteredEquipment = equipment.filter((item) => {
+  const filteredEquipment = equipment?.filter((item) => {
     const matchesSearch =
       item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -339,14 +340,14 @@ export function EquipmentInventory() {
     const matchesType = typeFilter === "all" || item.type.toLowerCase().includes(typeFilter.toLowerCase())
     const matchesStatus = statusFilter === "all" || item.status === statusFilter
     return matchesSearch && matchesType && matchesStatus
-  })
+  }) || []
 
   // Calculate equipment statistics
-  const totalEquipment = equipment.length
-  const availableEquipment = equipment.filter((item) => item.status === "available").length
-  const inUseEquipment = equipment.filter((item) => item.status === "in-use").length
-  const maintenanceEquipment = equipment.filter((item) => item.status === "maintenance").length
-  const rentedEquipment = equipment.filter((item) => item.status === "rented").length
+  const totalEquipment = equipment?.length || 0
+  const availableEquipment = equipment?.filter((item) => item.status === "available").length || 0
+  const inUseEquipment = equipment?.filter((item) => item.status === "in-use").length || 0
+  const maintenanceEquipment = equipment?.filter((item) => item.status === "maintenance").length || 0
+  const rentedEquipment = equipment?.filter((item) => item.status === "rented").length || 0
 
   // Handle equipment rental
   const handleRentEquipment = (item: Equipment) => {
@@ -597,32 +598,30 @@ export function EquipmentInventory() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          item.status === "available"
-                            ? "default"
-                            : item.status === "in-use"
-                              ? "secondary"
-                              : item.status === "rented"
-                                ? "outline"
-                                : "outline"
-                        }
-                        className={
-                          item.status === "maintenance"
-                            ? "border-amber-500 text-amber-500"
-                            : item.status === "rented"
-                              ? "border-primary text-primary"
-                              : ""
-                        }
-                      >
-                        {item.status === "in-use"
-                          ? "In Use"
-                          : item.status === "available"
-                            ? "Available"
-                            : item.status === "rented"
-                              ? "Rented"
-                              : "Maintenance"}
-                      </Badge>
+                      {item.status === "rented" ? (
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src="/placeholder.svg?height=24&width=24" />
+                            <AvatarFallback>{item.rentedTo?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="text-sm font-medium">{item.rentedTo}</div>
+                            <div className="text-xs text-muted-foreground">Until {item.rentedUntil}</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "capitalize",
+                            item.status === "available" && "border-green-500 text-green-500",
+                            item.status === "in-use" && "border-blue-500 text-blue-500",
+                            item.status === "maintenance" && "border-amber-500 text-amber-500"
+                          )}
+                        >
+                          {item.status}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Badge

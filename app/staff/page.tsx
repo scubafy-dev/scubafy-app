@@ -5,27 +5,21 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { StaffDirectory, StaffMember } from "@/components/staff-directory"
+import { StaffDirectory } from "@/components/staff-directory"
 import { AddStaffDialog } from "@/components/add-staff-dialog"
+import { useDiveCenter } from "@/lib/dive-center-context"
+import { staffByCenter, allStaff } from "@/lib/mock-data/staff"
 
 export default function StaffPage() {
   const [showAddStaffDialog, setShowAddStaffDialog] = useState(false)
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([])
+  const { currentCenter, isAllCenters } = useDiveCenter()
 
-  const handleAddStaffMember = (staffData: Omit<StaffMember, "id" | "avatar">) => {
-    // Generate a new staff ID
-    const newId = `S-${Math.floor(1000 + Math.random() * 9000)}`
-
-    // Create new staff member with generated ID and default avatar
-    const newStaffMember: StaffMember = {
-      ...staffData,
-      id: newId,
-      avatar: "/placeholder.svg?height=40&width=40",
-    }
-
-    // Add the new staff member to the list
-    setStaffMembers((prevStaff) => [...prevStaff, newStaffMember])
-  }
+  // Get staff based on selected dive center
+  const staff = isAllCenters
+    ? allStaff
+    : currentCenter
+    ? staffByCenter[currentCenter.id as keyof typeof staffByCenter]
+    : []
 
   return (
     <DashboardShell>
@@ -34,11 +28,10 @@ export default function StaffPage() {
           <Plus className="mr-2 h-4 w-4" /> Add Staff Member
         </Button>
       </DashboardHeader>
-      <StaffDirectory externalStaff={staffMembers} />
+      <StaffDirectory staff={staff} />
       <AddStaffDialog 
         open={showAddStaffDialog} 
-        onOpenChange={setShowAddStaffDialog} 
-        onAddStaff={handleAddStaffMember}
+        onOpenChange={setShowAddStaffDialog}
       />
     </DashboardShell>
   )

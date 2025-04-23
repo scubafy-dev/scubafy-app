@@ -119,17 +119,8 @@ function getAccessLabel(accessId: string): string {
 }
 
 // Main component
-export function StaffDirectory({ externalStaff }: { externalStaff?: StaffMember[] }) {
+export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
   const [searchTerm, setSearchTerm] = useState("")
-  // Use state to store staff data
-  const [staff, setStaff] = useState<StaffMember[]>(initialStaff)
-
-  // Update staff when externalStaff changes
-  useEffect(() => {
-    if (externalStaff && externalStaff.length > 0) {
-      setStaff([...initialStaff, ...externalStaff])
-    }
-  }, [externalStaff])
 
   const filteredStaff = staff.filter((member) => {
     const matchesSearch =

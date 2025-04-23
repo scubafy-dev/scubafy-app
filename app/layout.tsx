@@ -3,6 +3,7 @@ import "@/app/globals.css"
 import { Toaster } from "@/components/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { SidebarProvider } from "@/components/sidebar-provider"
+import { DiveCenterProvider } from "@/lib/dive-center-context"
 import { inter } from "@/app/fonts"
 
 export const metadata = {
@@ -19,8 +20,10 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <ThemeProvider>
           <SidebarProvider>
-            {children}
-            <Toaster />
+            <DiveCenterProvider>
+              {children}
+              <Toaster />
+            </DiveCenterProvider>
           </SidebarProvider>
         </ThemeProvider>
       </body>

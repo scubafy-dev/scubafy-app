@@ -7,6 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Plus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
@@ -62,6 +64,60 @@ const SAMPLE_VEHICLES: Vehicle[] = [
   }
 ]
 
+// Add these interfaces after the existing Vehicle interface
+interface Staff {
+  id: string;
+  name: string;
+  role: "instructor" | "divemaster";
+  certifications: string[];
+}
+
+interface Customer {
+  id: string;
+  name: string;
+  certification: string;
+}
+
+// Add sample data after SAMPLE_VEHICLES
+const SAMPLE_STAFF: Staff[] = [
+  {
+    id: "s1",
+    name: "Maria Santos",
+    role: "instructor",
+    certifications: ["PADI IDC Staff Instructor", "EFR Instructor"]
+  },
+  {
+    id: "s2",
+    name: "Alex Rodriguez",
+    role: "divemaster",
+    certifications: ["PADI Divemaster", "Rescue Diver"]
+  },
+  {
+    id: "s3",
+    name: "James Wilson",
+    role: "instructor",
+    certifications: ["SSI Open Water Instructor", "Nitrox Instructor"]
+  }
+];
+
+const SAMPLE_CUSTOMERS: Customer[] = [
+  {
+    id: "c1",
+    name: "John Smith",
+    certification: "PADI Open Water"
+  },
+  {
+    id: "c2",
+    name: "Emma Wilson",
+    certification: "SSI Advanced Open Water"
+  },
+  {
+    id: "c3",
+    name: "Mike Chen",
+    certification: "PADI Rescue Diver"
+  }
+];
+
 // Extended form schema with the new fields
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -97,7 +153,22 @@ const formSchema = z.object({
     foodAndSupplies: z.string().optional(),
     fees: z.string().optional(),
     other: z.string().optional()
-  })
+  }),
+  instructorId: z.string({
+    required_error: "Please select an instructor.",
+  }),
+  diveMasterId: z.string({
+    required_error: "Please select a dive master.",
+  }),
+  useCustomerDatabase: z.boolean().default(true),
+  participants: z.array(
+    z.object({
+      id: z.string().optional(),
+      name: z.string(),
+      certification: z.string()
+    })
+  ),
+  selectedCustomerIds: z.array(z.string()),
 })
 
 export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
@@ -106,6 +177,9 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES)
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all")
+  const [staff, setStaff] = useState<Staff[]>(SAMPLE_STAFF)
+  const [customers, setCustomers] = useState<Customer[]>(SAMPLE_CUSTOMERS)
+  const [manualParticipants, setManualParticipants] = useState<Array<{ name: string; certification: string }>>([])
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
@@ -130,7 +204,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
         foodAndSupplies: "",
         fees: "",
         other: ""
-      }
+      },
+      instructorId: "",
+      diveMasterId: "",
+      useCustomerDatabase: true,
+      participants: [],
+      selectedCustomerIds: [],
     },
   })
 
@@ -146,8 +225,37 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
     }
   }, [watchVehicleId, vehicles, form])
 
+  // Add these helper functions before onSubmit
+  const addManualParticipant = () => {
+    setManualParticipants([...manualParticipants, { name: "", certification: "" }]);
+  };
+
+  const removeManualParticipant = (index: number) => {
+    const updated = [...manualParticipants];
+    updated.splice(index, 1);
+    setManualParticipants(updated);
+  };
+
+  const updateManualParticipant = (index: number, field: string, value: string) => {
+    const updated = [...manualParticipants];
+    updated[index] = { ...updated[index], [field]: value };
+    setManualParticipants(updated);
+  };
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
+
+    // Combine selected customers and manual participants
+    const allParticipants = values.useCustomerDatabase
+      ? values.selectedCustomerIds.map(id => {
+          const customer = customers.find(c => c.id === id);
+          return {
+            id: customer?.id,
+            name: customer?.name || "",
+            certification: customer?.certification || ""
+          };
+        })
+      : manualParticipants;
 
     // Calculate total expenses
     const expenses = values.expenses
@@ -159,6 +267,9 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
     setTimeout(() => {
       console.log({
         ...values,
+        participants: allParticipants,
+        instructor: staff.find(s => s.id === values.instructorId),
+        diveMaster: staff.find(s => s.id === values.diveMasterId),
         totalExpenses
       })
       setIsSubmitting(false)
@@ -187,9 +298,10 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs defaultValue="details" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Trip Details</TabsTrigger>
-            <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
+            <TabsTrigger value="staff">Staff</TabsTrigger>
+            <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
           </TabsList>
           
@@ -441,6 +553,208 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                   </FormItem>
                 )}
               />
+            </div>
+          </TabsContent>
+          
+          {/* Staff Tab */}
+          <TabsContent value="staff" className="space-y-4">
+            <div className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="instructorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instructor</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an instructor" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {staff
+                          .filter(s => s.role === "instructor")
+                          .map(instructor => (
+                            <SelectItem key={instructor.id} value={instructor.id}>
+                              <div className="flex flex-col">
+                                <span>{instructor.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {instructor.certifications.join(", ")}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="diveMasterId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Dive Master</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a dive master" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {staff
+                          .filter(s => s.role === "divemaster")
+                          .map(divemaster => (
+                            <SelectItem key={divemaster.id} value={divemaster.id}>
+                              <div className="flex flex-col">
+                                <span>{divemaster.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {divemaster.certifications.join(", ")}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </TabsContent>
+
+          {/* Participants Tab */}
+          <TabsContent value="participants" className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <FormLabel className="text-base">Participants</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addManualParticipant}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Participant
+                </Button>
+              </div>
+              {manualParticipants.map((participant, index) => (
+                <div key={index} className="flex gap-4 items-start border rounded-lg p-4">
+                  <div className="flex-1 space-y-4">
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={participant.name}
+                          onChange={(e) => updateManualParticipant(index, "name", e.target.value)}
+                          placeholder="Participant name"
+                        />
+                      </FormControl>
+                    </FormItem>
+                    <FormItem>
+                      <FormLabel>Certification</FormLabel>
+                      <FormControl>
+                        <Input
+                          value={participant.certification}
+                          onChange={(e) => updateManualParticipant(index, "certification", e.target.value)}
+                          placeholder="e.g. PADI Open Water"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeManualParticipant(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <FormField
+                control={form.control}
+                name="useCustomerDatabase"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-6">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Use Customer Database</FormLabel>
+                      <FormDescription>
+                        Switch to select participants from your existing customer database
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("useCustomerDatabase") && (
+                <div className="space-y-4 mt-4">
+                  <FormField
+                    control={form.control}
+                    name="selectedCustomerIds"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Select From Database</FormLabel>
+                          <FormDescription>
+                            Choose participants from your customer database
+                          </FormDescription>
+                        </div>
+                        {customers.map((customer) => (
+                          <FormField
+                            key={customer.id}
+                            control={form.control}
+                            name="selectedCustomerIds"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={customer.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={field.value?.includes(customer.id)}
+                                      onCheckedChange={(checked) => {
+                                        return checked
+                                          ? field.onChange([...field.value, customer.id])
+                                          : field.onChange(
+                                              field.value?.filter(
+                                                (value) => value !== customer.id
+                                              )
+                                            )
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel className="text-sm font-medium">
+                                      {customer.name}
+                                    </FormLabel>
+                                    <FormDescription className="text-xs">
+                                      {customer.certification}
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              )
+                            }}
+                          />
+                        ))}
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
             </div>
           </TabsContent>
           

@@ -4,9 +4,86 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { useDiveCenter } from "@/lib/dive-center-context"
+
+// Mock data for each dive center
+const diveCenterEvents = {
+  dauin: [
+    {
+      id: 1,
+      title: "Coral Reef Exploration",
+      date: new Date(2025, 2, 5),
+      type: "dive-trip",
+    },
+    {
+      id: 2,
+      title: "Night Dive",
+      date: new Date(2025, 2, 12),
+      type: "dive-trip",
+    },
+    {
+      id: 3,
+      title: "Equipment Maintenance",
+      date: new Date(2025, 2, 15),
+      type: "maintenance",
+    },
+  ],
+  malapascua: [
+    {
+      id: 4,
+      title: "Thresher Shark Dive",
+      date: new Date(2025, 2, 8),
+      type: "dive-trip",
+    },
+    {
+      id: 5,
+      title: "Staff Meeting",
+      date: new Date(2025, 2, 20),
+      type: "meeting",
+    },
+  ],
+  siquijor: [
+    {
+      id: 6,
+      title: "Wall Dive Adventure",
+      date: new Date(2025, 2, 18),
+      type: "dive-trip",
+    },
+    {
+      id: 7,
+      title: "Deep Dive Certification",
+      date: new Date(2025, 2, 28),
+      type: "training",
+    },
+  ],
+  sipalay: [
+    {
+      id: 8,
+      title: "Shipwreck Dive",
+      date: new Date(2025, 2, 22),
+      type: "dive-trip",
+    },
+  ],
+};
+
+// All events for "All Centers" view
+const allEvents = [
+  ...diveCenterEvents.dauin.map(event => ({ ...event, center: "Sea Explorers Dauin" })),
+  ...diveCenterEvents.malapascua.map(event => ({ ...event, center: "Sea Explorers Malapascua" })),
+  ...diveCenterEvents.siquijor.map(event => ({ ...event, center: "Sea Explorers Siquijor" })),
+  ...diveCenterEvents.sipalay.map(event => ({ ...event, center: "Sea Explorers Sipalay" })),
+];
 
 export function DiveCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
+  const { currentCenter, isAllCenters } = useDiveCenter();
+
+  // Select events based on current center or show all events
+  const diveEvents = isAllCenters
+    ? allEvents
+    : currentCenter
+    ? diveCenterEvents[currentCenter.id as keyof typeof diveCenterEvents]
+    : [];
 
   // Calendar navigation functions
   const nextMonth = () => {
@@ -58,46 +135,6 @@ export function DiveCalendar() {
   }
 
   const calendarDays = generateCalendarDays()
-
-  // Sample dive events data
-  const diveEvents = [
-    {
-      id: 1,
-      title: "Coral Reef Exploration",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 5),
-      type: "dive-trip",
-    },
-    {
-      id: 2,
-      title: "Night Dive",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 12),
-      type: "dive-trip",
-    },
-    {
-      id: 3,
-      title: "Equipment Maintenance",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 15),
-      type: "maintenance",
-    },
-    {
-      id: 4,
-      title: "Staff Meeting",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 20),
-      type: "meeting",
-    },
-    {
-      id: 5,
-      title: "Wreck Dive Adventure",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 22),
-      type: "dive-trip",
-    },
-    {
-      id: 6,
-      title: "Deep Dive Certification",
-      date: new Date(currentDate.getFullYear(), currentDate.getMonth(), 28),
-      type: "training",
-    },
-  ]
 
   // Check if a day has events
   const getEventsForDay = (day: number | null) => {
@@ -173,6 +210,11 @@ export function DiveCalendar() {
                         }`}
                       >
                         {event.title}
+                        {isAllCenters && (
+                          <span className="block text-[10px] opacity-75">
+                            {(event as any).center}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

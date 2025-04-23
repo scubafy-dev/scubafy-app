@@ -8,7 +8,8 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 export default function RentedEquipmentPage() {
   const router = useRouter()
@@ -23,14 +24,14 @@ export default function RentedEquipmentPage() {
       model: "Wave",
       serialNumber: "BCD-5002",
       size: "Large",
-      location: "Rental Checkout",
+      location: "Main Storage Room B2",
       rentedTo: "John Smith",
-      rentedSince: "2025-03-20",
+      rentedToEmail: "john@example.com",
+      rentedSince: "2025-03-15",
       rentedUntil: "2025-03-28",
-      rentalAmount: "$60.00",
-      trackUsage: true,
-      usageCount: 45,
-      usageLimit: 50,
+      rentalRate: "$20.00",
+      rentalTimeframe: "per dive",
+      condition: "good"
     },
     {
       id: "EQ-1008",
@@ -40,20 +41,20 @@ export default function RentedEquipmentPage() {
       model: "Reactor",
       serialNumber: "WS-2002",
       size: "Large",
-      location: "Rental Checkout",
+      location: "Gear Room A1",
       rentedTo: "Sarah Johnson",
-      rentedSince: "2025-03-25",
+      rentedToEmail: "sarah@example.com",
+      rentedSince: "2025-03-20",
       rentedUntil: "2025-03-30",
-      rentalAmount: "$54.00",
-      trackUsage: true,
-      usageCount: 86,
-      usageLimit: 90,
-    },
+      rentalRate: "$18.00",
+      rentalTimeframe: "per dive",
+      condition: "fair"
+    }
   ]
 
   return (
     <DashboardShell>
-      <DashboardHeader heading="Rented Equipment" text="Equipment currently rented to customers.">
+      <DashboardHeader heading="Rented Equipment" text="View all equipment currently rented out to customers.">
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
@@ -71,12 +72,13 @@ export default function RentedEquipmentPage() {
                   <TableHead>ID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Make/Model</TableHead>
+                  <TableHead>Serial Number</TableHead>
                   <TableHead>Size</TableHead>
                   <TableHead>Rented To</TableHead>
                   <TableHead>Since</TableHead>
                   <TableHead>Until</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Usage</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead>Condition</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -84,36 +86,40 @@ export default function RentedEquipmentPage() {
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.id}</TableCell>
                     <TableCell>{item.type}</TableCell>
-                    <TableCell>{item.make} {item.model}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{item.make}</div>
+                      <div className="text-xs text-muted-foreground">{item.model}</div>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{item.serialNumber}</TableCell>
                     <TableCell>{item.size}</TableCell>
                     <TableCell>
-                      <div className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
                           <AvatarImage src="/placeholder.svg?height=32&width=32" />
                           <AvatarFallback>{item.rentedTo.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                         </Avatar>
-                        {item.rentedTo}
+                        <div>
+                          <div className="font-medium">{item.rentedTo}</div>
+                          <div className="text-xs text-muted-foreground">{item.rentedToEmail}</div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>{item.rentedSince}</TableCell>
                     <TableCell>{item.rentedUntil}</TableCell>
-                    <TableCell>{item.rentalAmount}</TableCell>
+                    <TableCell>{item.rentalRate}/{item.rentalTimeframe}</TableCell>
                     <TableCell>
-                      {item.trackUsage ? (
-                        <div className="flex items-center gap-1">
-                          <span className={item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit * 0.8 ? "text-orange-500 font-medium" : ""}>
-                            {item.usageCount}/{item.usageLimit}
-                          </span>
-                          <Progress 
-                            value={(item.usageCount && item.usageLimit) ? (item.usageCount / item.usageLimit) * 100 : 0} 
-                            className={`h-1 w-16 ml-2 ${
-                              (item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit * 0.8) ? "text-orange-400" : ""
-                            }`}
-                          />
-                        </div>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Not tracked</span>
-                      )}
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "capitalize",
+                          item.condition === "excellent" && "border-green-500 text-green-500",
+                          item.condition === "good" && "border-blue-500 text-blue-500",
+                          item.condition === "fair" && "border-yellow-500 text-yellow-500",
+                          item.condition === "poor" && "border-red-500 text-red-500"
+                        )}
+                      >
+                        {item.condition}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}

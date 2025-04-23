@@ -20,19 +20,19 @@ body {
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 200 70% 40%;
+    --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 180 40% 45%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    --accent: 195 30% 90%;
+    --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 200 70% 40%;
+    --ring: 240 5.9% 10%;
     --radius: 0.5rem;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -47,13 +47,13 @@ body {
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 6.9%;
+    --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6.9%;
+    --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 200 70% 40%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 180 40% 45%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
@@ -63,7 +63,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 200 70% 40%;
+    --ring: 240 4.9% 83.9%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -107,6 +107,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1,
   h2,
@@ -168,17 +169,11 @@ body {
 
 /* Dashboard card styles */
 .dashboard-card {
-  @apply rounded-lg border bg-card text-card-foreground shadow-sm p-4;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.dashboard-card:hover {
-  @apply shadow-md;
-  transform: translateY(-2px);
+  @apply flex flex-col gap-1 border rounded-lg p-4 bg-card text-card-foreground shadow-sm;
 }
 
 .dashboard-card-title {
-  @apply text-sm font-bold mb-1;
+  @apply text-sm font-medium;
 }
 
 .dashboard-card-value {
@@ -186,7 +181,7 @@ body {
 }
 
 .dashboard-card-subtitle {
-  @apply text-xs text-muted-foreground mt-1;
+  @apply text-xs text-muted-foreground;
 }
 
 .section-title {
