@@ -1,236 +1,147 @@
-"use client"
+// app/diveTrips/new/page.tsx
+import prisma from "@/prisma/prisma";
+import { redirect } from "next/navigation";
+import DiveTripsPage from "./client";
 
-import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
-import { Button } from "@/components/ui/button"
-import { Plus, Car, Anchor, Ship, ChevronDown, ChevronRight, Users, Calendar, MapPin } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AddTripForm } from "@/components/add-trip-form"
-import { VehicleManagement } from "@/components/vehicle-management"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { useDiveCenter } from "@/lib/dive-center-context"
-import { diveTripsByCenter, allDiveTrips } from "@/lib/mock-data/dive-trips"
+export const dynamic = "force-dynamic";
 
-export default function DiveTripsPage() {
-  const [isAddTripOpen, setIsAddTripOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState("trips")
-  const [expandedRows, setExpandedRows] = useState<string[]>([])
-  const { currentCenter, isAllCenters, getCenterSpecificData } = useDiveCenter()
-  
-  const toggleRowExpansion = (tripId: string) => {
-    setExpandedRows(prev => 
-      prev.includes(tripId) 
-        ? prev.filter(id => id !== tripId) 
-        : [...prev, tripId]
-    )
-  }
-  
-  // Get dive trips based on the selected center
-  const diveTrips = getCenterSpecificData(diveTripsByCenter, allDiveTrips)
+export default function NewDiveTripPage() {
+    // ❶ Server Action
+    async function upsertDiveTrip(formData: FormData) {
+        "use server";
+        // Validate required form data fields
+        // const requiredFields = [
+        //   "title",
+        //   "date",
+        //   "location",
+        //   "capacity",
+        //   "price",
+        //   "diveMaster",
+        //   "instructor"
+        // ];
 
-  return (
-    <DashboardShell>
-      <Tabs defaultValue="trips" value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex justify-between items-center mb-4">
-          <TabsList>
-            <TabsTrigger value="trips">Trips</TabsTrigger>
-            <TabsTrigger value="vehicles" className="flex items-center gap-1">
-              <span>Vehicles</span>
-              <div className="flex -space-x-1">
-                <Anchor className="h-3 w-3" />
-                <Car className="h-3 w-3" />
-                <Ship className="h-3 w-3" />
-              </div>
-            </TabsTrigger>
-          </TabsList>
-          
-          {activeTab === "trips" && (
-            <Button onClick={() => setIsAddTripOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Trip
-            </Button>
-          )}
+        // for (const field of requiredFields) {
+        //   if (!formData.get(field)) {
+        //     throw new Error(`Missing required field: ${field}`);
+        //   }
+        // }
+
+        // Set default values for required fields
+        const requiredDefaults = {
+            title: "Sample Dive Trip",
+            date: new Date().toISOString(),
+            location: "Blue Lagoon",
+            capacity: 8,
+            price: 120,
+            diveMaster: "DM-001",
+            instructor: "INS-001",
+        };
+
+        // For each required field, use the form value if present, otherwise use default
+        for (const [key, defaultValue] of Object.entries(requiredDefaults)) {
+            if (!formData.get(key)) {
+                formData.append(key, defaultValue.toString());
+            }
+        }
+        // Set default values for optional fields
+        const defaultValues = {
+            booked: 0,
+            status: "upcoming",
+            description: "",
+            duration: "",
+            difficulty: "beginner",
+            center: null,
+            vehicle: JSON.stringify({
+                name: "Default Vehicle",
+                type: "boat",
+                capacity: 8,
+            }),
+            participants: JSON.stringify([]),
+        };
+
+        // For each optional field, use the form value if present, otherwise use default
+        for (const [key, defaultValue] of Object.entries(defaultValues)) {
+            if (!formData.get(key)) {
+                formData.append(key, defaultValue);
+            }
+        }
+
+        const id = formData.get("id") as string | null;
+        const title = formData.get("title") as string;
+        const dateStr = formData.get("date") as string;
+        const location = formData.get("location") as string;
+        const capacity = Number(formData.get("capacity"));
+        const booked = Number(formData.get("booked"));
+        const price = Number(formData.get("price"));
+        const status = formData.get("status") as
+            | "upcoming"
+            | "in_progress"
+            | "completed"
+            | "cancelled";
+        const diveMaster = formData.get("diveMaster") as string;
+        const description = formData.get("description") as string;
+        const duration = formData.get("duration") as string;
+        const difficulty = formData.get("difficulty") as
+            | "beginner"
+            | "intermediate"
+            | "advanced";
+        const center = (formData.get("center") as string) || null;
+        const instructor = formData.get("instructor") as string;
+
+        const vehicle = JSON.parse(
+            formData.get("vehicle") as string,
+        ) as {
+            name: string;
+            type: "boat" | "speedboat" | "catamaran";
+            capacity: number;
+        };
+        // const participants = JSON.parse(
+        //     formData.get("participants") as string,
+        // ) as Array<{
+        //     name: string;
+        //     certification: string;
+        //     level: string;
+        // }>;
+
+        const participants: {
+            name: string;
+            certification: string;
+            level: string;
+        }[] = [];
+        try {
+            await prisma.diveTrip.create(
+                {
+                    data: {
+                        title,
+                        date: new Date(dateStr),
+                        location,
+                        capacity,
+                        booked,
+                        price,
+                        status,
+                        diveMaster,
+                        description,
+                        duration,
+                        difficulty,
+                        center,
+                        instructor,
+                        vehicle: { create: vehicle },
+                        participants: { createMany: { data: participants } },
+                    },
+                },
+            );
+        } catch (error) {
+            console.log("error: ", error);
+        }
+
+        // redirect("/diveTrips");
+    }
+
+    return (
+        <div>
+            {/* ❷ Pass the action down to the client form */}
+            <DiveTripsPage action={upsertDiveTrip} />
+            {/* <DiveTripForm action={upsertDiveTrip} /> */}
         </div>
-        
-        <TabsContent value="trips">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Dive Trips</h1>
-              <p className="text-muted-foreground text-sm">
-                {isAllCenters 
-                  ? "Manage dive trips across all centers"
-                  : `Manage dive trips for ${currentCenter?.name}`}
-              </p>
-            </div>
-          </div>
-
-          <Card>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8"></TableHead>
-                      <TableHead>Trip Name</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Dive Master</TableHead>
-                      <TableHead className="text-center">Capacity</TableHead>
-                      <TableHead className="text-center">Booked</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      {isAllCenters && <TableHead>Center</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {diveTrips.map((trip) => (
-                      <>
-                        <TableRow 
-                          key={trip.id}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleRowExpansion(trip.id)}
-                        >
-                          <TableCell>
-                            <div className="flex items-center justify-center">
-                              {expandedRows.includes(trip.id) ? 
-                                <ChevronDown className="h-4 w-4" /> : 
-                                <ChevronRight className="h-4 w-4" />
-                              }
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{trip.title}</div>
-                            <div className="text-xs text-muted-foreground">{trip.difficulty}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <div className="flex items-center">
-                                <Calendar className="mr-1 h-3 w-3" />
-                                <span>{trip.date}</span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{trip.location}</TableCell>
-                          <TableCell>{trip.diveMaster}</TableCell>
-                          <TableCell className="text-center">{trip.capacity}</TableCell>
-                          <TableCell className="text-center">{trip.booked}</TableCell>
-                          <TableCell>${trip.price}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={trip.status === "completed" ? "outline" : "default"}
-                              className={
-                                trip.status === "upcoming"
-                                  ? "bg-blue-500"
-                                  : trip.status === "in-progress"
-                                  ? "bg-amber-500"
-                                  : trip.status === "completed"
-                                  ? "bg-green-500"
-                                  : "bg-red-500"
-                              }
-                            >
-                              {trip.status}
-                            </Badge>
-                          </TableCell>
-                          {isAllCenters && (
-                            <TableCell>{trip.center}</TableCell>
-                          )}
-                        </TableRow>
-                        {expandedRows.includes(trip.id) && (
-                          <TableRow className="bg-muted/30">
-                            <TableCell colSpan={isAllCenters ? 10 : 9} className="p-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-2">Description</h4>
-                                  <p className="text-sm text-muted-foreground mb-4">{trip.description}</p>
-                                  
-                                  <h4 className="text-sm font-semibold mb-2">Duration</h4>
-                                  <p className="text-sm text-muted-foreground mb-4">{trip.duration}</p>
-                                  
-                                  <h4 className="text-sm font-semibold mb-2">Staff</h4>
-                                  <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-sm text-muted-foreground">
-                                      <span className="font-medium mr-2">Dive Master:</span>
-                                      {trip.diveMaster}
-                                    </div>
-                                    <div className="flex items-center text-sm text-muted-foreground">
-                                      <span className="font-medium mr-2">Instructor:</span>
-                                      {trip.instructor}
-                                    </div>
-                                  </div>
-
-                                  <h4 className="text-sm font-semibold mb-2">Vehicle Details</h4>
-                                  <div className="text-sm text-muted-foreground mb-4">
-                                    <div className="flex items-center mb-1">
-                                      {trip.vehicle.type === 'boat' && <Ship className="h-4 w-4 mr-2" />}
-                                      {trip.vehicle.type === 'speedboat' && <Ship className="h-4 w-4 mr-2" />}
-                                      {trip.vehicle.type === 'catamaran' && <Anchor className="h-4 w-4 mr-2" />}
-                                      {trip.vehicle.name}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Vehicle Capacity: {trip.vehicle.capacity} persons
-                                    </div>
-                                  </div>
-                                </div>
-                                
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-2 flex items-center">
-                                    <MapPin className="h-4 w-4 mr-1" /> Location Details
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground mb-4">{trip.location}</p>
-                                  
-                                  <h4 className="text-sm font-semibold mb-2 flex items-center">
-                                    <Users className="h-4 w-4 mr-1" /> Participants ({trip.participants.length})
-                                  </h4>
-                                  <div className="text-sm text-muted-foreground mb-4">
-                                    <div className="grid grid-cols-1 gap-2">
-                                      {trip.participants.map((participant, index) => (
-                                        <div key={index} className="flex flex-col p-2 border rounded-md">
-                                          <div className="font-medium">{participant.name}</div>
-                                          <div className="text-xs space-y-1">
-                                            <div>Certification: {participant.certification}</div>
-                                            <div>Level: {participant.level}</div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="vehicles">
-          <VehicleManagement />
-        </TabsContent>
-      </Tabs>
-
-      <Dialog open={isAddTripOpen} onOpenChange={setIsAddTripOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Add New Dive Trip</DialogTitle>
-          </DialogHeader>
-          <AddTripForm onSuccess={() => setIsAddTripOpen(false)} />
-        </DialogContent>
-      </Dialog>
-    </DashboardShell>
-  )
+    );
 }
-

@@ -1,5 +1,16 @@
 // Mock data for dive trips for each dive center
 
+export interface Vehicle {
+  name: string;
+  type: 'boat' | 'speedboat' | 'catamaran';
+  capacity: number;
+}
+
+export interface Participant {
+  name: string;
+  certification: string;
+  level: string;
+}
 export interface DiveTrip {
   id: string;
   title: string;
@@ -15,16 +26,8 @@ export interface DiveTrip {
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   center?: string; // Optional center name for all centers view
   instructor: string;
-  vehicle: {
-    name: string;
-    type: 'boat' | 'speedboat' | 'catamaran';
-    capacity: number;
-  };
-  participants: Array<{
-    name: string;
-    certification: string;
-    level: string;
-  }>;
+  vehicle: Vehicle;
+  participants: Array<Participant>;
 }
 
 // Dive trips for Dauin

@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    Int     @id @default(autoincrement())
+  email String  @unique
+  name  String?
+}
+
+enum Status {
+  upcoming
+  in_progress
+  completed
+  cancelled
+}
+
+enum Difficulty {
+  beginner
+  intermediate
+  advanced
+}
+
+enum VehicleType {
+  boat
+  speedboat
+  catamaran
+}
+
+model DiveTrip {
+  id          String     @id @default(uuid())
+  title       String
+  date        DateTime
+  location    String
+  capacity    Int
+  booked      Int
+  price       Float
+  status      Status
+  diveMaster  String
+  description String
+  duration    String
+  difficulty  Difficulty
+  center      String? // optional
+  instructor  String
+
+  // relations
+  vehicle      Vehicle?
+  participants Participant[]
+
+  @@map("dive_trips")
+}
+
+model Vehicle {
+  id       String      @id @default(uuid())
+  name     String
+  type     VehicleType
+  capacity Int
+
+  // one-to-one back to DiveTrip
+  diveTrip   DiveTrip @relation(fields: [diveTripId], references: [id])
+  diveTripId String   @unique
+
+  @@map("vehicles")
+}
+
+model Participant {
+  id            String @id @default(uuid())
+  name          String
+  certification String
+  level         String
+
+  // many-to-one back to DiveTrip
+  diveTrip   DiveTrip @relation(fields: [diveTripId], references: [id])
+  diveTripId String
+
+  @@map("participants")
+}

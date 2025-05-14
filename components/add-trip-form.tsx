@@ -1,40 +1,64 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { CalendarIcon } from "lucide-react"
-import { format } from "date-fns"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, X } from "lucide-react"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, X } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
-import { Anchor, Car, Ship } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Anchor, Car, Ship } from "lucide-react";
 
 // Sample vehicle data for demo purposes
 // In a real app, this would be fetched from an API
 interface Vehicle {
-  id: string
-  name: string
-  type: "boat" | "car" | "liveaboard"
-  size: string
-  capacity: number
-  imageUrl?: string
+  id: string;
+  name: string;
+  type: "boat" | "car" | "liveaboard";
+  size: string;
+  capacity: number;
+  imageUrl?: string;
 }
 
 const SAMPLE_VEHICLES: Vehicle[] = [
@@ -44,7 +68,7 @@ const SAMPLE_VEHICLES: Vehicle[] = [
     type: "boat",
     size: "42 ft",
     capacity: 12,
-    imageUrl: "/vehicles/boat1.jpg"
+    imageUrl: "/vehicles/boat1.jpg",
   },
   {
     id: "v2",
@@ -52,7 +76,7 @@ const SAMPLE_VEHICLES: Vehicle[] = [
     type: "liveaboard",
     size: "85 ft",
     capacity: 24,
-    imageUrl: "/vehicles/liveaboard1.jpg"
+    imageUrl: "/vehicles/liveaboard1.jpg",
   },
   {
     id: "v3",
@@ -60,9 +84,9 @@ const SAMPLE_VEHICLES: Vehicle[] = [
     type: "car",
     size: "SUV",
     capacity: 7,
-    imageUrl: "/vehicles/car1.jpg"
-  }
-]
+    imageUrl: "/vehicles/car1.jpg",
+  },
+];
 
 // Add these interfaces after the existing Vehicle interface
 interface Staff {
@@ -84,43 +108,43 @@ const SAMPLE_STAFF: Staff[] = [
     id: "s1",
     name: "Maria Santos",
     role: "instructor",
-    certifications: ["PADI IDC Staff Instructor", "EFR Instructor"]
+    certifications: ["PADI IDC Staff Instructor", "EFR Instructor"],
   },
   {
     id: "s2",
     name: "Alex Rodriguez",
     role: "divemaster",
-    certifications: ["PADI Divemaster", "Rescue Diver"]
+    certifications: ["PADI Divemaster", "Rescue Diver"],
   },
   {
     id: "s3",
     name: "James Wilson",
     role: "instructor",
-    certifications: ["SSI Open Water Instructor", "Nitrox Instructor"]
-  }
+    certifications: ["SSI Open Water Instructor", "Nitrox Instructor"],
+  },
 ];
 
 const SAMPLE_CUSTOMERS: Customer[] = [
   {
     id: "c1",
     name: "John Smith",
-    certification: "PADI Open Water"
+    certification: "PADI Open Water",
   },
   {
     id: "c2",
     name: "Emma Wilson",
-    certification: "SSI Advanced Open Water"
+    certification: "SSI Advanced Open Water",
   },
   {
     id: "c3",
     name: "Mike Chen",
-    certification: "PADI Rescue Diver"
-  }
+    certification: "PADI Rescue Diver",
+  },
 ];
 
 // Extended form schema with the new fields
 const formSchema = z.object({
-  name: z.string().min(2, {
+  title: z.string().min(2, {
     message: "Trip name must be at least 2 characters.",
   }),
   location: z.string().min(2, {
@@ -129,9 +153,10 @@ const formSchema = z.object({
   date: z.date({
     required_error: "A date is required.",
   }),
-  time: z.string().min(1, {
-    message: "Time is required.",
-  }),
+  // time: z.string().min(1, {
+  //   message: "Time is required.",
+  // }),
+  time: z.string().optional(),
   capacity: z.coerce.number().min(1, {
     message: "Capacity must be at least 1.",
   }),
@@ -152,12 +177,12 @@ const formSchema = z.object({
     crewWages: z.string().optional(),
     foodAndSupplies: z.string().optional(),
     fees: z.string().optional(),
-    other: z.string().optional()
+    other: z.string().optional(),
   }),
-  instructorId: z.string({
+  instructor: z.string({
     required_error: "Please select an instructor.",
   }),
-  diveMasterId: z.string({
+  diveMaster: z.string({
     required_error: "Please select a dive master.",
   }),
   useCustomerDatabase: z.boolean().default(true),
@@ -165,35 +190,43 @@ const formSchema = z.object({
     z.object({
       id: z.string().optional(),
       name: z.string(),
-      certification: z.string()
-    })
+      certification: z.string(),
+      level: z.string(),
+    }),
   ),
   selectedCustomerIds: z.array(z.string()),
-})
+});
 
-export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
-  const { toast } = useToast()
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES)
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all")
-  const [staff, setStaff] = useState<Staff[]>(SAMPLE_STAFF)
-  const [customers, setCustomers] = useState<Customer[]>(SAMPLE_CUSTOMERS)
-  const [manualParticipants, setManualParticipants] = useState<Array<{ name: string; certification: string }>>([])
+export function AddTripForm(
+  { onSuccess, action }: {
+    onSuccess: () => void;
+    action: (formData: FormData) => Promise<void>;
+  },
+) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES);
+  const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all");
+  const [staff, setStaff] = useState<Staff[]>(SAMPLE_STAFF);
+  const [customers, setCustomers] = useState<Customer[]>(SAMPLE_CUSTOMERS);
+  const [manualParticipants, setManualParticipants] = useState<
+    Array<{ name: string; certification: string }>
+  >([]);
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
     ? vehicles
-    : vehicles.filter(vehicle => vehicle.type === selectedVehicleType)
+    : vehicles.filter((vehicle) => vehicle.type === selectedVehicleType);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      title: "",
       location: "",
       time: "",
       capacity: 8,
-      price: "",
+      price: 0,
       description: "",
       diveType: "",
       vehicleId: "",
@@ -203,31 +236,34 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
         crewWages: "",
         foodAndSupplies: "",
         fees: "",
-        other: ""
+        other: "",
       },
-      instructorId: "",
-      diveMasterId: "",
+      instructor: "",
+      diveMaster: "",
       useCustomerDatabase: true,
       participants: [],
       selectedCustomerIds: [],
     },
-  })
+  });
 
   // Update capacity when vehicle is selected
-  const watchVehicleId = form.watch("vehicleId")
-  
+  const watchVehicleId = form.watch("vehicleId");
+
   useEffect(() => {
     if (watchVehicleId) {
-      const selectedVehicle = vehicles.find(v => v.id === watchVehicleId)
+      const selectedVehicle = vehicles.find((v) => v.id === watchVehicleId);
       if (selectedVehicle) {
-        form.setValue("capacity", selectedVehicle.capacity)
+        form.setValue("capacity", selectedVehicle.capacity);
       }
     }
-  }, [watchVehicleId, vehicles, form])
+  }, [watchVehicleId, vehicles, form]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
-    setManualParticipants([...manualParticipants, { name: "", certification: "" }]);
+    setManualParticipants([...manualParticipants, {
+      name: "",
+      certification: "",
+    }]);
   };
 
   const removeManualParticipant = (index: number) => {
@@ -236,63 +272,71 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
     setManualParticipants(updated);
   };
 
-  const updateManualParticipant = (index: number, field: string, value: string) => {
+  const updateManualParticipant = (
+    index: number,
+    field: string,
+    value: string,
+  ) => {
     const updated = [...manualParticipants];
     updated[index] = { ...updated[index], [field]: value };
     setManualParticipants(updated);
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     // Combine selected customers and manual participants
     const allParticipants = values.useCustomerDatabase
-      ? values.selectedCustomerIds.map(id => {
-          const customer = customers.find(c => c.id === id);
-          return {
-            id: customer?.id,
-            name: customer?.name || "",
-            certification: customer?.certification || ""
-          };
-        })
+      ? values.selectedCustomerIds.map((id) => {
+        const customer = customers.find((c) => c.id === id);
+        return {
+          id: customer?.id,
+          name: customer?.name || "",
+          certification: customer?.certification || "",
+        };
+      })
       : manualParticipants;
 
     // Calculate total expenses
-    const expenses = values.expenses
+    const expenses = values.expenses;
     const totalExpenses = Object.values(expenses)
-      .filter(value => value !== "")
-      .reduce((sum, value) => sum + parseFloat(value || "0"), 0)
+      .filter((value) => value !== "")
+      .reduce((sum, value) => sum + parseFloat(value || "0"), 0);
 
     // Simulate API call
     setTimeout(() => {
       console.log({
         ...values,
         participants: allParticipants,
-        instructor: staff.find(s => s.id === values.instructorId),
-        diveMaster: staff.find(s => s.id === values.diveMasterId),
-        totalExpenses
-      })
-      setIsSubmitting(false)
+        instructor: staff.find((s) => s.id === values.instructor),
+        diveMaster: staff.find((s) => s.id === values.diveMaster),
+        totalExpenses,
+      });
+      setIsSubmitting(false);
 
       toast({
         title: "Trip created successfully",
-        description: `${values.name} has been added to your dive trips.`,
-      })
+        description: `${values.title} has been added to your dive trips.`,
+      });
 
-      form.reset()
-      onSuccess()
-      router.refresh()
-    }, 1000)
+      form.reset();
+      onSuccess();
+      router.refresh();
+    }, 1000);
   }
 
   const getVehicleTypeIcon = (type: string) => {
     switch (type) {
-      case "boat": return <Anchor className="h-4 w-4" />
-      case "car": return <Car className="h-4 w-4" />
-      case "liveaboard": return <Ship className="h-4 w-4" />
-      default: return null
+      case "boat":
+        return <Anchor className="h-4 w-4" />;
+      case "car":
+        return <Car className="h-4 w-4" />;
+      case "liveaboard":
+        return <Ship className="h-4 w-4" />;
+      default:
+        return null;
     }
-  }
+  };
 
   return (
     <Form {...form}>
@@ -304,13 +348,13 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
             <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
           </TabsList>
-          
+
           {/* Trip Details Tab */}
           <TabsContent value="details" className="space-y-4">
             <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="name"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Trip Name</FormLabel>
@@ -348,9 +392,14 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                           <FormControl>
                             <Button
                               variant={"outline"}
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground",
+                              )}
                             >
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                              {field.value
+                                ? format(field.value, "PPP")
+                                : <span>Pick a date</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
@@ -370,19 +419,21 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="time"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Time</FormLabel>
-                      <FormControl>
-                        <Input placeholder="9:00 AM - 1:00 PM" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {
+                  <FormField
+                    control={form.control}
+                    name="time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Time</FormLabel>
+                        <FormControl>
+                          <Input placeholder="9:00 AM - 1:00 PM" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                }
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -395,7 +446,9 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                       <FormControl>
                         <Input type="number" min={1} {...field} />
                       </FormControl>
-                      <FormDescription>Maximum number of divers</FormDescription>
+                      <FormDescription>
+                        Maximum number of divers
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -422,7 +475,10 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Dive Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select dive type" />
@@ -436,7 +492,9 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                         <SelectItem value="wreck">Wreck Dive</SelectItem>
                         <SelectItem value="cave">Cave Dive</SelectItem>
                         <SelectItem value="drift">Drift Dive</SelectItem>
-                        <SelectItem value="discovery">Discovery Dive</SelectItem>
+                        <SelectItem value="discovery">
+                          Discovery Dive
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -463,37 +521,45 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
           </TabsContent>
-          
+
           {/* Vehicle Selection Tab */}
           <TabsContent value="vehicle">
             <div className="space-y-4">
               <div className="flex space-x-2 pb-2">
                 <Button
-                  type="button" 
-                  variant={selectedVehicleType === "all" ? "default" : "outline"}
+                  type="button"
+                  variant={selectedVehicleType === "all"
+                    ? "default"
+                    : "outline"}
                   onClick={() => setSelectedVehicleType("all")}
                 >
                   All
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant={selectedVehicleType === "boat" ? "default" : "outline"}
+                  variant={selectedVehicleType === "boat"
+                    ? "default"
+                    : "outline"}
                   onClick={() => setSelectedVehicleType("boat")}
                 >
                   <Anchor className="mr-2 h-4 w-4" />
                   Boats
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant={selectedVehicleType === "liveaboard" ? "default" : "outline"}
+                  variant={selectedVehicleType === "liveaboard"
+                    ? "default"
+                    : "outline"}
                   onClick={() => setSelectedVehicleType("liveaboard")}
                 >
                   <Ship className="mr-2 h-4 w-4" />
                   Liveaboards
                 </Button>
-                <Button 
+                <Button
                   type="button"
-                  variant={selectedVehicleType === "car" ? "default" : "outline"}
+                  variant={selectedVehicleType === "car"
+                    ? "default"
+                    : "outline"}
                   onClick={() => setSelectedVehicleType("car")}
                 >
                   <Car className="mr-2 h-4 w-4" />
@@ -509,11 +575,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormLabel>Select Vehicle</FormLabel>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                       {filteredVehicles.map((vehicle) => (
-                        <Card 
-                          key={vehicle.id} 
+                        <Card
+                          key={vehicle.id}
                           className={cn(
                             "cursor-pointer hover:border-primary transition-colors",
-                            field.value === vehicle.id && "border-2 border-primary"
+                            field.value === vehicle.id &&
+                              "border-2 border-primary",
                           )}
                           onClick={() => field.onChange(vehicle.id)}
                         >
@@ -521,29 +588,43 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
                                 {getVehicleTypeIcon(vehicle.type)}
-                                <CardTitle className="text-base">{vehicle.name}</CardTitle>
+                                <CardTitle className="text-base">
+                                  {vehicle.name}
+                                </CardTitle>
                               </div>
-                              <RadioGroup value={field.value} onValueChange={field.onChange} className="hidden">
-                                <RadioGroupItem value={vehicle.id} id={`vehicle-${vehicle.id}`} />
+                              <RadioGroup
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                className="hidden"
+                              >
+                                <RadioGroupItem
+                                  value={vehicle.id}
+                                  id={`vehicle-${vehicle.id}`}
+                                />
                               </RadioGroup>
                             </div>
                             <CardDescription className="text-xs">
-                              {vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1)} • {vehicle.size}
+                              {vehicle.type.charAt(0).toUpperCase() +
+                                vehicle.type.slice(1)} • {vehicle.size}
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="p-3 pt-2">
                             {vehicle.imageUrl && (
                               <div className="w-full h-28 rounded-md overflow-hidden mb-2">
-                                <img 
-                                  src={vehicle.imageUrl} 
+                                <img
+                                  src={vehicle.imageUrl}
                                   alt={vehicle.name}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
                             )}
                             <div className="text-xs flex justify-between">
-                              <span className="text-muted-foreground">Capacity:</span>
-                              <Badge variant="outline">{vehicle.capacity} people</Badge>
+                              <span className="text-muted-foreground">
+                                Capacity:
+                              </span>
+                              <Badge variant="outline">
+                                {vehicle.capacity} people
+                              </Badge>
                             </div>
                           </CardContent>
                         </Card>
@@ -555,17 +636,20 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
           </TabsContent>
-          
+
           {/* Staff Tab */}
           <TabsContent value="staff" className="space-y-4">
             <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="instructorId"
+                name="instructor"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Instructor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select an instructor" />
@@ -573,9 +657,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                       </FormControl>
                       <SelectContent>
                         {staff
-                          .filter(s => s.role === "instructor")
-                          .map(instructor => (
-                            <SelectItem key={instructor.id} value={instructor.id}>
+                          .filter((s) => s.role === "instructor")
+                          .map((instructor) => (
+                            <SelectItem
+                              key={instructor.id}
+                              value={instructor.id}
+                            >
                               <div className="flex flex-col">
                                 <span>{instructor.name}</span>
                                 <span className="text-xs text-muted-foreground">
@@ -583,8 +670,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                                 </span>
                               </div>
                             </SelectItem>
-                          ))
-                        }
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -594,11 +680,14 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
 
               <FormField
                 control={form.control}
-                name="diveMasterId"
+                name="diveMaster"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Dive Master</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a dive master" />
@@ -606,9 +695,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                       </FormControl>
                       <SelectContent>
                         {staff
-                          .filter(s => s.role === "divemaster")
-                          .map(divemaster => (
-                            <SelectItem key={divemaster.id} value={divemaster.id}>
+                          .filter((s) => s.role === "divemaster")
+                          .map((divemaster) => (
+                            <SelectItem
+                              key={divemaster.id}
+                              value={divemaster.id}
+                            >
                               <div className="flex flex-col">
                                 <span>{divemaster.name}</span>
                                 <span className="text-xs text-muted-foreground">
@@ -616,8 +708,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                                 </span>
                               </div>
                             </SelectItem>
-                          ))
-                        }
+                          ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -643,14 +734,22 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                 </Button>
               </div>
               {manualParticipants.map((participant, index) => (
-                <div key={index} className="flex gap-4 items-start border rounded-lg p-4">
+                <div
+                  key={index}
+                  className="flex gap-4 items-start border rounded-lg p-4"
+                >
                   <div className="flex-1 space-y-4">
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
                         <Input
                           value={participant.name}
-                          onChange={(e) => updateManualParticipant(index, "name", e.target.value)}
+                          onChange={(e) =>
+                            updateManualParticipant(
+                              index,
+                              "name",
+                              e.target.value,
+                            )}
                           placeholder="Participant name"
                         />
                       </FormControl>
@@ -660,7 +759,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                       <FormControl>
                         <Input
                           value={participant.certification}
-                          onChange={(e) => updateManualParticipant(index, "certification", e.target.value)}
+                          onChange={(e) =>
+                            updateManualParticipant(
+                              index,
+                              "certification",
+                              e.target.value,
+                            )}
                           placeholder="e.g. PADI Open Water"
                         />
                       </FormControl>
@@ -683,9 +787,12 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-6">
                     <div className="space-y-0.5">
-                      <FormLabel className="text-base">Use Customer Database</FormLabel>
+                      <FormLabel className="text-base">
+                        Use Customer Database
+                      </FormLabel>
                       <FormDescription>
-                        Switch to select participants from your existing customer database
+                        Switch to select participants from your existing
+                        customer database
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -706,7 +813,9 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     render={() => (
                       <FormItem>
                         <div className="mb-4">
-                          <FormLabel className="text-base">Select From Database</FormLabel>
+                          <FormLabel className="text-base">
+                            Select From Database
+                          </FormLabel>
                           <FormDescription>
                             Choose participants from your customer database
                           </FormDescription>
@@ -724,15 +833,20 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                                 >
                                   <FormControl>
                                     <Checkbox
-                                      checked={field.value?.includes(customer.id)}
+                                      checked={field.value?.includes(
+                                        customer.id,
+                                      )}
                                       onCheckedChange={(checked) => {
                                         return checked
-                                          ? field.onChange([...field.value, customer.id])
+                                          ? field.onChange([
+                                            ...field.value,
+                                            customer.id,
+                                          ])
                                           : field.onChange(
-                                              field.value?.filter(
-                                                (value) => value !== customer.id
-                                              )
-                                            )
+                                            field.value?.filter(
+                                              (value) => value !== customer.id,
+                                            ),
+                                          );
                                       }}
                                     />
                                   </FormControl>
@@ -745,7 +859,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                                     </FormDescription>
                                   </div>
                                 </FormItem>
-                              )
+                              );
                             }}
                           />
                         ))}
@@ -757,14 +871,15 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
               )}
             </div>
           </TabsContent>
-          
+
           {/* Expenses Tab */}
           <TabsContent value="expenses">
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground mb-2">
-                Add expected expenses for this trip. This information will be reflected in financial reports.
+                Add expected expenses for this trip. This information will be
+                reflected in financial reports.
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -773,11 +888,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Insurance</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -785,7 +900,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="expenses.fuel"
@@ -793,11 +908,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Fuel</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -806,7 +921,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                   )}
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -815,11 +930,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Crew Wages</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -827,7 +942,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="expenses.foodAndSupplies"
@@ -835,11 +950,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Food & Supplies</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -848,7 +963,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                   )}
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -857,11 +972,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Park/Location Fees</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -869,7 +984,7 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="expenses.other"
@@ -877,11 +992,11 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormItem>
                       <FormLabel>Other Expenses</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="$0.00" 
-                          type="number" 
-                          min="0" 
-                          step="0.01" 
+                        <Input
+                          placeholder="$0.00"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           {...field}
                         />
                       </FormControl>
@@ -890,14 +1005,14 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
                   )}
                 />
               </div>
-              
+
               <div className="pt-2 border-t">
                 <div className="flex justify-between text-sm font-medium">
                   <span>Total Expenses:</span>
                   <span>
                     $
                     {Object.values(form.watch("expenses"))
-                      .filter(value => value !== "")
+                      .filter((value) => value !== "")
                       .reduce((sum, value) => sum + parseFloat(value || "0"), 0)
                       .toFixed(2)}
                   </span>
@@ -914,12 +1029,24 @@ export function AddTripForm({ onSuccess }: { onSuccess: () => void }) {
           <Button variant="outline" type="button" onClick={onSuccess}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={() => {
+              const formData = new FormData();
+              const values = form.getValues();
+              Object.entries(values).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) {
+                  formData.append(key, value.toString());
+                }
+              });
+              action(formData);
+            }}
+          >
             {isSubmitting ? "Creating..." : "Create Trip"}
           </Button>
         </div>
       </form>
     </Form>
-  )
+  );
 }
-
