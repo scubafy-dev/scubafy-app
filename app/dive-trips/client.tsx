@@ -35,9 +35,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { allDiveTrips, diveTripsByCenter } from "@/lib/mock-data/dive-trips";
+import { FullDiveTrip } from "@/lib/dive-trips";
 
 export default function DiveTripsPage(
-  { action }: { action: (formData: FormData) => Promise<void> },
+  { action, diveTrips }: {
+    action: (formData: FormData) => Promise<void>;
+    diveTrips: FullDiveTrip[];
+  },
 ) {
   const [isAddTripOpen, setIsAddTripOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("trips");
@@ -54,7 +58,7 @@ export default function DiveTripsPage(
   };
 
   // Get dive trips based on the selected center
-  const diveTrips = getCenterSpecificData(diveTripsByCenter, allDiveTrips);
+  // const diveTrips = getCenterSpecificData(diveTripsByCenter, allDiveTrips);
 
   return (
     <DashboardShell>
@@ -134,7 +138,7 @@ export default function DiveTripsPage(
                             <div className="flex flex-col">
                               <div className="flex items-center">
                                 <Calendar className="mr-1 h-3 w-3" />
-                                <span>{trip.date}</span>
+                                <span>{trip.date.toDateString()}</span>
                               </div>
                             </div>
                           </TableCell>
@@ -154,7 +158,7 @@ export default function DiveTripsPage(
                                 : "default"}
                               className={trip.status === "upcoming"
                                 ? "bg-blue-500"
-                                : trip.status === "in-progress"
+                                : trip.status === "in_progress"
                                 ? "bg-amber-500"
                                 : trip.status === "completed"
                                 ? "bg-green-500"
@@ -166,7 +170,7 @@ export default function DiveTripsPage(
                           {isAllCenters && <TableCell>{trip.center}</TableCell>}
                         </TableRow>
                         {expandedRows.includes(trip.id) && (
-                          <TableRow className="bg-muted/30">
+                          <TableRow key={trip.id} className="bg-muted/30">
                             <TableCell
                               colSpan={isAllCenters ? 10 : 9}
                               className="p-4"
@@ -209,23 +213,29 @@ export default function DiveTripsPage(
                                     Vehicle Details
                                   </h4>
                                   <div className="text-sm text-muted-foreground mb-4">
-                                    <div className="flex items-center mb-1">
-                                      {trip.vehicle.type === "boat" && (
-                                        <Ship className="h-4 w-4 mr-2" />
+                                    {trip.vehicle &&
+                                      (
+                                        <>
+                                          <div className="flex items-center mb-1">
+                                            {trip.vehicle.type === "boat" && (
+                                              <Ship className="h-4 w-4 mr-2" />
+                                            )}
+                                            {trip.vehicle.type ===
+                                                "speedboat" &&
+                                              <Ship className="h-4 w-4 mr-2" />}
+                                            {trip.vehicle.type ===
+                                                "catamaran" &&
+                                              (
+                                                <Anchor className="h-4 w-4 mr-2" />
+                                              )}
+                                            {trip.vehicle.name}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground">
+                                            Vehicle Capacity:{" "}
+                                            {trip.vehicle.capacity} persons
+                                          </div>
+                                        </>
                                       )}
-                                      {trip.vehicle.type === "speedboat" && (
-                                        <Ship className="h-4 w-4 mr-2" />
-                                      )}
-                                      {trip.vehicle.type === "catamaran" && (
-                                        <Anchor className="h-4 w-4 mr-2" />
-                                      )}
-                                      {trip.vehicle.name}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      Vehicle Capacity: {trip.vehicle.capacity}
-                                      {" "}
-                                      persons
-                                    </div>
                                   </div>
                                 </div>
 
