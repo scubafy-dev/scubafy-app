@@ -1,4 +1,5 @@
 import prisma  from '@prisma/prisma';
+import { redirect } from 'next/navigation';
 
 export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 
@@ -142,5 +143,30 @@ export const  getAllDiveTrips = async () => {
       date: 'asc',
     },
   });
+}
 
+export const deleteDiveTrip = async (id: string) => {
+    "use server"
+      
+    try{
+        // Delete participants linked to this dive trip
+        await prisma.participant.deleteMany({
+            where: { diveTripId: id },
+            })
+        
+        // Delete vehicle linked to this dive trip
+        await prisma.vehicle.deleteMany({
+        where: { diveTripId: id },
+        })
+
+        const res = await prisma.diveTrip.delete({
+            where: {
+                id
+            }
+        })
+        // redirect("/dive-trip");
+    }
+    catch(error){
+        console.log("error - ", error);
+    }
 }

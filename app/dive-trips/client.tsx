@@ -9,9 +9,12 @@ import {
   Car,
   ChevronDown,
   ChevronRight,
+  Edit,
   MapPin,
+  MoreHorizontal,
   Plus,
   Ship,
+  Trash,
   Users,
 } from "lucide-react";
 import {
@@ -20,6 +23,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AddTripForm } from "@/components/add-trip-form";
 import { VehicleManagement } from "@/components/vehicle-management";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,18 +59,25 @@ import { Badge } from "@/components/ui/badge";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { allDiveTrips, diveTripsByCenter } from "@/lib/mock-data/dive-trips";
 import { FullDiveTrip } from "@/lib/dive-trips";
+import { useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 export default function DiveTripsPage(
-  { action, diveTrips }: {
-    action: (formData: FormData) => Promise<void>;
+  { actionCreate, actionDelete, diveTrips }: {
+    actionCreate: (formData: FormData) => Promise<void>;
+    actionDelete: (id: string) => Promise<void>;
     diveTrips: FullDiveTrip[];
   },
 ) {
   const [isAddTripOpen, setIsAddTripOpen] = useState(false);
+  const [isDeleteTripAlertOpen, setIsDeleteTripAlertOpen] = useState(false);
+  const [isEditTripOpen, setIsEditTripOpen] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<FullDiveTrip | null>(null);
   const [activeTab, setActiveTab] = useState("trips");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const { currentCenter, isAllCenters, getCenterSpecificData } =
     useDiveCenter();
+  const router = useRouter();
 
   const toggleRowExpansion = (tripId: string) => {
     setExpandedRows((prev) =>
@@ -168,6 +198,40 @@ export default function DiveTripsPage(
                             </Badge>
                           </TableCell>
                           {isAllCenters && <TableCell>{trip.center}</TableCell>}
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedTrip(trip);
+                                    setIsEditTripOpen(true);
+                                  }}
+                                >
+                                  <Edit className="mr-2 h-4 w-4" /> Edit Trip
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => {
+                                    setSelectedTrip(trip);
+                                    setIsDeleteTripAlertOpen(true);
+                                  }}
+                                >
+                                  <Trash className="mr-2 h-4 w-4" /> Remove
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                         {expandedRows.includes(trip.id) && (
                           <TableRow key={trip.id} className="bg-muted/30">
@@ -304,10 +368,64 @@ export default function DiveTripsPage(
           </DialogHeader>
           <AddTripForm
             onSuccess={() => setIsAddTripOpen(false)}
-            action={action}
+            action={actionCreate}
           />
         </DialogContent>
       </Dialog>
+
+      {
+        /* <Dialog open={isEditTripOpen} onOpenChange={setIsEditTripOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit New Dive Trip</DialogTitle>
+          </DialogHeader>
+          <AddTripForm
+            onSuccess={() => setIsAddTripOpen(false)}
+            action={actionCreate}
+          />
+        </DialogContent>
+      </Dialog> */
+      }
+
+      <AlertDialog
+        open={isDeleteTripAlertOpen}
+        onOpenChange={setIsDeleteTripAlertOpen}
+      >
+        <AlertDialogPortal>
+          <AlertDialogOverlay />
+          <AlertDialogContent>
+            <AlertDialogTitle>
+              Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove this trip related data from our servers.
+            </AlertDialogDescription>
+            <div
+              style={{ display: "flex", gap: 25, justifyContent: "flex-end" }}
+            >
+              <AlertDialogCancel>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (selectedTrip) {
+                    await actionDelete(selectedTrip.id);
+                    toast({
+                      title: "Trip deleted successfully.",
+                      description: `Center: ${
+                        selectedTrip.center ?? "N/A"
+                      }   \nTrip: ${selectedTrip.title}`,
+                    });
+                    router.refresh();
+                  }
+                }}
+              >
+                Yes, delete this trip
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialogPortal>
+      </AlertDialog>
     </DashboardShell>
   );
 }
