@@ -133,6 +133,7 @@ export async function createDiveTrip(formData: FormData) {
     // redirect("/diveTrips");
 }
 
+
 export const  getAllDiveTrips = async () => {
   return prisma.diveTrip.findMany({
     include: {
@@ -143,6 +144,65 @@ export const  getAllDiveTrips = async () => {
       date: 'asc',
     },
   });
+}
+
+export async function updateDiveTrip(id: string | null, formData: FormData) {
+    "use server";
+
+    if(id === null){
+        return;
+    }
+
+    const title = formData.get("title") as string;
+    const date = formData.get("date") as string;
+    const location = formData.get("location") as string;
+    const capacity = Number(formData.get("capacity"));
+    const booked = Number(formData.get("booked"));
+    const price = Number(formData.get("price"));
+    const status = formData.get("status") as
+        | "upcoming"
+        | "in_progress"
+        | "completed"
+        | "cancelled";
+    const diveMaster = formData.get("diveMaster") as string;
+    const description = formData.get("description") as string;
+    const duration = formData.get("duration") as string;
+    const difficulty = formData.get("difficulty") as
+        | "beginner"
+        | "intermediate"
+        | "advanced";
+    const center = (formData.get("center") as string) || null;
+    const instructor = formData.get("instructor") as string;
+
+
+    try {
+        await prisma.diveTrip.update(
+            {
+                where: {
+                    id
+                },
+                data: {
+                    title,
+                    // date,
+                    location,
+                    capacity,
+                    booked,
+                    price,
+                    // status,
+                    diveMaster,
+                    description,
+                    // duration,
+                    // difficulty,
+                    center,
+                    instructor,
+                },
+            },
+        );
+    } catch (error) {
+        console.log("error: ", error);
+    }
+
+    // redirect("/diveTrips");
 }
 
 export const deleteDiveTrip = async (id: string) => {

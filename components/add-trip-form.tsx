@@ -49,6 +49,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Anchor, Car, Ship } from "lucide-react";
+import { FullDiveTrip } from "@/lib/dive-trips";
+import { ActionMode } from "@/types/all";
 
 // Sample vehicle data for demo purposes
 // In a real app, this would be fetched from an API
@@ -198,9 +200,12 @@ const formSchema = z.object({
 });
 
 export function AddTripForm(
-  { onSuccess, action }: {
+  { onSuccess, mode, trip, actionCreate, actionUpdate }: {
     onSuccess: () => void;
-    action: (formData: FormData) => Promise<void>;
+    mode: ActionMode;
+    trip: FullDiveTrip | null;
+    actionCreate: (formData: FormData) => Promise<void>;
+    actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
   },
 ) {
   const { toast } = useToast();
@@ -222,12 +227,12 @@ export function AddTripForm(
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      location: "",
+      title: trip?.title ?? "",
+      location: trip?.location ?? "",
       time: "",
-      capacity: 8,
-      price: 0,
-      description: "",
+      capacity: trip?.capacity ?? 0,
+      price: trip?.price.toString() ?? "0",
+      description: trip?.description ?? "",
       diveType: "",
       vehicleId: "",
       expenses: {
@@ -238,8 +243,8 @@ export function AddTripForm(
         fees: "",
         other: "",
       },
-      instructor: "",
-      diveMaster: "",
+      instructor: trip?.instructor ?? "",
+      diveMaster: trip?.diveMaster ?? "",
       useCustomerDatabase: true,
       participants: [],
       selectedCustomerIds: [],
@@ -315,8 +320,12 @@ export function AddTripForm(
       setIsSubmitting(false);
 
       toast({
-        title: "Trip created successfully",
-        description: `${values.title} has been added to your dive trips.`,
+        title: `Trip ${
+          mode === ActionMode.create ? "created" : "updated"
+        } successfully`,
+        description: `${values.title} has been ${
+          mode === ActionMode.create ? "added to your dive trips." : "updated."
+        }`,
       });
 
       form.reset();
@@ -359,7 +368,10 @@ export function AddTripForm(
                   <FormItem>
                     <FormLabel>Trip Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Coral Reef Exploration" {...field} />
+                      <Input
+                        placeholder="Coral Reef Exploration"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1040,10 +1052,18 @@ export function AddTripForm(
                   formData.append(key, value.toString());
                 }
               });
-              action(formData);
+              if (mode === ActionMode.create) {
+                actionCreate(formData);
+              } else {
+                actionUpdate(trip?.id ?? null, formData);
+              }
             }}
           >
-            {isSubmitting ? "Creating..." : "Create Trip"}
+            {isSubmitting
+              ? mode === ActionMode.create ? "Creating..." : "Updating..."
+              : mode === ActionMode.create
+              ? "Create Trip"
+              : "Update Trip"}
           </Button>
         </div>
       </form>

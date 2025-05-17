@@ -61,10 +61,12 @@ import { allDiveTrips, diveTripsByCenter } from "@/lib/mock-data/dive-trips";
 import { FullDiveTrip } from "@/lib/dive-trips";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { ActionMode } from "@/types/all";
 
 export default function DiveTripsPage(
-  { actionCreate, actionDelete, diveTrips }: {
+  { actionCreate, actionUpdate, actionDelete, diveTrips }: {
     actionCreate: (formData: FormData) => Promise<void>;
+    actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
     actionDelete: (id: string) => Promise<void>;
     diveTrips: FullDiveTrip[];
   },
@@ -368,24 +370,28 @@ export default function DiveTripsPage(
           </DialogHeader>
           <AddTripForm
             onSuccess={() => setIsAddTripOpen(false)}
-            action={actionCreate}
+            mode={ActionMode.create}
+            trip={selectedTrip}
+            actionCreate={actionCreate}
+            actionUpdate={actionUpdate}
           />
         </DialogContent>
       </Dialog>
 
-      {
-        /* <Dialog open={isEditTripOpen} onOpenChange={setIsEditTripOpen}>
+      <Dialog open={isEditTripOpen} onOpenChange={setIsEditTripOpen}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit New Dive Trip</DialogTitle>
+            <DialogTitle>Update Dive Trip</DialogTitle>
           </DialogHeader>
           <AddTripForm
-            onSuccess={() => setIsAddTripOpen(false)}
-            action={actionCreate}
+            onSuccess={() => setIsEditTripOpen(false)}
+            mode={ActionMode.update}
+            trip={selectedTrip}
+            actionCreate={actionCreate}
+            actionUpdate={actionUpdate}
           />
         </DialogContent>
-      </Dialog> */
-      }
+      </Dialog>
 
       <AlertDialog
         open={isDeleteTripAlertOpen}

@@ -4,6 +4,7 @@ import {
     deleteDiveTrip,
     FullDiveTrip,
     getAllDiveTrips,
+    updateDiveTrip,
 } from "@/lib/dive-trips";
 
 export default async function NewDiveTripPage() {
@@ -14,6 +15,7 @@ export default async function NewDiveTripPage() {
             <DiveTripsPage
                 actionCreate={createDiveTrip}
                 actionDelete={deleteDiveTrip}
+                actionUpdate={updateDiveTrip}
                 diveTrips={diveTrips}
             />
         </div>
