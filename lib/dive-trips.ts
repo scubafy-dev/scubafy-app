@@ -188,7 +188,7 @@ export async function updateDiveTrip(id: string | null, formData: FormData) {
                     capacity,
                     booked,
                     price,
-                    // status,
+                    status,
                     diveMaster,
                     description,
                     // duration,

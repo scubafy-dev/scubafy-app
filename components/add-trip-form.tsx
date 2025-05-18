@@ -152,6 +152,7 @@ const formSchema = z.object({
   location: z.string().min(2, {
     message: "Location must be at least 2 characters.",
   }),
+  status: z.string(),
   date: z.date({
     required_error: "A date is required.",
   }),
@@ -228,6 +229,7 @@ export function AddTripForm(
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: trip?.title ?? "",
+      status: trip?.status ?? "upcoming",
       location: trip?.location ?? "",
       time: "",
       capacity: trip?.capacity ?? 0,
@@ -386,6 +388,55 @@ export function AddTripForm(
                     <FormLabel>Location</FormLabel>
                     <FormControl>
                       <Input placeholder="Blue Lagoon Reef" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select trip status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem
+                            value="upcoming"
+                            className="text-blue-700"
+                          >
+                            Upcoming
+                          </SelectItem>
+                          <SelectItem
+                            value="in_progress"
+                            className="text-yellow-700"
+                          >
+                            In progress
+                          </SelectItem>
+                          <SelectItem
+                            value="completed"
+                            className="text-orange-700"
+                          >
+                            Completed
+                          </SelectItem>
+                          <SelectItem
+                            value="cancelled"
+                            className="text-red-700"
+                          >
+                            Cancelled
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
