@@ -1,21 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { Equipment } from "@/lib/equipment";
 
 interface AddEquipmentDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  actionCreate: (formData: Equipment) => void;
 }
 
-export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogProps) {
-  const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">("basic")
+export function AddEquipmentDialog(
+  { open, onOpenChange, actionCreate }: AddEquipmentDialogProps,
+) {
+  const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">(
+    "basic",
+  );
   const [formData, setFormData] = useState({
     type: "",
     sku: "",
@@ -32,21 +49,22 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
     nextInspection: "",
     itemValue: "",
     rentalRate: "",
-    rentalTimeframe: "Per Dive"
-  })
+    rentalTimeframe: "Per Dive",
+  });
 
   const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }))
-  }
+      [field]: value,
+    }));
+  };
 
   const handleSubmit = () => {
     // Handle form submission
-    console.log(formData)
-    onOpenChange(false)
-  }
+    console.log(formData);
+    actionCreate(formData);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,9 +77,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
           <button
             className={cn(
               "flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative",
-              activeTab === "basic" 
+              activeTab === "basic"
                 ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-primary"
+                : "text-muted-foreground hover:text-primary",
             )}
             onClick={() => setActiveTab("basic")}
           >
@@ -72,7 +90,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
               "flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative",
               activeTab === "details"
                 ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-primary"
+                : "text-muted-foreground hover:text-primary",
             )}
             onClick={() => setActiveTab("details")}
           >
@@ -83,7 +101,7 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
               "flex-1 px-4 py-2.5 text-sm font-medium transition-colors relative",
               activeTab === "rental"
                 ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-primary"
+                : "text-muted-foreground hover:text-primary",
             )}
             onClick={() => setActiveTab("rental")}
           >
@@ -95,7 +113,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
           {activeTab === "basic" && (
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="type" className="text-sm font-medium">Equipment Type</Label>
+                <Label htmlFor="type" className="text-sm font-medium">
+                  Equipment Type
+                </Label>
                 <Input
                   id="type"
                   placeholder="Scuba Tank, BCD, Regulator, etc."
@@ -115,7 +135,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="make" className="text-sm font-medium">Make</Label>
+                <Label htmlFor="make" className="text-sm font-medium">
+                  Make
+                </Label>
                 <Input
                   id="make"
                   placeholder="Manufacturer name"
@@ -125,7 +147,9 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="model" className="text-sm font-medium">Model</Label>
+                <Label htmlFor="model" className="text-sm font-medium">
+                  Model
+                </Label>
                 <Input
                   id="model"
                   placeholder="Model name/number"
@@ -135,17 +159,22 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="serialNumber" className="text-sm font-medium">Serial Number</Label>
+                <Label htmlFor="serialNumber" className="text-sm font-medium">
+                  Serial Number
+                </Label>
                 <Input
                   id="serialNumber"
                   placeholder="ST-12345"
                   value={formData.serialNumber}
-                  onChange={(e) => handleInputChange("serialNumber", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("serialNumber", e.target.value)}
                   className="h-9"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="size" className="text-sm font-medium">Size</Label>
+                <Label htmlFor="size" className="text-sm font-medium">
+                  Size
+                </Label>
                 <Input
                   id="size"
                   placeholder="80 cu ft / Medium / etc."
@@ -160,20 +189,26 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
           {activeTab === "details" && (
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="location" className="text-sm font-medium">Storage Location</Label>
+                <Label htmlFor="location" className="text-sm font-medium">
+                  Storage Location
+                </Label>
                 <Input
                   id="location"
                   placeholder="Warehouse A, Shelf B3, etc."
                   value={formData.location}
-                  onChange={(e) => handleInputChange("location", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("location", e.target.value)}
                   className="h-9"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="condition" className="text-sm font-medium">Condition</Label>
+                <Label htmlFor="condition" className="text-sm font-medium">
+                  Condition
+                </Label>
                 <Select
                   value={formData.condition}
-                  onValueChange={(value) => handleInputChange("condition", value)}
+                  onValueChange={(value) =>
+                    handleInputChange("condition", value)}
                 >
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select condition" />
@@ -187,13 +222,16 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="quantity" className="text-sm font-medium">Quantity</Label>
+                <Label htmlFor="quantity" className="text-sm font-medium">
+                  Quantity
+                </Label>
                 <Input
                   id="quantity"
                   type="number"
                   min="1"
                   value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("quantity", e.target.value)}
                   className="h-9"
                 />
               </div>
@@ -201,43 +239,62 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                 <Checkbox
                   id="trackMinQuantity"
                   checked={formData.trackMinQuantity}
-                  onCheckedChange={(checked) => handleInputChange("trackMinQuantity", checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("trackMinQuantity", checked as boolean)}
                   className="mt-0.5"
                 />
                 <div>
-                  <Label htmlFor="trackMinQuantity" className="text-sm font-medium">Track Minimum Quantity</Label>
-                  <p className="text-xs text-muted-foreground">Enable low stock alerts</p>
+                  <Label
+                    htmlFor="trackMinQuantity"
+                    className="text-sm font-medium"
+                  >
+                    Track Minimum Quantity
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable low stock alerts
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-2">
                 <Checkbox
                   id="trackUsage"
                   checked={formData.trackUsage}
-                  onCheckedChange={(checked) => handleInputChange("trackUsage", checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    handleInputChange("trackUsage", checked as boolean)}
                   className="mt-0.5"
                 />
                 <div>
-                  <Label htmlFor="trackUsage" className="text-sm font-medium">Track Usage</Label>
-                  <p className="text-xs text-muted-foreground">Enable usage tracking for maintenance alerts</p>
+                  <Label htmlFor="trackUsage" className="text-sm font-medium">
+                    Track Usage
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Enable usage tracking for maintenance alerts
+                  </p>
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="lastInspection" className="text-sm font-medium">Last Inspection</Label>
+                <Label htmlFor="lastInspection" className="text-sm font-medium">
+                  Last Inspection
+                </Label>
                 <Input
                   id="lastInspection"
                   type="date"
                   value={formData.lastInspection}
-                  onChange={(e) => handleInputChange("lastInspection", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("lastInspection", e.target.value)}
                   className="h-9"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="nextInspection" className="text-sm font-medium">Next Inspection</Label>
+                <Label htmlFor="nextInspection" className="text-sm font-medium">
+                  Next Inspection
+                </Label>
                 <Input
                   id="nextInspection"
                   type="date"
                   value={formData.nextInspection}
-                  onChange={(e) => handleInputChange("nextInspection", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("nextInspection", e.target.value)}
                   className="h-9"
                 />
               </div>
@@ -247,9 +304,13 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
           {activeTab === "rental" && (
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label htmlFor="itemValue" className="text-sm font-medium">Item Value</Label>
+                <Label htmlFor="itemValue" className="text-sm font-medium">
+                  Item Value
+                </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-sm text-muted-foreground">$</span>
+                  <span className="absolute left-3 top-2 text-sm text-muted-foreground">
+                    $
+                  </span>
                   <Input
                     id="itemValue"
                     type="number"
@@ -258,14 +319,19 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                     className="pl-6 h-9"
                     placeholder="250.00"
                     value={formData.itemValue}
-                    onChange={(e) => handleInputChange("itemValue", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("itemValue", e.target.value)}
                   />
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="rentalRate" className="text-sm font-medium">Rental Rate</Label>
+                <Label htmlFor="rentalRate" className="text-sm font-medium">
+                  Rental Rate
+                </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-2 text-sm text-muted-foreground">$</span>
+                  <span className="absolute left-3 top-2 text-sm text-muted-foreground">
+                    $
+                  </span>
                   <Input
                     id="rentalRate"
                     type="number"
@@ -274,15 +340,22 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
                     className="pl-6 h-9"
                     placeholder="15.00"
                     value={formData.rentalRate}
-                    onChange={(e) => handleInputChange("rentalRate", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("rentalRate", e.target.value)}
                   />
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="rentalTimeframe" className="text-sm font-medium">Rental Timeframe</Label>
+                <Label
+                  htmlFor="rentalTimeframe"
+                  className="text-sm font-medium"
+                >
+                  Rental Timeframe
+                </Label>
                 <Select
                   value={formData.rentalTimeframe}
-                  onValueChange={(value) => handleInputChange("rentalTimeframe", value)}
+                  onValueChange={(value) =>
+                    handleInputChange("rentalTimeframe", value)}
                 >
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="Select timeframe" />
@@ -299,7 +372,11 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         </div>
 
         <div className="flex items-center justify-end gap-2 p-4 border-t bg-muted/50">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button size="sm" onClick={handleSubmit}>
@@ -308,5 +385,5 @@ export function AddEquipmentDialog({ open, onOpenChange }: AddEquipmentDialogPro
         </div>
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+}

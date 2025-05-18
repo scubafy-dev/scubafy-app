@@ -87,3 +87,53 @@ model Participant {
 
   @@map("participants")
 }
+
+/// new enums for your equipment table
+enum EquipmentType {
+  BCD
+  Regulator
+  Wetsuit
+  DiveComputer // Suunto D5, etc.
+  Fins
+}
+
+enum EquipmentStatus {
+  available // ✅
+  in_use // ⏱
+  rented // 💲
+  maintenance // ⚠️
+}
+
+enum Condition {
+  excellent
+  good
+  fair
+  poor
+}
+
+/// new model for each row in your “Equipment Inventory” table
+model Equipment {
+  /// e.g. "EQ-D001"
+  id           String        @id @default(uuid())
+  type         EquipmentType
+  brand        String
+  model        String
+  serialNumber String        @unique
+
+  /// purchase info
+  purchaseDate DateTime?
+
+  /// service info
+  lastService DateTime?
+  nextService DateTime?
+
+  /// usage stats (75/100 in your UI)
+  usageCount Int?
+  usageLimit Int?
+
+  status    EquipmentStatus @default(available)
+  condition Condition
+  notes     String?
+
+  @@map("equipment")
+}
