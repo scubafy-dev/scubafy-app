@@ -6,26 +6,35 @@ import {
   Condition,
 } from "@/app/generated/prisma";
 
-export type Equipment = {
-    type: string;
-    sku: string;
-    make: string;
+export type EquipmentFormType = {
+    id: string;
+    type: EquipmentType;
+    brand: string;
     model: string;
     serialNumber: string;
-    size: string;
-    location: string;
-    condition: string;
-    quantity: string;
-    trackMinQuantity: boolean;
-    trackUsage: boolean;
-    lastInspection: string,
-    nextInspection: string,
-    itemValue: string,
-    rentalRate: string,    
-    rentalTimeframe: string;
+    purchaseDate: string;
+    lastService: string,
+    nextService: string,
+    status: EquipmentStatus,
+    condition: Condition,    
+    notes: string;
 }
 
-export async function createEquipment(formData: Equipment) {
+export type Equipment = {
+  id: string;
+  type: EquipmentType;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  purchaseDate: Date | null;
+  lastService: Date | null,
+  nextService: Date | null,
+  status: EquipmentStatus,
+  condition: Condition,    
+  notes: string | null;
+}
+
+export async function createEquipment(formData: EquipmentFormType) {
   "use server";
 
   // 1) Ensure all required fields have *something*
@@ -54,8 +63,8 @@ export async function createEquipment(formData: Equipment) {
   const serialNumber = formData.serialNumber as string;
 
   const purchaseDate = new Date();
-  const lastService  = new Date(formData.lastInspection  as string);
-  const nextService  = new Date(formData.nextInspection  as string);
+  const lastService  = new Date(formData.lastService  as string);
+  const nextService  = new Date(formData.nextService  as string);
 
   const usageCount   = 0;
   const usageLimit   = 100;

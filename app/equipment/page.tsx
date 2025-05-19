@@ -16,7 +16,7 @@ export default async function NewDiveTripPage() {
         actionCreate={createEquipment}
         // actionDelete={deleteDiveTrip}
         // actionUpdate={updateDiveTrip}
-        // equipments={equipments}
+        equipments={equipments}
       />
     </div>
   );

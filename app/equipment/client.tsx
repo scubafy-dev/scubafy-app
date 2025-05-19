@@ -35,7 +35,7 @@ import { AddEquipmentDialog } from "@/components/add-equipment-dialog";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { EquipmentDetails } from "../components/equipment-details";
-import { Equipment } from "@/lib/equipment";
+import { Equipment, EquipmentFormType } from "@/lib/equipment";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -64,9 +64,9 @@ const equipmentSchema = z.object({
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
 export default function EquipmentPage(
-    { actionCreate }: {
-        equipments: EquipmentFormValues;
-        actionCreate: (formData: Equipment) => void;
+    { equipments, actionCreate }: {
+        equipments: Equipment[];
+        actionCreate: (formData: EquipmentFormType) => void;
     },
 ) {
     const [isAddEquipmentOpen, setIsAddEquipmentOpen] = useState(false);
@@ -201,8 +201,8 @@ export default function EquipmentPage(
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredEquipment.length > 0
-                                    ? filteredEquipment.map((item) => (
+                                {equipments.length > 0
+                                    ? equipments.map((item) => (
                                         <>
                                             <TableRow
                                                 key={item.id}
@@ -239,74 +239,81 @@ export default function EquipmentPage(
                                                     {item.serialNumber}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {item.trackUsage
-                                                        ? (
-                                                            <div className="flex flex-col gap-1">
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span
-                                                                        className={cn(
-                                                                            "font-medium",
-                                                                            item.usageCount &&
-                                                                                item.usageLimit &&
-                                                                                item.usageCount >=
-                                                                                    item.usageLimit *
-                                                                                        0.8
-                                                                                ? "text-amber-500"
-                                                                                : "",
-                                                                        )}
-                                                                    >
-                                                                        {item
-                                                                            .usageCount}/{item
-                                                                            .usageLimit}
-                                                                    </span>
-                                                                    {item
-                                                                        .usageCount &&
-                                                                        item.usageLimit &&
-                                                                        item.usageCount >=
-                                                                            item.usageLimit &&
-                                                                        (
-                                                                            <span className="text-amber-500">
-                                                                                Maintenance
-                                                                                needed
-                                                                            </span>
-                                                                        )}
-                                                                </div>
-                                                                <Progress
-                                                                    value={item
-                                                                            .usageCount &&
-                                                                            item.usageLimit
-                                                                        ? (item
-                                                                            .usageCount /
-                                                                            item.usageLimit) *
-                                                                            100
-                                                                        : 0}
-                                                                    className={cn(
-                                                                        "h-2",
-                                                                        item.usageCount &&
-                                                                            item.usageLimit &&
-                                                                            item.usageCount >=
-                                                                                item.usageLimit
-                                                                            ? "text-amber-500"
-                                                                            : item
-                                                                                    .usageCount &&
-                                                                                    item.usageLimit &&
-                                                                                    item.usageCount >=
-                                                                                        item.usageLimit *
-                                                                                            0.8
-                                                                            ? "text-orange-400"
-                                                                            : "text-blue-500",
-                                                                    )}
-                                                                />
-                                                            </div>
-                                                        )
-                                                        : (
+                                                    {
+                                                        // item.trackUsage
+                                                        //     ? (
+                                                        //         <div className="flex flex-col gap-1">
+                                                        //             <div className="flex items-center justify-between text-xs">
+                                                        //                 <span
+                                                        //                     className={cn(
+                                                        //                         "font-medium",
+                                                        //                         item.usageCount &&
+                                                        //                             item.usageLimit &&
+                                                        //                             item.usageCount >=
+                                                        //                                 item.usageLimit *
+                                                        //                                     0.8
+                                                        //                             ? "text-amber-500"
+                                                        //                             : "",
+                                                        //                     )}
+                                                        //                 >
+                                                        //                     {item
+                                                        //                         .usageCount}/{item
+                                                        //                         .usageLimit}
+                                                        //                 </span>
+                                                        //                 {item
+                                                        //                     .usageCount &&
+                                                        //                     item.usageLimit &&
+                                                        //                     item.usageCount >=
+                                                        //                         item.usageLimit &&
+                                                        //                     (
+                                                        //                         <span className="text-amber-500">
+                                                        //                             Maintenance
+                                                        //                             needed
+                                                        //                         </span>
+                                                        //                     )}
+                                                        //             </div>
+                                                        //             <Progress
+                                                        //                 value={item
+                                                        //                         .usageCount &&
+                                                        //                         item.usageLimit
+                                                        //                     ? (item
+                                                        //                         .usageCount /
+                                                        //                         item.usageLimit) *
+                                                        //                         100
+                                                        //                     : 0}
+                                                        //                 className={cn(
+                                                        //                     "h-2",
+                                                        //                     item.usageCount &&
+                                                        //                         item.usageLimit &&
+                                                        //                         item.usageCount >=
+                                                        //                             item.usageLimit
+                                                        //                         ? "text-amber-500"
+                                                        //                         : item
+                                                        //                                 .usageCount &&
+                                                        //                                 item.usageLimit &&
+                                                        //                                 item.usageCount >=
+                                                        //                                     item.usageLimit *
+                                                        //                                         0.8
+                                                        //                         ? "text-orange-400"
+                                                        //                         : "text-blue-500",
+                                                        //                 )}
+                                                        //             />
+                                                        //         </div>
+                                                        //     )
+                                                        //     :
+
+
                                                             <span className="text-xs text-muted-foreground">
                                                                 Not tracked
                                                             </span>
-                                                        )}
+
+                                                    }
                                                 </TableCell>
                                                 <TableCell>
-                                                    {item.nextService}
+                                                    {item.nextService
+                                                        ? item.nextService
+                                                            .toDateString()
+                                                        : ""}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge
@@ -316,7 +323,7 @@ export default function EquipmentPage(
                                                                 "available"
                                                             ? "bg-green-500 text-white"
                                                             : item.status ===
-                                                                    "in-use"
+                                                                    "in_use"
                                                             ? "bg-blue-500 text-white"
                                                             : item.status ===
                                                                     "maintenance"
@@ -324,14 +331,16 @@ export default function EquipmentPage(
                                                             : "bg-red-500 text-white"}
                                                     >
                                                         {item.status}
-                                                        {item.status ===
-                                                                "in-use" &&
+                                                        {
+                                                            /* {item.status ===
+                                                                "in_use" &&
                                                             item.rentedTo && (
                                                             <span className="ml-1">
                                                                 ({item
                                                                     .rentedTo})
                                                             </span>
-                                                        )}
+                                                        )} */
+                                                        }
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
@@ -352,11 +361,13 @@ export default function EquipmentPage(
                                                         {item.condition}
                                                     </Badge>
                                                 </TableCell>
-                                                {isAllCenters && (
+                                                {
+                                                    /* {isAllCenters && (
                                                     <TableCell>
                                                         {item.center}
                                                     </TableCell>
-                                                )}
+                                                )} */
+                                                }
                                                 <TableCell className="max-w-[200px] truncate">
                                                     {item.notes}
                                                 </TableCell>

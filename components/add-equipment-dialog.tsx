@@ -19,12 +19,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Equipment } from "@/lib/equipment";
+import { EquipmentFormType } from "@/lib/equipment";
 
 interface AddEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  actionCreate: (formData: Equipment) => void;
+  actionCreate: (formData: EquipmentFormType) => void;
 }
 
 export function AddEquipmentDialog(
