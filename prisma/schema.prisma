@@ -118,7 +118,7 @@ model Equipment {
   type         EquipmentType
   brand        String
   model        String
-  serialNumber String        @unique
+  serialNumber String
 
   /// purchase info
   purchaseDate DateTime?

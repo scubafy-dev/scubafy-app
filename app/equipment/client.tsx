@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Plus, Search } from "lucide-react";
+import {
+    ChevronDown,
+    ChevronUp,
+    Edit,
+    MoreHorizontal,
+    Plus,
+    Search,
+    Trash,
+} from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -36,6 +44,26 @@ import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { EquipmentDetails } from "../components/equipment-details";
 import { Equipment, EquipmentFormType } from "@/lib/equipment";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ActionMode } from "@/types/all";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogOverlay,
+    AlertDialogPortal,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -64,17 +92,31 @@ const equipmentSchema = z.object({
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
 export default function EquipmentPage(
-    { equipments, actionCreate }: {
+    { equipments, actionCreate, actionUpdate, actionDelete }: {
         equipments: Equipment[];
         actionCreate: (formData: EquipmentFormType) => void;
+        actionUpdate: (
+            id: string | null,
+            formData: EquipmentFormType,
+        ) => Promise<void>;
+        actionDelete: (
+            id: string,
+        ) => Promise<void>;
     },
 ) {
     const [isAddEquipmentOpen, setIsAddEquipmentOpen] = useState(false);
+    const [isDeleteEquipmentAlertOpen, setIsDeleteEquipmentAlertOpen] =
+        useState(false);
+    const [isEditEquipmentOpen, setIsEditEquipmentOpen] = useState(false);
+    const [selectedEquipment, setSelectedEquipment] = useState<
+        Equipment | null
+    >(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const { currentCenter, isAllCenters, getCenterSpecificData } =
         useDiveCenter();
     const { toast } = useToast();
+    const router = useRouter();
 
     // Get equipment data based on the selected center
     const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
@@ -166,7 +208,7 @@ export default function EquipmentPage(
                     </Button>
                 </div>
 
-                <EquipmentStats equipment={equipment} />
+                <EquipmentStats equipment={equipments} />
 
                 <div className="flex items-center max-w-sm">
                     <div className="relative w-full">
@@ -198,6 +240,7 @@ export default function EquipmentPage(
                                         <TableHead>Center</TableHead>
                                     )}
                                     <TableHead>Notes</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -371,6 +414,58 @@ export default function EquipmentPage(
                                                 <TableCell className="max-w-[200px] truncate">
                                                     {item.notes}
                                                 </TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
+                                                            <Button
+                                                                variant="ghost"
+                                                                className="h-8 w-8 p-0"
+                                                            >
+                                                                <span className="sr-only">
+                                                                    Open menu
+                                                                </span>
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>
+                                                                Actions
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setSelectedEquipment(
+                                                                        item,
+                                                                    );
+                                                                    setIsEditEquipmentOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Edit className="mr-2 h-4 w-4" />
+                                                                {" "}
+                                                                Edit Equipment
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                className="text-destructive"
+                                                                onClick={() => {
+                                                                    setSelectedEquipment(
+                                                                        item,
+                                                                    );
+                                                                    setIsDeleteEquipmentAlertOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                <Trash className="mr-2 h-4 w-4" />
+                                                                {" "}
+                                                                Remove
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
                                             </TableRow>
                                             {expandedItems.has(item.id) && (
                                                 <TableRow>
@@ -403,11 +498,96 @@ export default function EquipmentPage(
                     </CardContent>
                 </Card>
 
-                <AddEquipmentDialog
+                <Dialog
                     open={isAddEquipmentOpen}
                     onOpenChange={setIsAddEquipmentOpen}
-                    actionCreate={actionCreate}
-                />
+                >
+                    <DialogContent className="sm:max-w-[500px] p-0 gap-0">
+                        <DialogHeader className="p-4 pb-0">
+                            <DialogTitle className="text-xl">
+                                Add New Equipment
+                            </DialogTitle>
+                        </DialogHeader>
+                        <AddEquipmentDialog
+                            open={isAddEquipmentOpen}
+                            onOpenChange={setIsAddEquipmentOpen}
+                            mode={ActionMode.create}
+                            equipment={null}
+                            actionCreate={actionCreate}
+                            actionUpdate={actionUpdate}
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog
+                    open={isEditEquipmentOpen}
+                    onOpenChange={setIsEditEquipmentOpen}
+                >
+                    <DialogContent className="sm:max-w-[500px] p-0 gap-0">
+                        <DialogHeader className="p-4 pb-0">
+                            <DialogTitle className="text-xl">
+                                Edit Equipment
+                            </DialogTitle>
+                        </DialogHeader>
+                        <AddEquipmentDialog
+                            open={isEditEquipmentOpen}
+                            onOpenChange={setIsEditEquipmentOpen}
+                            mode={ActionMode.update}
+                            equipment={selectedEquipment}
+                            actionUpdate={actionUpdate}
+                            actionCreate={actionCreate}
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                <AlertDialog
+                    open={isDeleteEquipmentAlertOpen}
+                    onOpenChange={setIsDeleteEquipmentAlertOpen}
+                >
+                    <AlertDialogPortal>
+                        <AlertDialogOverlay />
+                        <AlertDialogContent>
+                            <AlertDialogTitle>
+                                Are you sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will remove this equipment related data
+                                from our servers.
+                            </AlertDialogDescription>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: 25,
+                                    justifyContent: "flex-end",
+                                }}
+                            >
+                                <AlertDialogCancel>
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={async () => {
+                                        if (selectedEquipment) {
+                                            await actionDelete(
+                                                selectedEquipment.id,
+                                            );
+                                            toast({
+                                                title:
+                                                    "Equipment deleted successfully.",
+                                                description: `Id: ${
+                                                    selectedEquipment.id ??
+                                                        "N/A"
+                                                }`,
+                                            });
+                                            router.refresh();
+                                        }
+                                    }}
+                                >
+                                    Yes, delete this equipment
+                                </AlertDialogAction>
+                            </div>
+                        </AlertDialogContent>
+                    </AlertDialogPortal>
+                </AlertDialog>
             </div>
         </DashboardShell>
     );

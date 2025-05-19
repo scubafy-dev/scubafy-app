@@ -13,8 +13,8 @@ export type EquipmentFormType = {
     model: string;
     serialNumber: string;
     purchaseDate: string;
-    lastService: string,
-    nextService: string,
+    lastInspection: string,
+    nextInspection: string,
     status: EquipmentStatus,
     condition: Condition,    
     notes: string;
@@ -47,7 +47,7 @@ export async function createEquipment(formData: EquipmentFormType) {
   // 2) Set up defaults for all the optional bits
   const optionalDefaults: Record<string,string> = {
     purchaseDate: new Date().toISOString(),
-    lastService:  new Date().toISOString(),
+    lastInspection:  new Date().toISOString(),
     nextService:  new Date().toISOString(),
     usageCount:   "0",
     usageLimit:   "100",
@@ -63,8 +63,8 @@ export async function createEquipment(formData: EquipmentFormType) {
   const serialNumber = formData.serialNumber as string;
 
   const purchaseDate = new Date();
-  const lastService  = new Date(formData.lastService  as string);
-  const nextService  = new Date(formData.nextService  as string);
+  const lastService  = new Date(formData.lastInspection  as string);
+  const nextService  = new Date(formData.nextInspection  as string);
 
   const usageCount   = 0;
   const usageLimit   = 100;
@@ -108,55 +108,48 @@ export const  getAllEquipments = async () => {
   return prisma.equipment.findMany();
 }
 
-export async function updateDiveTrip(id: string | null, formData: FormData) {
+export async function updateEquipment(id: string | null, formData: EquipmentFormType) {
     "use server";
 
     if(id === null){
         return;
     }
 
-    const title = formData.get("title") as string;
-    const date = formData.get("date") as string;
-    const location = formData.get("location") as string;
-    const capacity = Number(formData.get("capacity"));
-    const booked = Number(formData.get("booked"));
-    const price = Number(formData.get("price"));
-    const status = formData.get("status") as
-        | "upcoming"
-        | "in_progress"
-        | "completed"
-        | "cancelled";
-    const diveMaster = formData.get("diveMaster") as string;
-    const description = formData.get("description") as string;
-    const duration = formData.get("duration") as string;
-    const difficulty = formData.get("difficulty") as
-        | "beginner"
-        | "intermediate"
-        | "advanced";
-    const center = (formData.get("center") as string) || null;
-    const instructor = formData.get("instructor") as string;
+    const type         = formData.type         as EquipmentType;
+    const brand        = "Generic";
+    const modelName    = formData.model        as string;
+    const serialNumber = formData.serialNumber as string;
+  
+    const purchaseDate = new Date();
+    const lastService  = new Date(formData.lastInspection  as string);
+    const nextService  = new Date(formData.nextInspection  as string);
+  
+    const usageCount   = 0;
+    const usageLimit   = 100;
+  
+    const status       = formData.status    as EquipmentStatus;
+    const condition    = formData.condition as Condition;
+    const notes        = formData.notes     as string;
 
 
     try {
-        await prisma.diveTrip.update(
+        await prisma.equipment.update(
             {
                 where: {
                     id
                 },
                 data: {
-                    title,
-                    // date,
-                    location,
-                    capacity,
-                    booked,
-                    price,
+                    type,
+                    brand,
+                    serialNumber,
+                    purchaseDate,
+                    lastService,
+                    nextService,
+                    usageCount,
+                    usageLimit,
                     status,
-                    diveMaster,
-                    description,
-                    // duration,
-                    // difficulty,
-                    center,
-                    instructor,
+                    condition,
+                    notes,
                 },
             },
         );
@@ -164,24 +157,13 @@ export async function updateDiveTrip(id: string | null, formData: FormData) {
         console.log("error: ", error);
     }
 
-    // redirect("/diveTrips");
 }
 
-export const deleteDiveTrip = async (id: string) => {
+export const deleteEquipment = async (id: string) => {
     "use server"
       
     try{
-        // Delete participants linked to this dive trip
-        await prisma.participant.deleteMany({
-            where: { diveTripId: id },
-            })
-        
-        // Delete vehicle linked to this dive trip
-        await prisma.vehicle.deleteMany({
-        where: { diveTripId: id },
-        })
-
-        const res = await prisma.diveTrip.delete({
+        const res = await prisma.equipment.delete({
             where: {
                 id
             }

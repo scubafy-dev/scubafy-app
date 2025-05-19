@@ -1,10 +1,10 @@
 import EquipmentPage from "./client";
 import {
   createEquipment,
-  deleteDiveTrip,
+  deleteEquipment,
   Equipment,
   getAllEquipments,
-  updateDiveTrip,
+  updateEquipment,
 } from "@/lib/equipment";
 
 export default async function NewDiveTripPage() {
@@ -14,8 +14,8 @@ export default async function NewDiveTripPage() {
     <div>
       <EquipmentPage
         actionCreate={createEquipment}
-        // actionDelete={deleteDiveTrip}
-        // actionUpdate={updateDiveTrip}
+        actionDelete={deleteEquipment}
+        actionUpdate={updateEquipment}
         equipments={equipments}
       />
     </div>
