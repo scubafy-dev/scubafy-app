@@ -66,8 +66,30 @@ import {
 } from "@/lib/mock-data/customers";
 import { Customer } from "@/lib/customers";
 import { mockCustomer } from "@/lib/mock-data/customers";
+import { AddCustomerForm } from "./add-customer-form";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogOverlay,
+  AlertDialogPortal,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { set } from "date-fns";
 
-export function CustomersTable({ customers }: { customers: Customer[] }) {
+export function CustomersTable(
+  { customers, deleteCustomer, updateCustomer }: {
+    customers: Customer[];
+    deleteCustomer: (id: string) => Promise<void>;
+    updateCustomer: (id: string, formData: FormData) => Promise<void>;
+  },
+) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -80,8 +102,12 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
     Customer | null
   >(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
   const { currentCenter, isAllCenters } = useDiveCenter();
+
+  const router = useRouter();
 
   // Filter customers based on the selected dive center
   // const customers = React.useMemo(() => {
@@ -193,7 +219,7 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
         const customer = row.original;
 
         return (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <Dialog>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -211,7 +237,22 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
                 >
                   View Customer Profile
                 </DropdownMenuItem>
-                <DropdownMenuItem>Edit Customer</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedCustomer(customer);
+                    setUpdateDialogOpen(true);
+                  }}
+                >
+                  Edit Customer
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedCustomer(customer);
+                    setDeleteDialogOpen(true);
+                  }}
+                >
+                  Delete Customer
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>Copy ID</DropdownMenuItem>
               </DropdownMenuContent>
@@ -633,8 +674,8 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
                     onClick={() => {
-                      setSelectedCustomer(row.original);
-                      setDialogOpen(true);
+                      // setSelectedCustomer(row.original);
+                      // setDialogOpen(true);
                     }}
                     className="cursor-pointer hover:bg-muted/50"
                   >
@@ -686,6 +727,62 @@ export function CustomersTable({ customers }: { customers: Customer[] }) {
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={updateDialogOpen}
+        onOpenChange={setUpdateDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Update Customer</DialogTitle>
+          </DialogHeader>
+          <AddCustomerForm
+            onSuccess={() => setUpdateDialogOpen(false)}
+            updateCustomer={updateCustomer}
+            customer={selectedCustomer}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      >
+        <AlertDialogPortal>
+          <AlertDialogOverlay />
+          <AlertDialogContent>
+            <AlertDialogTitle>
+              Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove this customer related data from our servers.
+            </AlertDialogDescription>
+            <div
+              style={{ display: "flex", gap: 25, justifyContent: "flex-end" }}
+            >
+              <AlertDialogCancel>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  if (selectedCustomer) {
+                    await deleteCustomer(selectedCustomer.id);
+                    toast({
+                      title: "Customer deleted successfully.",
+                      description: `id: ${
+                        selectedCustomer.id ?? "N/A"
+                      }   \n name: ${selectedCustomer.fullName}`,
+                    });
+                    router.refresh();
+                  }
+                }}
+              >
+                Yes, delete this customer
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialogPortal>
+      </AlertDialog>
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Customer } from "@/lib/customers";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -32,9 +33,7 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  phone: z.string().min(7, {
-    message: "Please enter a valid phone number.",
-  }),
+  phoneNumber: z.string().optional(),
   certificationLevel: z.string({
     required_error: "Please select a certification level.",
   }),
@@ -48,9 +47,11 @@ const formSchema = z.object({
 });
 
 export function AddCustomerForm(
-  { onSuccess, createCustomer }: {
+  { onSuccess, createCustomer, customer, updateCustomer }: {
     onSuccess: () => void;
-    createCustomer: (formData: FormData) => Promise<void>;
+    createCustomer?: (formData: FormData) => Promise<void>;
+    customer: Customer | null;
+    updateCustomer?: (id: string, formData: FormData) => Promise<void>;
   },
 ) {
   const { toast } = useToast();
@@ -60,12 +61,13 @@ export function AddCustomerForm(
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      room: "",
-      numberOfNights: 0,
-      roomCost: 0,
+      fullName: customer?.fullName ?? "",
+      email: customer?.email ?? "",
+      certificationLevel: customer?.certificationLevel ?? "",
+      phoneNumber: customer?.phoneNumber ?? "",
+      room: customer?.roomNumber ?? "",
+      numberOfNights: customer?.numberOfNights ?? 0,
+      roomCost: customer?.roomCost ?? 0,
     },
   });
 
@@ -80,13 +82,29 @@ export function AddCustomerForm(
           formData.append(key, value.toString());
         }
       });
-      createCustomer(formData);
+      if (updateCustomer) {
+        if (!customer) {
+          toast({
+            title: "Error",
+            description: "Customer not found.",
+          });
+          return;
+        }
+        updateCustomer(customer.id, formData);
+        toast({
+          title: "Customer added successfully",
+          description:
+            `${values.fullName} has been added to your customer database.`,
+        });
+      } else if (createCustomer) {
+        createCustomer(formData);
+        toast({
+          title: "Customer added successfully",
+          description:
+            `${values.fullName} has been added to your customer database.`,
+        });
+      }
       setIsSubmitting(false);
-
-      toast({
-        title: "Customer added successfully",
-        description: `${values.name} has been added to your customer database.`,
-      });
 
       form.reset();
       onSuccess();
@@ -132,7 +150,7 @@ export function AddCustomerForm(
 
           <FormField
             control={form.control}
-            name="phone"
+            name="phoneNumber"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Phone Number</FormLabel>
@@ -235,7 +253,11 @@ export function AddCustomerForm(
             type="submit"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Adding..." : "Add Customer"}
+            {isSubmitting
+              ? createCustomer ? "Adding..." : "Updating"
+              : createCustomer
+              ? "Add Customer"
+              : "Update Customer"}
           </Button>
         </div>
       </form>

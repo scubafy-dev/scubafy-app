@@ -20,7 +20,7 @@ export default function CustomersClient(
         customers: Customer[];
         createCustomer: (formData: FormData) => Promise<void>;
         deleteCustomer: (id: string) => Promise<void>;
-        updateCustomer: (formData: FormData) => Promise<void>;
+        updateCustomer: (id: string, formData: FormData) => Promise<void>;
     },
 ) {
     const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
@@ -35,7 +35,11 @@ export default function CustomersClient(
                     <Plus className="mr-2 h-4 w-4" /> Add Customer
                 </Button>
             </DashboardHeader>
-            <CustomersTable customers={customers} />
+            <CustomersTable
+                customers={customers}
+                deleteCustomer={deleteCustomer}
+                updateCustomer={updateCustomer}
+            />
 
             <Dialog
                 open={isAddCustomerOpen}
@@ -48,6 +52,7 @@ export default function CustomersClient(
                     <AddCustomerForm
                         onSuccess={() => setIsAddCustomerOpen(false)}
                         createCustomer={createCustomer}
+                        customer={null}
                     />
                 </DialogContent>
             </Dialog>

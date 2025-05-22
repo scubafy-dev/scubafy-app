@@ -17,8 +17,6 @@ export interface Customer {
   
 
 export async function createCustomer(formData: FormData) {
-  "use server";
-
   // 1) required defaults
   const requiredDefaults: Record<string,string> = {
     fullName:           "Unnamed Customer",
@@ -63,33 +61,43 @@ export async function createCustomer(formData: FormData) {
   });
 }
 
-export async function updateCustomer(formData: FormData) {
-  "use server";
+export async function updateCustomer(id: string, formData: FormData) {
+    try{
+        if (!id) throw new Error("Missing customer id");
 
-  const id = formData.get("id") as string;
-  if (!id) throw new Error("Missing customer id");
+        // build up the data object only with present fields
+        const data: Record<string, any> = {};
+        if (formData.get("fullName"))           data.fullName           = formData.get("fullName");
+        if (formData.get("email"))              data.email              = formData.get("email");
+        if (formData.get("phoneNumber"))        data.phoneNumber        = formData.get("phoneNumber");
+        if (formData.get("certificationLevel")) data.certificationLevel = formData.get("certificationLevel");
+        if (formData.get("roomNumber"))         data.roomNumber         = formData.get("roomNumber");
+        if (formData.get("numberOfNights"))     data.numberOfNights     = Number(formData.get("numberOfNights"));
+        if (formData.get("roomCost"))           data.roomCost           = Number(formData.get("roomCost"));
 
-  // build up the data object only with present fields
-  const data: Record<string, any> = {};
-  if (formData.get("fullName"))           data.fullName           = formData.get("fullName");
-  if (formData.get("email"))              data.email              = formData.get("email");
-  if (formData.get("phoneNumber"))        data.phoneNumber        = formData.get("phoneNumber");
-  if (formData.get("certificationLevel")) data.certificationLevel = formData.get("certificationLevel");
-  if (formData.get("roomNumber"))         data.roomNumber         = formData.get("roomNumber");
-  if (formData.get("numberOfNights"))     data.numberOfNights     = Number(formData.get("numberOfNights"));
-  if (formData.get("roomCost"))           data.roomCost           = Number(formData.get("roomCost"));
-
-  await prisma.customer.update({
-    where: { id },
-    data,
-  });
+        await prisma.customer.update({
+            where: { id },
+            data,
+        });
+    }
+    catch (error) {
+        console.error("Error updating customer:", error);
+        throw error;
+    }
 }
 
 export async function deleteCustomer(id: string) {
-  "use server";
-  await prisma.customer.delete({
-    where: { id },
-  });
+  try {
+    if (!id) throw new Error("Missing customer id");
+    // Check if the customer exists
+    await prisma.customer.delete({
+        where: { id },
+    });
+}
+    catch (error) {
+        console.error("Error deleting customer:", error);
+        throw error;
+    }
 }
 
 export async function getCustomerById(id: string) {
