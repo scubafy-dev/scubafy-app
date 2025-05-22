@@ -1,19 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
-  name: z.string().min(2, {
+  fullName: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
   email: z.string().email({
@@ -32,42 +45,53 @@ const formSchema = z.object({
   roomCost: z.coerce.number().min(0, {
     message: "Room cost must be a positive number.",
   }).optional(),
-})
+});
 
-export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
-  const { toast } = useToast()
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export function AddCustomerForm(
+  { onSuccess, createCustomer }: {
+    onSuccess: () => void;
+    createCustomer: (formData: FormData) => Promise<void>;
+  },
+) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      fullName: "",
       email: "",
       phone: "",
       room: "",
       numberOfNights: 0,
       roomCost: 0,
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    // Simulate API call
     setTimeout(() => {
-      console.log(values)
-      setIsSubmitting(false)
+      console.log(values);
+      const formData = new FormData();
+      Object.entries(values).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+      createCustomer(formData);
+      setIsSubmitting(false);
 
       toast({
         title: "Customer added successfully",
         description: `${values.name} has been added to your customer database.`,
-      })
+      });
 
-      form.reset()
-      onSuccess()
-      router.refresh()
-    }, 1000)
+      form.reset();
+      onSuccess();
+      router.refresh();
+    }, 1000);
   }
 
   return (
@@ -75,7 +99,7 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="fullName"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Full Name</FormLabel>
@@ -95,7 +119,11 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="john@example.com" type="email" {...field} />
+                  <Input
+                    placeholder="john@example.com"
+                    type="email"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -124,18 +152,23 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Certification Level</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select certification level" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Open Water">Open Water</SelectItem>
-                    <SelectItem value="Advanced Open Water">Advanced Open Water</SelectItem>
-                    <SelectItem value="Rescue Diver">Rescue Diver</SelectItem>
-                    <SelectItem value="Divemaster">Divemaster</SelectItem>
-                    <SelectItem value="Instructor">Instructor</SelectItem>
+                    <SelectItem value="openWater">Open Water</SelectItem>
+                    <SelectItem value="advancedOpenWater">
+                      Advanced Open Water
+                    </SelectItem>
+                    <SelectItem value="rescue">Rescue Diver</SelectItem>
+                    <SelectItem value="diveMaster">Divemaster</SelectItem>
+                    <SelectItem value="instructor">Instructor</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -180,7 +213,13 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
               <FormItem>
                 <FormLabel>Room Cost</FormLabel>
                 <FormControl>
-                  <Input type="number" min={0} step="0.01" placeholder="0.00" {...field} />
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="0.00"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -192,12 +231,14 @@ export function AddCustomerForm({ onSuccess }: { onSuccess: () => void }) {
           <Button variant="outline" type="button" onClick={onSuccess}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+          >
             {isSubmitting ? "Adding..." : "Add Customer"}
           </Button>
         </div>
       </form>
     </Form>
-  )
+  );
 }
-

@@ -236,5 +236,32 @@ function addCenterToCustomers(): Customer[] {
   return allCenterCustomers;
 }
 
+export const mockCustomer = {
+  id: "CD-1001",
+  name: "John Smith",
+  email: "john@example.com",
+  phone: "+1 (555) 123-4567",
+  certificationLevel: "Advanced Open Water",
+  room: "101",
+  numberOfNights: 5,
+  roomCost: 750,
+  lastDive: "2025-03-15",
+  avatar: "/placeholder.svg?height=40&width=40",
+  currentCourse: "Rescue Diver",
+  courseStartDate: "2025-04-01",
+  courseEndDate: "2025-04-05",
+  center: "Dauin",
+  courseCost: 595,
+  upcomingDives: [
+    { date: "2025-03-28", site: "Blue Hole", type: "Wall Dive", cost: 120 },
+    { date: "2025-03-29", site: "Shark Reef", type: "Drift Dive", cost: 150 }
+  ],
+  rentedEquipment: [
+    { item: "BCD - Medium", dueDate: "2025-03-30", condition: "Good", cost: 20 },
+    { item: "Regulator Set", dueDate: "2025-03-30", condition: "Excellent", cost: 25 },
+    { item: "Wetsuit - 5mm", dueDate: "2025-03-30", condition: "Good", cost: 18 }
+  ],
+};
+
 // All customers data combined
 export const allCustomers = addCenterToCustomers(); 

@@ -13,8 +13,16 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { AddCustomerForm } from "@/components/add-customer-form";
+import { Customer } from "@/lib/customers";
 
-export default function CustomersClient() {
+export default function CustomersClient(
+    { customers, createCustomer, deleteCustomer, updateCustomer }: {
+        customers: Customer[];
+        createCustomer: (formData: FormData) => Promise<void>;
+        deleteCustomer: (id: string) => Promise<void>;
+        updateCustomer: (formData: FormData) => Promise<void>;
+    },
+) {
     const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
 
     return (
@@ -27,7 +35,7 @@ export default function CustomersClient() {
                     <Plus className="mr-2 h-4 w-4" /> Add Customer
                 </Button>
             </DashboardHeader>
-            <CustomersTable />
+            <CustomersTable customers={customers} />
 
             <Dialog
                 open={isAddCustomerOpen}
@@ -39,6 +47,7 @@ export default function CustomersClient() {
                     </DialogHeader>
                     <AddCustomerForm
                         onSuccess={() => setIsAddCustomerOpen(false)}
+                        createCustomer={createCustomer}
                     />
                 </DialogContent>
             </Dialog>

@@ -1,5 +1,20 @@
+"use server";
 import prisma from "@prisma/prisma";
 import type { CertificationLevel } from "@/app/generated/prisma";
+
+export interface Customer {
+    id: string;
+    fullName: string;
+    email: string;
+    phoneNumber: string | null;
+    certificationLevel: CertificationLevel | null;
+    roomNumber: string | null;
+    numberOfNights: number | null;
+    roomCost: number | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+  
 
 export async function createCustomer(formData: FormData) {
   "use server";

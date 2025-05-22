@@ -1,27 +1,23 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import type { Row } from "@tanstack/react-table"
-import {
-  ChevronDown,
-  ArrowUpDown,
-  MoreHorizontal
-} from "lucide-react"
+import * as React from "react";
+import type { Row } from "@tanstack/react-table";
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 import {
   ColumnDef,
   ColumnFiltersState,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  SortingState,
   useReactTable,
-} from "@tanstack/react-table"
+  VisibilityState,
+} from "@tanstack/react-table";
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -30,8 +26,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -39,7 +35,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import {
   Card,
   CardContent,
@@ -47,136 +43,154 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { CalendarIcon, ClockIcon, PhoneIcon } from "lucide-react"
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CalendarIcon, ClockIcon, PhoneIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useDiveCenter } from "@/lib/dive-center-context"
-import { customersByCenter, allCustomers, Customer, Equipment, Dive } from "@/lib/mock-data/customers"
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import {
+  allCustomers,
+  customersByCenter,
+  Dive,
+  Equipment,
+} from "@/lib/mock-data/customers";
+import { Customer } from "@/lib/customers";
+import { mockCustomer } from "@/lib/mock-data/customers";
 
-export function CustomersTable() {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null)
-  const [dialogOpen, setDialogOpen] = React.useState(false)
+export function CustomersTable({ customers }: { customers: Customer[] }) {
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    [],
+  );
+  const [columnVisibility, setColumnVisibility] = React.useState<
+    VisibilityState
+  >({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [selectedCustomer, setSelectedCustomer] = React.useState<
+    Customer | null
+  >(null);
+  const [dialogOpen, setDialogOpen] = React.useState(false);
 
-  const { currentCenter, isAllCenters } = useDiveCenter()
+  const { currentCenter, isAllCenters } = useDiveCenter();
 
   // Filter customers based on the selected dive center
-  const customers = React.useMemo(() => {
-    if (isAllCenters) {
-      return allCustomers
-    }
-    return currentCenter ? customersByCenter[currentCenter.id] || [] : []
-  }, [currentCenter, isAllCenters])
+  // const customers = React.useMemo(() => {
+  //   if (isAllCenters) {
+  //     return allCustomers;
+  //   }
+  //   return currentCenter ? customersByCenter[currentCenter.id] || [] : [];
+  // }, [currentCenter, isAllCenters]);
 
   // Get total payment for a customer
-  const calculateTotal = (customer: Customer): number => {
-    const accommodationTotal = customer.roomCost || 0
-    const courseTotal = customer.courseCost || 0
-    const divesTotal = customer.upcomingDives.reduce((sum, dive) => sum + dive.cost, 0)
-    const equipmentTotal = customer.rentedEquipment.reduce((sum, eq) => sum + eq.cost, 0)
-    
-    return accommodationTotal + courseTotal + divesTotal + equipmentTotal
-  }
+  const calculateTotal = (): number => {
+    const customer = mockCustomer;
+    const accommodationTotal = customer.roomCost || 0;
+    const courseTotal = customer.courseCost || 0;
+    const divesTotal = customer.upcomingDives.reduce(
+      (sum, dive) => sum + dive.cost,
+      0,
+    );
+    const equipmentTotal = customer.rentedEquipment.reduce(
+      (sum, eq) => sum + eq.cost,
+      0,
+    );
+
+    return accommodationTotal + courseTotal + divesTotal + equipmentTotal;
+  };
 
   const columns: ColumnDef<Customer>[] = [
     {
       accessorKey: "name",
       header: "Customer",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const customer = row.original
+        const customer = row.original;
         return (
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={customer.avatar} alt={customer.name} />
-              <AvatarFallback>{customer.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={mockCustomer.avatar} alt={customer.fullName} />
+              <AvatarFallback>{customer.fullName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-medium leading-none">{customer.name}</p>
+              <p className="font-medium leading-none">{customer.fullName}</p>
               <p className="text-sm text-muted-foreground">{customer.email}</p>
             </div>
           </div>
-        )
+        );
       },
     },
     ...(isAllCenters
       ? [
-          {
-            accessorKey: "center",
-            header: "Center",
-            cell: ({ row }: { row: Row<Customer> }) => {
-              return <div>{row.getValue("center")}</div>
-            },
+        {
+          accessorKey: "center",
+          header: "Center",
+          cell: ({ row }: { row: Row<Customer> }) => {
+            return <div>{row.getValue("center")}</div>;
           },
-        ]
+        },
+      ]
       : []),
     {
       accessorKey: "certificationLevel",
       header: "Certification",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const level = row.getValue("certificationLevel") as string
+        const level = row.getValue("certificationLevel") as string;
         return (
           <Badge
-            variant={
-              level === "Instructor" || level === "Divemaster"
-                ? "default"
-                : level === "Rescue Diver"
-                ? "outline"
-                : "secondary"
-            }
+            variant={level === "Instructor" || level === "Divemaster"
+              ? "default"
+              : level === "Rescue Diver"
+              ? "outline"
+              : "secondary"}
           >
             {level}
           </Badge>
-        )
+        );
       },
     },
     {
       accessorKey: "currentCourse",
       header: "Current Course",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const course = row.getValue("currentCourse") as string
-        return course ? (
-          <div>
-            <Badge variant="outline">{course}</Badge>
-          </div>
-        ) : (
-          <div className="text-muted-foreground">-</div>
-        )
+        const course = row.getValue("currentCourse") as string;
+        return course
+          ? (
+            <div>
+              <Badge variant="outline">{course}</Badge>
+            </div>
+          )
+          : <div className="text-muted-foreground">-</div>;
       },
     },
     {
       accessorKey: "lastDive",
       header: "Last Dive",
       cell: ({ row }: { row: Row<Customer> }) => {
-        return <div>{row.getValue("lastDive")}</div>
+        return <div>{row.getValue("lastDive")}</div>;
       },
     },
     {
       id: "total",
       header: "Total Due",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const total = calculateTotal(row.original)
-        return <div>${total.toFixed(2)}</div>
+        const total = calculateTotal();
+        return <div>${total.toFixed(2)}</div>;
       },
     },
     {
       id: "actions",
       enableHiding: false,
       cell: ({ row }: { row: Row<Customer> }) => {
-        const customer = row.original
+        const customer = row.original;
 
         return (
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -191,8 +205,8 @@ export function CustomersTable() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   onClick={() => {
-                    setSelectedCustomer(customer)
-                    setDialogOpen(true)
+                    setSelectedCustomer(customer);
+                    setDialogOpen(true);
                   }}
                 >
                   View Customer Profile
@@ -203,10 +217,10 @@ export function CustomersTable() {
               </DropdownMenuContent>
             </DropdownMenu>
           </Dialog>
-        )
+        );
       },
     },
-  ]
+  ];
 
   const table = useReactTable({
     data: customers,
@@ -225,7 +239,7 @@ export function CustomersTable() {
       columnVisibility,
       rowSelection,
     },
-  })
+  });
 
   return (
     <div className="w-full">
@@ -235,15 +249,25 @@ export function CustomersTable() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={selectedCustomer.avatar} alt={selectedCustomer.name} />
-                  <AvatarFallback>{selectedCustomer.name.charAt(0)}</AvatarFallback>
+                  {
+                    <AvatarImage
+                      src={mockCustomer.avatar}
+                      alt={selectedCustomer.fullName}
+                    />
+                  }
+                  <AvatarFallback>
+                    {selectedCustomer.fullName.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
-                {selectedCustomer.name}
+                {selectedCustomer.fullName}
               </DialogTitle>
               <DialogDescription>
                 Customer ID: {selectedCustomer.id}
-                {isAllCenters && selectedCustomer.center && (
-                  <span className="ml-2">• Center: {selectedCustomer.center}</span>
+
+                {isAllCenters && mockCustomer.center && (
+                  <span className="ml-2">
+                    • Center: {mockCustomer.center}
+                  </span>
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -251,7 +275,10 @@ export function CustomersTable() {
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="grid w-full grid-cols-6 mb-4">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="accommodation" className="text-xs sm:text-sm">
+                <TabsTrigger
+                  value="accommodation"
+                  className="text-xs sm:text-sm"
+                >
                   Accommodation
                 </TabsTrigger>
                 <TabsTrigger value="courses">Courses</TabsTrigger>
@@ -273,7 +300,7 @@ export function CustomersTable() {
                       <div>
                         <p className="text-sm font-medium">Phone</p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedCustomer.phone}
+                          {selectedCustomer.phoneNumber}
                         </p>
                       </div>
                       <div>
@@ -287,19 +314,20 @@ export function CustomersTable() {
                       <div>
                         <p className="text-sm font-medium">Last Dive</p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedCustomer.lastDive}
+                          {mockCustomer.lastDive}
                         </p>
                       </div>
                     </div>
-                    {selectedCustomer.currentCourse && (
+
+                    {mockCustomer.currentCourse && (
                       <div>
                         <p className="text-sm font-medium">
                           Current Course
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedCustomer.currentCourse}
-                          {selectedCustomer.courseStartDate &&
-                            ` (${selectedCustomer.courseStartDate} to ${selectedCustomer.courseEndDate})`}
+                          {mockCustomer.currentCourse}
+                          {mockCustomer.courseStartDate &&
+                            ` (${mockCustomer.courseStartDate} to ${mockCustomer.courseEndDate})`}
                         </p>
                       </div>
                     )}
@@ -310,34 +338,36 @@ export function CustomersTable() {
               <TabsContent value="accommodation">
                 <Card>
                   <CardContent className="pt-4">
-                    {selectedCustomer.room ? (
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium">Room</p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedCustomer.room}
-                          </p>
+                    {mockCustomer.room
+                      ? (
+                        <div className="space-y-4">
+                          <div>
+                            <p className="text-sm font-medium">Room</p>
+                            <p className="text-sm text-muted-foreground">
+                              {mockCustomer.room}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              Number of Nights
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {mockCustomer.numberOfNights}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Room Cost</p>
+                            <p className="text-sm text-muted-foreground">
+                              ${mockCustomer.roomCost?.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            Number of Nights
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedCustomer.numberOfNights}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Room Cost</p>
-                          <p className="text-sm text-muted-foreground">
-                            ${selectedCustomer.roomCost?.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No accommodation booked
-                      </p>
-                    )}
+                      )
+                      : (
+                        <p className="text-sm text-muted-foreground">
+                          No accommodation booked
+                        </p>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -345,50 +375,52 @@ export function CustomersTable() {
               <TabsContent value="courses">
                 <Card>
                   <CardContent className="pt-4">
-                    {selectedCustomer.currentCourse ? (
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium">Course</p>
-                          <p className="text-sm text-muted-foreground">
-                            {selectedCustomer.currentCourse}
-                          </p>
-                        </div>
-                        {selectedCustomer.courseStartDate && (
-                          <>
-                            <div>
-                              <p className="text-sm font-medium">
-                                Start Date
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {selectedCustomer.courseStartDate}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">
-                                End Date
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {selectedCustomer.courseEndDate}
-                              </p>
-                            </div>
-                          </>
-                        )}
-                        {selectedCustomer.courseCost && (
+                    {mockCustomer.currentCourse
+                      ? (
+                        <div className="space-y-4">
                           <div>
-                            <p className="text-sm font-medium">
-                              Course Cost
-                            </p>
+                            <p className="text-sm font-medium">Course</p>
                             <p className="text-sm text-muted-foreground">
-                              ${selectedCustomer.courseCost?.toFixed(2)}
+                              {mockCustomer.currentCourse}
                             </p>
                           </div>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No courses booked
-                      </p>
-                    )}
+                          {mockCustomer.courseStartDate && (
+                            <>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  Start Date
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {mockCustomer.courseStartDate}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  End Date
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {mockCustomer.courseEndDate}
+                                </p>
+                              </div>
+                            </>
+                          )}
+                          {mockCustomer.courseCost && (
+                            <div>
+                              <p className="text-sm font-medium">
+                                Course Cost
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                ${mockCustomer.courseCost?.toFixed(2)}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                      : (
+                        <p className="text-sm text-muted-foreground">
+                          No courses booked
+                        </p>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -396,40 +428,42 @@ export function CustomersTable() {
               <TabsContent value="dives">
                 <Card>
                   <CardContent className="pt-4">
-                    {selectedCustomer.upcomingDives &&
-                    selectedCustomer.upcomingDives.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedCustomer.upcomingDives.map(
-                          (dive, index) => (
-                            <div
-                              key={index}
-                              className="border rounded-md p-3"
-                            >
-                              <div className="flex justify-between">
-                                <p className="text-sm font-medium">
-                                  {dive.site}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  ${dive.cost?.toFixed(2)}
-                                </p>
+                    {mockCustomer.upcomingDives &&
+                        mockCustomer.upcomingDives.length > 0
+                      ? (
+                        <div className="space-y-4">
+                          {mockCustomer.upcomingDives.map(
+                            (dive, index) => (
+                              <div
+                                key={index}
+                                className="border rounded-md p-3"
+                              >
+                                <div className="flex justify-between">
+                                  <p className="text-sm font-medium">
+                                    {dive.site}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    ${dive.cost?.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div className="flex justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    {dive.date}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {dive.type}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex justify-between mt-1">
-                                <p className="text-sm text-muted-foreground">
-                                  {dive.date}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {dive.type}
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No upcoming dives
-                      </p>
-                    )}
+                            ),
+                          )}
+                        </div>
+                      )
+                      : (
+                        <p className="text-sm text-muted-foreground">
+                          No upcoming dives
+                        </p>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -437,40 +471,42 @@ export function CustomersTable() {
               <TabsContent value="equipment">
                 <Card>
                   <CardContent className="pt-4">
-                    {selectedCustomer.rentedEquipment &&
-                    selectedCustomer.rentedEquipment.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedCustomer.rentedEquipment.map(
-                          (equipment, index) => (
-                            <div
-                              key={index}
-                              className="border rounded-md p-3"
-                            >
-                              <div className="flex justify-between">
-                                <p className="text-sm font-medium">
-                                  {equipment.item}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  ${equipment.cost?.toFixed(2)}
-                                </p>
+                    {mockCustomer.rentedEquipment &&
+                        mockCustomer.rentedEquipment.length > 0
+                      ? (
+                        <div className="space-y-4">
+                          {mockCustomer.rentedEquipment.map(
+                            (equipment, index) => (
+                              <div
+                                key={index}
+                                className="border rounded-md p-3"
+                              >
+                                <div className="flex justify-between">
+                                  <p className="text-sm font-medium">
+                                    {equipment.item}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    ${equipment.cost?.toFixed(2)}
+                                  </p>
+                                </div>
+                                <div className="flex justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    Due: {equipment.dueDate}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Condition: {equipment.condition}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex justify-between mt-1">
-                                <p className="text-sm text-muted-foreground">
-                                  Due: {equipment.dueDate}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Condition: {equipment.condition}
-                                </p>
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No equipment rented
-                      </p>
-                    )}
+                            ),
+                          )}
+                        </div>
+                      )
+                      : (
+                        <p className="text-sm text-muted-foreground">
+                          No equipment rented
+                        </p>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -479,7 +515,8 @@ export function CustomersTable() {
                 <Card>
                   <CardContent className="pt-4">
                     <div className="space-y-4">
-                      {selectedCustomer.roomCost && selectedCustomer.roomCost > 0 && (
+                      {selectedCustomer.roomCost &&
+                        selectedCustomer.roomCost > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Accommodation</p>
                           <p className="text-sm font-medium">
@@ -487,31 +524,32 @@ export function CustomersTable() {
                           </p>
                         </div>
                       )}
-                      {selectedCustomer.courseCost && selectedCustomer.courseCost > 0 && (
+                      {mockCustomer.courseCost &&
+                        mockCustomer.courseCost > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Course Fee</p>
                           <p className="text-sm font-medium">
-                            ${selectedCustomer.courseCost?.toFixed(2)}
+                            ${mockCustomer.courseCost?.toFixed(2)}
                           </p>
                         </div>
                       )}
-                      {selectedCustomer.upcomingDives.length > 0 && (
+                      {mockCustomer.upcomingDives.length > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Dive Fees</p>
                           <p className="text-sm font-medium">
                             $
-                            {selectedCustomer.upcomingDives
+                            {mockCustomer.upcomingDives
                               .reduce((acc, dive) => acc + dive.cost, 0)
                               .toFixed(2)}
                           </p>
                         </div>
                       )}
-                      {selectedCustomer.rentedEquipment.length > 0 && (
+                      {mockCustomer.rentedEquipment.length > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Equipment Rental</p>
                           <p className="text-sm font-medium">
                             $
-                            {selectedCustomer.rentedEquipment
+                            {mockCustomer.rentedEquipment
                               .reduce((acc, eq) => acc + eq.cost, 0)
                               .toFixed(2)}
                           </p>
@@ -520,7 +558,7 @@ export function CustomersTable() {
                       <div className="pt-2 mt-2 border-t flex justify-between">
                         <p className="text-sm font-medium">Total</p>
                         <p className="text-sm font-medium">
-                          ${calculateTotal(selectedCustomer).toFixed(2)}
+                          ${calculateTotal().toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -540,8 +578,7 @@ export function CustomersTable() {
           placeholder="Filter names..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("name")?.setFilterValue(event.target.value)
-          }
+            table.getColumn("name")?.setFilterValue(event.target.value)}
           className="max-w-sm"
         />
         <DropdownMenu>
@@ -561,12 +598,11 @@ export function CustomersTable() {
                     className="capitalize"
                     checked={column.getIsVisible()}
                     onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
+                      column.toggleVisibility(!!value)}
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
-                )
+                );
               })}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -579,50 +615,50 @@ export function CustomersTable() {
                 {headerGroup.headers.map((header: any) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                      {header.isPlaceholder ? null : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row: Row<Customer>) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  onClick={() => {
-                    setSelectedCustomer(row.original)
-                    setDialogOpen(true)
-                  }}
-                  className="cursor-pointer hover:bg-muted/50"
-                >
-                  {row.getVisibleCells().map((cell: any) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+            {table.getRowModel().rows?.length
+              ? (
+                table.getRowModel().rows.map((row: Row<Customer>) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    onClick={() => {
+                      setSelectedCustomer(row.original);
+                      setDialogOpen(true);
+                    }}
+                    className="cursor-pointer hover:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell: any) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              )
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
       </div>
@@ -651,6 +687,5 @@ export function CustomersTable() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
