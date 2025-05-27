@@ -2,13 +2,11 @@
 "use client";
 
 import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
-export default function SignInPage({
-    searchParams,
-}: {
-    searchParams: { callbackUrl?: string };
-}) {
-    const callbackUrl = searchParams.callbackUrl ?? "/";
+export default function SignInPage() {
+    const params = useSearchParams();
+    const callbackUrl = params.get("callbackUrl") ?? "/";
 
     return (
         <div

@@ -10,7 +10,7 @@ import { AddStaffDialog } from "@/components/add-staff-dialog";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { allStaff, staffByCenter } from "@/lib/mock-data/staff";
 
-export default async function StaffClient() {
+export default function StaffClient() {
     const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
     const { currentCenter, isAllCenters } = useDiveCenter();
 
