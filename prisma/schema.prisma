@@ -215,3 +215,64 @@ model Customer {
 
   @@map("customers")
 }
+
+/// enums for fixed dropdowns and checkboxes
+enum Gender {
+  male
+  female
+  other
+}
+
+enum StaffStatus {
+  active
+  inactive
+  freelance
+}
+
+/// each module area they can access
+enum Permission {
+  diveTrips
+  equipment
+  tasks
+  courseTracker
+  finances
+  customers
+  staff
+  reports
+  calendar
+}
+
+/// join table for Staff ↔ Permission (many-to-many)
+model StaffPermission {
+  staffId    String
+  permission Permission
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, permission])
+  @@map("staff_permissions")
+}
+
+/// main Staff table
+model Staff {
+  id          String      @id @default(uuid())
+  fullName    String
+  email       String      @unique
+  phoneNumber String?
+  age         Int?
+  gender      Gender?
+  roleTitle   String?
+  status      StaffStatus @default(active)
+
+  address          String?
+  emergencyContact String? // “Name and phone number”
+  bio              String? // notes
+
+  // permissions via join table
+  permissions StaffPermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("staff")
+}

@@ -1,34 +1,42 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { 
+import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import {
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Textarea } from "@/components/ui/textarea"
-import { X } from "lucide-react"
-import { StaffMember } from "./staff-directory"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { X } from "lucide-react";
+import { StaffMember } from "./staff-directory";
+import { StaffWithPermissions } from "@/lib/staffs";
+import { useRouter } from "next/navigation";
 
 // Define the permissions available in the system
 const accessOptions = [
@@ -41,75 +49,104 @@ const accessOptions = [
   { id: "course-tracker", label: "Course Tracker" },
   { id: "calendar", label: "Calendar" },
   { id: "finances", label: "Finances" },
-]
+];
 
 // Define the staff schema
 const staffSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   email: z.string().email("Please enter a valid email address."),
-  phone: z.string().min(10, "Please enter a valid phone number."),
+  phone: z.string().optional(),
   role: z.string().min(1, "Please enter a role."),
-  age: z.string().min(1, "Please enter age."),
-  gender: z.string().min(1, "Please select a gender."),
+  age: z.string().optional(),
+  gender: z.string().optional(),
   address: z.string().optional(),
   emergencyContact: z.string().optional(),
   bio: z.string().optional(),
-  access: z.array(z.string()).min(1, "Please select at least one access permission."),
-  status: z.enum(["active", "on-leave"]),
-})
+  access: z.array(z.string()).min(
+    1,
+    "Please select at least one access permission.",
+  ),
+  status: z.enum(["active", "inactive", "freelance"]),
+});
 
-type StaffFormValues = z.infer<typeof staffSchema>
+type StaffFormValues = z.infer<typeof staffSchema>;
 
 interface AddStaffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddStaff?: (staffData: Omit<StaffMember, "id" | "avatar">) => void;
+  staff?: StaffWithPermissions | null;
+  createStaff?: (formData: FormData) => Promise<void>;
+  updateStaff?: (id: string, formData: FormData) => Promise<void>;
 }
 
-export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialogProps) {
+export function AddStaffDialog(
+  { open, onOpenChange, staff, createStaff, updateStaff }: AddStaffDialogProps,
+) {
+  const router = useRouter();
+
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      role: "",
-      age: "",
-      gender: "",
-      address: "",
-      emergencyContact: "",
-      bio: "",
-      access: [],
-      status: "active",
+      name: staff?.fullName || "",
+      email: staff?.email || "",
+      phone: staff?.phoneNumber || "",
+      role: staff?.roleTitle || "",
+      age: staff?.age ? String(staff.age) : "",
+      gender: staff?.gender || "",
+      address: staff?.address || "",
+      emergencyContact: staff?.emergencyContact || "",
+      bio: staff?.bio || "",
+      access: staff?.permissions || [],
+      status: staff?.status || "active",
     },
-  })
+  });
 
   function onSubmit(values: StaffFormValues) {
     // Convert the form values to match StaffMember type
-    const staffData = {
-      ...values,
-      // Ensure compatibility with StaffMember type which still has specialties and certification
-      specialties: values.access,
-      certification: values.role, // Use role as certification for backward compatibility
-    };
-    
-    // Call the onAddStaff callback if provided
-    if (onAddStaff) {
-      onAddStaff(staffData);
+    // const staffData = {
+    //   ...values,
+    //   // Ensure compatibility with StaffMember type which still has specialties and certification
+    //   specialties: values.access,
+    //   certification: values.role, // Use role as certification for backward compatibility
+    // };
+
+    const formData = new FormData();
+
+    Object.entries(values).forEach(([key, val]) => {
+      if (val == null) return;
+
+      if (Array.isArray(val)) {
+        // for permissions, tags, whatever array field you have...
+        val.forEach((item) => {
+          formData.append(key, item);
+        });
+      } else {
+        formData.append(key, String(val));
+      }
+    });
+
+    if (createStaff) {
+      createStaff(formData);
+    } else if (updateStaff && staff) {
+      updateStaff(staff.id, formData);
     }
-    
+
     // Reset form and close dialog
-    form.reset()
-    onOpenChange(false)
+    form.reset();
+    onOpenChange(false);
+    router.refresh();
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Staff Member</DialogTitle>
+          <DialogTitle>
+            {createStaff ? "Add" : "Update"} Staff Member
+          </DialogTitle>
           <DialogDescription>
-            Add a new staff member to your dive center team.
+            {createStaff ? "Add a new" : "Update"}
+            staff member to your dive center team.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -123,7 +160,10 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter staff member's full name" {...field} />
+                      <Input
+                        placeholder="Enter staff member's full name"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -177,7 +217,10 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Gender</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select gender" />
@@ -187,7 +230,9 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                           <SelectItem value="male">Male</SelectItem>
                           <SelectItem value="female">Female</SelectItem>
                           <SelectItem value="non-binary">Non-binary</SelectItem>
-                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                          <SelectItem value="prefer-not-to-say">
+                            Prefer not to say
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -201,7 +246,10 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                     <FormItem>
                       <FormLabel>Role Title</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Dive Instructor, Manager, etc." {...field} />
+                        <Input
+                          placeholder="e.g. Dive Instructor, Manager, etc."
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,7 +261,10 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select status" />
@@ -221,7 +272,8 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="on-leave">On Leave</SelectItem>
+                          <SelectItem value="inactive">On Leave</SelectItem>
+                          <SelectItem value="freelance">Freelance</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -230,7 +282,7 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                 />
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Information</h3>
               <FormField
@@ -266,7 +318,7 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                   <FormItem>
                     <FormLabel>Bio/Notes</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Add any additional information about this staff member"
                         className="resize-none min-h-[100px]"
                         {...field}
@@ -277,7 +329,7 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                 )}
               />
             </div>
-            
+
             <div className="space-y-4">
               <h3 className="text-lg font-medium">System Access</h3>
               <FormField
@@ -286,7 +338,9 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                 render={() => (
                   <FormItem>
                     <div className="mb-4">
-                      <FormLabel className="text-base">Access Permissions</FormLabel>
+                      <FormLabel className="text-base">
+                        Access Permissions
+                      </FormLabel>
                       <FormDescription>
                         Select which areas this staff member can access
                       </FormDescription>
@@ -310,9 +364,9 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                                       const updatedValue = checked
                                         ? [...field.value, option.id]
                                         : field.value?.filter(
-                                            (value) => value !== option.id
-                                          )
-                                      field.onChange(updatedValue)
+                                          (value) => value !== option.id,
+                                        );
+                                      field.onChange(updatedValue);
                                     }}
                                   />
                                 </FormControl>
@@ -320,7 +374,7 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                                   {option.label}
                                 </FormLabel>
                               </FormItem>
-                            )
+                            );
                           }}
                         />
                       ))}
@@ -330,16 +384,18 @@ export function AddStaffDialog({ open, onOpenChange, onAddStaff }: AddStaffDialo
                 )}
               />
             </div>
-            
+
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">Add Staff Member</Button>
+              <Button type="submit">
+                {createStaff ? "Add" : "Update"} Staff Member
+              </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+}

@@ -9,17 +9,25 @@ import { StaffDirectory } from "@/components/staff-directory";
 import { AddStaffDialog } from "@/components/add-staff-dialog";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { allStaff, staffByCenter } from "@/lib/mock-data/staff";
+import { Staff } from "@app/generated/prisma";
+import { StaffWithPermissions } from "@/lib/staffs";
 
-export default function StaffClient() {
+export default function StaffClient(
+    { staffs, createStaff, updateStaff }: {
+        staffs: StaffWithPermissions[];
+        createStaff: (formData: FormData) => Promise<void>;
+        updateStaff: (id: string, formData: FormData) => Promise<void>;
+    },
+) {
     const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
     const { currentCenter, isAllCenters } = useDiveCenter();
 
     // Get staff based on selected dive center
-    const staff = isAllCenters
-        ? allStaff
-        : currentCenter
-        ? staffByCenter[currentCenter.id as keyof typeof staffByCenter]
-        : [];
+    // const staff = isAllCenters
+    //     ? allStaff
+    //     : currentCenter
+    //     ? staffByCenter[currentCenter.id as keyof typeof staffByCenter]
+    //     : [];
 
     return (
         <DashboardShell>
@@ -31,10 +39,11 @@ export default function StaffClient() {
                     <Plus className="mr-2 h-4 w-4" /> Add Staff Member
                 </Button>
             </DashboardHeader>
-            <StaffDirectory staff={staff} />
+            <StaffDirectory staffs={staffs} updateStaff={updateStaff} />
             <AddStaffDialog
                 open={showAddStaffDialog}
                 onOpenChange={setShowAddStaffDialog}
+                createStaff={createStaff}
             />
         </DashboardShell>
     );

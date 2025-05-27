@@ -1,10 +1,17 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,10 +19,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Edit, Trash, Calendar, Mail, Phone } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/dropdown-menu";
+import {
+  Calendar,
+  Edit,
+  Mail,
+  MoreHorizontal,
+  Phone,
+  Trash,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Staff } from "@/app/generated/prisma";
+import { StaffWithPermissions } from "@/lib/staffs";
+import { AddStaffDialog } from "./add-staff-dialog";
 
 // Define the permissions available in the system
 const accessOptions = [
@@ -28,7 +45,7 @@ const accessOptions = [
   { id: "course-tracker", label: "Course Tracker" },
   { id: "calendar", label: "Calendar" },
   { id: "finances", label: "Finances" },
-]
+];
 
 // Define staff member type
 export type StaffMember = {
@@ -40,13 +57,13 @@ export type StaffMember = {
   age?: string;
   gender?: string;
   address?: string;
-  emergencyContact?: string; 
+  emergencyContact?: string;
   bio?: string;
   certification?: string; // Keep for backward compatibility
   specialties: string[]; // Used for access permissions
   status: "active" | "on-leave";
   avatar: string;
-}
+};
 
 // Initial staff data
 const initialStaff: StaffMember[] = [
@@ -62,73 +79,35 @@ const initialStaff: StaffMember[] = [
     status: "active",
     avatar: "/placeholder.svg?height=40&width=40",
   },
-  {
-    id: "S-1002",
-    name: "Jennifer Lee",
-    email: "jennifer@scubafy.com",
-    phone: "+1 (555) 234-5678",
-    role: "Senior Instructor",
-    age: "29",
-    gender: "female",
-    specialties: ["dive-trips", "customers", "course-tracker", "calendar"],
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "S-1003",
-    name: "Robert Chen",
-    email: "robert@scubafy.com",
-    phone: "+1 (555) 345-6789",
-    role: "Operations Manager",
-    age: "41",
-    gender: "male",
-    specialties: ["equipment", "staff", "reports", "tasks"],
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "S-1004",
-    name: "Sarah Johnson",
-    email: "sarah@scubafy.com",
-    phone: "+1 (555) 456-7890",
-    role: "General Manager",
-    age: "36",
-    gender: "female",
-    specialties: ["customers", "staff", "equipment", "reports", "finances"],
-    status: "active",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "S-1005",
-    name: "David Wilson",
-    email: "david@scubafy.com",
-    phone: "+1 (555) 567-8901",
-    role: "Boat Captain",
-    age: "45",
-    gender: "male",
-    specialties: ["dive-trips", "equipment"],
-    status: "on-leave",
-    avatar: "/placeholder.svg?height=40&width=40",
-  },
-]
+];
 
 // Helper function to get access label from ID
 function getAccessLabel(accessId: string): string {
-  const option = accessOptions.find(opt => opt.id === accessId);
+  const option = accessOptions.find((opt) => opt.id === accessId);
   return option ? option.label : accessId;
 }
 
 // Main component
-export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
-  const [searchTerm, setSearchTerm] = useState("")
+export function StaffDirectory(
+  { staffs, updateStaff }: {
+    staffs: StaffWithPermissions[];
+    updateStaff: (id: string, formData: FormData) => Promise<void>;
+  },
+) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState<
+    StaffWithPermissions | null
+  >(null);
+  const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
 
-  const filteredStaff = staff.filter((member) => {
-    const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
-  })
+  // const filteredStaff = staff.filter((member) => {
+  //   const matchesSearch =
+  //     member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     member.role.toLowerCase().includes(searchTerm.toLowerCase());
+  //   return matchesSearch;
+  // });
+  const filteredStaff = staffs;
 
   return (
     <Card>
@@ -162,12 +141,19 @@ export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={member.avatar} alt={member.name} />
-                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage
+                          src={"/placeholder.svg?height=40&width=40"}
+                          alt={member.fullName}
+                        />
+                        <AvatarFallback>
+                          {member.fullName.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-medium">{member.name}</span>
-                        <span className="text-xs text-muted-foreground">{member.id}</span>
+                        <span className="font-medium">{member.fullName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {member.id}
+                        </span>
                       </div>
                     </div>
                   </TableCell>
@@ -179,22 +165,34 @@ export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
                       </div>
                       <div className="flex items-center text-sm">
                         <Phone className="mr-1 h-3 w-3" />
-                        <span>{member.phone}</span>
+                        <span>{member.phoneNumber}</span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>{member.role}</TableCell>
+                  <TableCell>{member.roleTitle}</TableCell>
                   <TableCell>
-                    {member.age && member.gender ? (
-                      <span>{member.age} / {member.gender.charAt(0).toUpperCase() + member.gender.slice(1)}</span>
-                    ) : (
-                      <span className="text-muted-foreground">Not specified</span>
-                    )}
+                    {member.age && member.gender
+                      ? (
+                        <span>
+                          {member.age} /{" "}
+                          {member.gender.charAt(0).toUpperCase() +
+                            member.gender.slice(1)}
+                        </span>
+                      )
+                      : (
+                        <span className="text-muted-foreground">
+                          Not specified
+                        </span>
+                      )}
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {member.specialties.map((accessId, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
+                      {member.permissions.map((accessId, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {getAccessLabel(accessId)}
                         </Badge>
                       ))}
@@ -202,10 +200,14 @@ export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={member.status === "active" ? "default" : "outline"}
-                      className={member.status === "on-leave" ? "border-amber-500 text-amber-500" : ""}
+                      variant={member.status === "active"
+                        ? "default"
+                        : "outline"}
+                      className={member.status === "inactive"
+                        ? "border-amber-500 text-amber-500"
+                        : ""}
                     >
-                      {member.status === "active" ? "Active" : "On Leave"}
+                      {member.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -218,7 +220,12 @@ export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedStaff(member);
+                            setShowAddStaffDialog(true);
+                          }}
+                        >
                           <Edit className="mr-2 h-4 w-4" /> Edit Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem>
@@ -236,8 +243,14 @@ export function StaffDirectory({ staff }: { staff: StaffMember[] }) {
             </TableBody>
           </Table>
         </div>
+        <AddStaffDialog
+          key={selectedStaff?.id || "new"}
+          open={showAddStaffDialog}
+          staff={selectedStaff}
+          onOpenChange={setShowAddStaffDialog}
+          updateStaff={updateStaff}
+        />
       </CardContent>
     </Card>
-  )
+  );
 }
-
