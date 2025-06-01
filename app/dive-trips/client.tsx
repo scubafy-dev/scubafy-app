@@ -141,7 +141,7 @@ export default function DiveTripsPage(
                       <TableHead className="text-center">Capacity</TableHead>
                       <TableHead className="text-center">Booked</TableHead>
                       <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
+                      Master <TableHead>Status</TableHead>
                       {isAllCenters && <TableHead>Center</TableHead>}
                     </TableRow>
                   </TableHeader>

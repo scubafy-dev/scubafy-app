@@ -276,3 +276,39 @@ model Staff {
 
   @@map("staff")
 }
+
+enum CourseCertificationLevel {
+  openWater
+  advancedOpenWater
+  rescueDiver
+  diveMaster
+  instructor
+  specialtyCourse
+}
+
+enum CourseStatus {
+  upcoming
+  active
+  completed
+}
+
+model Course {
+  id                 String                    @id @default(uuid())
+  title              String
+  certificationLevel CourseCertificationLevel?
+  status             CourseStatus?
+  startDate          DateTime? // nullable since not always set
+  endDate            DateTime? // nullable since not always set
+  instructorName     String?
+  instructorContact  String?
+  location           String?
+  cost               Float? // nullable if cost unknown
+  specialNeeds       String? // text field for special notes
+
+  studentsCount Int @default(0) // you track student numbers
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("courses")
+}
