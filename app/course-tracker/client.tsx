@@ -51,7 +51,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { addCourse } from "@/lib/course"; // import server action
-import { Course } from "@app/generated/prisma";
+import {
+    CertificationLevel,
+    Course,
+    CourseStatus,
+} from "@app/generated/prisma";
+
+import { useRouter } from "next/navigation";
 
 // Types for the course tracker
 interface Student {
@@ -102,6 +108,10 @@ export default function CourseTrackerClient(
     const [expandedCourseId, setExpandedCourseId] = useState<string | null>(
         null,
     );
+    const [level, setLevel] = useState<CertificationLevel>("openWater");
+    const [status, setStatus] = useState<CourseStatus>("upcoming");
+
+    const router = useRouter();
 
     // Example courses data
     //   const [courses, setCourses] = useState<Course[]>([
@@ -284,7 +294,8 @@ export default function CourseTrackerClient(
         // Simplest: reload page or refetch from server. For example:
         // const res = await fetch("/api/courses"); // You need to implement this API or use a route handler to fetch courses
         // const updatedCourses = await res.json();
-        // setIsAddCourseOpen(false);
+        router.refresh();
+        setIsAddCourseOpen(false);
     }
 
     return (
@@ -1657,7 +1668,12 @@ export default function CourseTrackerClient(
                                     <Label htmlFor="level">
                                         Certification Level
                                     </Label>
-                                    <Select>
+                                    <Select
+                                        value={level}
+                                        onValueChange={(value) => setLevel(
+                                            value as CertificationLevel,
+                                        )}
+                                    >
                                         <SelectTrigger id="level">
                                             <SelectValue placeholder="Select level" />
                                         </SelectTrigger>
@@ -1685,7 +1701,12 @@ export default function CourseTrackerClient(
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="status">Status</Label>
-                                    <Select>
+                                    <Select
+                                        value={status}
+                                        onValueChange={(value) => setStatus(
+                                            value as CourseStatus,
+                                        )}
+                                    >
                                         <SelectTrigger id="status">
                                             <SelectValue placeholder="Select status" />
                                         </SelectTrigger>
@@ -1767,12 +1788,6 @@ export default function CourseTrackerClient(
                             </div>
                         </div>
                     </div>
-                    {
-                        /* <AddCourseDialog
-                        onClose={() => setIsAddCourseOpen(false)}
-                        onSubmit={handleAddCourse}
-                    /> */
-                    }
 
                     <DialogFooter>
                         <Button
@@ -1792,15 +1807,11 @@ export default function CourseTrackerClient(
                                 );
                                 formData.append(
                                     "level",
-                                    (document.getElementById(
-                                        "level",
-                                    ) as HTMLInputElement)?.value || "",
+                                    level,
                                 );
                                 formData.append(
                                     "status",
-                                    (document.getElementById(
-                                        "status",
-                                    ) as HTMLInputElement)?.value || "",
+                                    status,
                                 );
                                 formData.append(
                                     "startDate",
