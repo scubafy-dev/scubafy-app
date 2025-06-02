@@ -59,6 +59,9 @@ import {
 
 import { useRouter } from "next/navigation";
 
+import { EditCourseDialog } from "./EditCourseDialog";
+import { se } from "date-fns/locale";
+
 // Types for the course tracker
 interface Student {
     id: string;
@@ -103,6 +106,7 @@ export default function CourseTrackerClient(
 ) {
     const [activeTab, setActiveTab] = useState("all");
     const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
+    const [isEditCourseOpen, setIsEditCourseOpen] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [courseDetailsOpen, setCourseDetailsOpen] = useState(false);
     const [expandedCourseId, setExpandedCourseId] = useState<string | null>(
@@ -571,8 +575,17 @@ export default function CourseTrackerClient(
                                                             </Button>
                                                             <Button
                                                                 size="sm"
-                                                                onClick={(e) =>
-                                                                    e.stopPropagation()}
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setIsEditCourseOpen(
+                                                                        true,
+                                                                    );
+                                                                    setSelectedCourse(
+                                                                        course,
+                                                                    );
+                                                                }}
                                                             >
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
@@ -1863,6 +1876,20 @@ export default function CourseTrackerClient(
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Course Dialog */}
+            {selectedCourse &&
+                (
+                    <Dialog
+                        open={isEditCourseOpen}
+                        onOpenChange={setIsEditCourseOpen}
+                    >
+                        <EditCourseDialog
+                            selectedCourse={selectedCourse}
+                            setIsEditCourseOpen={setIsEditCourseOpen}
+                        />
+                    </Dialog>
+                )}
         </DashboardShell>
     );
 }
