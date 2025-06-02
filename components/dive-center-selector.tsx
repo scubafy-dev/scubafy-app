@@ -24,7 +24,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function DiveCenterSelector() {
-  const { currentCenter, isAllCenters, centers, setCurrentCenter, setIsAllCenters } = useDiveCenter();
+  const {
+    currentCenter,
+    isAllCenters,
+    centers,
+    setCurrentCenter,
+    setIsAllCenters,
+  } = useDiveCenter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleSelectCenter = (centerId: string | null) => {
@@ -33,7 +39,8 @@ export function DiveCenterSelector() {
       setCurrentCenter(null);
     } else {
       setIsAllCenters(false);
-      const selectedCenter = centers.find((center) => center.id === centerId) || null;
+      const selectedCenter = centers.find((center) => center.id === centerId) ||
+        null;
       setCurrentCenter(selectedCenter);
     }
   };
@@ -49,7 +56,11 @@ export function DiveCenterSelector() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="flex items-center gap-2 pl-0 h-10">
-            <img src="/logo scubafy.png" alt="Scubafy Logo" className="h-10 w-auto" />
+            <img
+              src="/logo scubafy.png"
+              alt="Scubafy Logo"
+              className="h-16 w-auto"
+            />
             <span className="text-lg font-medium">
               {isAllCenters ? "All Dive Centers" : currentCenter?.name}
             </span>
@@ -57,7 +68,7 @@ export function DiveCenterSelector() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-64">
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className={isAllCenters ? "bg-muted" : ""}
             onClick={() => handleSelectCenter("all")}
           >
@@ -67,7 +78,9 @@ export function DiveCenterSelector() {
           {centers.map((center) => (
             <DropdownMenuItem
               key={center.id}
-              className={!isAllCenters && currentCenter?.id === center.id ? "bg-muted" : ""}
+              className={!isAllCenters && currentCenter?.id === center.id
+                ? "bg-muted"
+                : ""}
               onClick={() => handleSelectCenter(center.id)}
             >
               {center.name}
@@ -121,4 +134,4 @@ export function DiveCenterSelector() {
       </DropdownMenu>
     </>
   );
-} 
+}

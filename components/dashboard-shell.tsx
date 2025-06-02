@@ -1,28 +1,28 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { DashboardNav } from "@/components/dashboard-nav"
-import { UserNav } from "@/components/user-nav"
-import { MobileNav } from "@/components/mobile-nav"
-import { SidebarToggle } from "@/components/sidebar-toggle"
-import { useSidebar } from "@/components/sidebar-provider"
-import { DiveCenterSelector } from "@/components/dive-center-selector"
-import { cn } from "@/lib/utils"
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import type React from "react";
+import { DashboardNav } from "@/components/dashboard-nav";
+import { UserNav } from "@/components/user-nav";
+import { MobileNav } from "@/components/mobile-nav";
+import { SidebarToggle } from "@/components/sidebar-toggle";
+import { useSidebar } from "@/components/sidebar-provider";
+import { DiveCenterSelector } from "@/components/dive-center-selector";
+import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface DashboardShellProps {
-  children: React.ReactNode
-  className?: string
+  children: React.ReactNode;
+  className?: string;
 }
 
 export function DashboardShell({ children, className }: DashboardShellProps) {
-  const { collapsed } = useSidebar()
+  const { collapsed } = useSidebar();
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-40 border-b bg-background">
-        <div className="container flex h-16 items-center justify-between py-4">
+        <div className="px-8 flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 md:hidden">
               <MobileNav />
@@ -44,7 +44,7 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
           </div>
         </div>
       </header>
-      <div className="container grid flex-1 gap-0 md:grid-cols-[auto_1fr]">
+      <div className="px-2 grid flex-1 gap-0 md:grid-cols-[auto_1fr]">
         <aside
           className={cn(
             "hidden md:block transition-all duration-300 ease-in-out",
@@ -58,6 +58,5 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
         </main>
       </div>
     </div>
-  )
+  );
 }
-
