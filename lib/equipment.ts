@@ -1,3 +1,5 @@
+"use server";
+
 import prisma  from '@prisma/prisma';
 import { redirect } from 'next/navigation';
 import {
@@ -7,7 +9,6 @@ import {
 } from "@/app/generated/prisma";
 
 export type EquipmentFormType = {
-    id: string;
     type: EquipmentType;
     brand: string;
     model: string;
@@ -16,7 +17,9 @@ export type EquipmentFormType = {
     lastInspection: string,
     nextInspection: string,
     status: EquipmentStatus,
-    condition: Condition,    
+    condition: Condition,
+    usageCount: string | null;
+    usageLimit: string | null;    
     notes: string;
 }
 
@@ -30,13 +33,13 @@ export type Equipment = {
   lastService: Date | null,
   nextService: Date | null,
   status: EquipmentStatus,
-  condition: Condition,    
+  condition: Condition,
+  usageCount: number | null;
+  usageLimit: number | null;    
   notes: string | null;
 }
 
 export async function createEquipment(formData: EquipmentFormType) {
-  "use server";
-
   // 1) Ensure all required fields have *something*
   const requiredDefaults: Record<string,string> = {
     type: EquipmentType.BCD,
@@ -66,8 +69,8 @@ export async function createEquipment(formData: EquipmentFormType) {
   const lastService  = new Date(formData.lastInspection  as string);
   const nextService  = new Date(formData.nextInspection  as string);
 
-  const usageCount   = 0;
-  const usageLimit   = 100;
+  const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : null;
+  const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : null;
 
   const status       = optionalDefaults.status    as EquipmentStatus;
   const condition    = formData.condition as Condition;
@@ -109,8 +112,6 @@ export const  getAllEquipments = async () => {
 }
 
 export async function updateEquipment(id: string | null, formData: EquipmentFormType) {
-    "use server";
-
     if(id === null){
         return;
     }
@@ -124,8 +125,8 @@ export async function updateEquipment(id: string | null, formData: EquipmentForm
     const lastService  = new Date(formData.lastInspection  as string);
     const nextService  = new Date(formData.nextInspection  as string);
   
-    const usageCount   = 0;
-    const usageLimit   = 100;
+    const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : null;
+    const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : null;
   
     const status       = formData.status    as EquipmentStatus;
     const condition    = formData.condition as Condition;
@@ -159,9 +160,7 @@ export async function updateEquipment(id: string | null, formData: EquipmentForm
 
 }
 
-export const deleteEquipment = async (id: string) => {
-    "use server"
-      
+export const deleteEquipment = async (id: string) => {      
     try{
         const res = await prisma.equipment.delete({
             where: {

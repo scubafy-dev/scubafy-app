@@ -22,41 +22,45 @@ import { cn } from "@/lib/utils";
 import { Equipment, EquipmentFormType } from "@/lib/equipment";
 import { ActionMode } from "@/types/all";
 import { useRouter } from "next/navigation";
+import { createEquipment, updateEquipment } from "@/lib/equipment";
+import { Condition, EquipmentStatus } from "@app/generated/prisma";
 
 interface AddEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   equipment: Equipment | null;
   mode: ActionMode;
-  actionCreate: (formData: EquipmentFormType) => void;
-  actionUpdate: (
-    id: string | null,
-    formData: EquipmentFormType,
-  ) => Promise<void>;
 }
 
 export function AddEquipmentDialog(
-  { open, onOpenChange, equipment, mode, actionCreate, actionUpdate }:
-    AddEquipmentDialogProps,
+  { open, onOpenChange, equipment, mode }: AddEquipmentDialogProps,
 ) {
   const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">(
     "basic",
   );
   const [formData, setFormData] = useState({
-    type: equipment?.type ?? "",
+    type: equipment?.type as EquipmentFormType["type"],
     sku: "",
     make: "",
+    brand: equipment?.brand ?? "",
     model: equipment?.model ?? "",
+    purchaseDate: equipment?.purchaseDate?.toISOString() ??
+      new Date().toISOString(),
     serialNumber: equipment?.serialNumber ?? "",
     size: "",
     location: "",
-    status: equipment?.status ?? "",
-    condition: equipment?.condition ?? "",
+    status: equipment?.status ?? EquipmentStatus.available,
+    condition: equipment?.condition ?? Condition.excellent,
+    usageCount: equipment?.usageCount?.toString() ?? "",
+    usageLimit: equipment?.usageLimit?.toString() ?? "",
+    notes: equipment?.notes ?? "",
     quantity: "1",
     trackMinQuantity: false,
     trackUsage: false,
-    lastInspection: equipment?.lastService ?? "",
-    nextInspection: equipment?.nextService ?? "",
+    lastInspection: equipment?.lastService?.toISOString() ??
+      new Date().toISOString(),
+    nextInspection: equipment?.nextService?.toISOString() ??
+      new Date().toISOString(),
     itemValue: "",
     rentalRate: "",
     rentalTimeframe: "Per Dive",
@@ -74,11 +78,11 @@ export function AddEquipmentDialog(
     // Handle form submission
     console.log(formData);
     if (mode === ActionMode.create) {
-      actionCreate(formData);
+      createEquipment(formData);
       router.refresh();
     } else {
       if (equipment) {
-        actionUpdate(equipment.id, formData);
+        updateEquipment(equipment.id, formData);
         router.refresh();
       }
     }
@@ -235,7 +239,7 @@ export function AddEquipmentDialog(
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="status" className="text-sm font-medium">
-                Condition
+                Status
               </Label>
               <Select
                 value={formData.status}
@@ -251,6 +255,30 @@ export function AddEquipmentDialog(
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="location" className="text-sm font-medium">
+                Wear Rate (Usage Count / Usage Limit)
+              </Label>
+              <div className="flex flex-row gap-2 items-center">
+                <Input
+                  id="usageCount"
+                  placeholder="Usage Count"
+                  value={formData.usageCount}
+                  onChange={(e) =>
+                    handleInputChange("usageCount", e.target.value)}
+                  className="h-9"
+                />
+                <div>/</div>
+                <Input
+                  id="usageLimit"
+                  placeholder="Usage Limit"
+                  value={formData.usageLimit}
+                  onChange={(e) =>
+                    handleInputChange("usageLimit", e.target.value)}
+                  className="h-9"
+                />
+              </div>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="quantity" className="text-sm font-medium">
@@ -302,31 +330,33 @@ export function AddEquipmentDialog(
                 </p>
               </div>
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="lastInspection" className="text-sm font-medium">
-                Last Inspection
-              </Label>
-              <Input
-                id="lastInspection"
-                type="date"
-                value={formData.lastInspection.toString()}
-                onChange={(e) =>
-                  handleInputChange("lastInspection", e.target.value)}
-                className="h-9"
-              />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="nextInspection" className="text-sm font-medium">
-                Next Inspection
-              </Label>
-              <Input
-                id="nextInspection"
-                type="date"
-                value={formData.nextInspection.toString()}
-                onChange={(e) =>
-                  handleInputChange("nextInspection", e.target.value)}
-                className="h-9"
-              />
+            <div className="flex flex-row justify-between">
+              <div className="grid gap-1.5">
+                <Label htmlFor="lastInspection" className="text-sm font-medium">
+                  Last Inspection
+                </Label>
+                <Input
+                  id="lastInspection"
+                  type="date"
+                  value={formData.lastInspection}
+                  onChange={(e) =>
+                    handleInputChange("lastInspection", e.target.value)}
+                  className="h-9"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor="nextInspection" className="text-sm font-medium">
+                  Next Inspection
+                </Label>
+                <Input
+                  id="nextInspection"
+                  type="date"
+                  value={formData.nextInspection}
+                  onChange={(e) =>
+                    handleInputChange("nextInspection", e.target.value)}
+                  className="h-9"
+                />
+              </div>
             </div>
           </div>
         )}

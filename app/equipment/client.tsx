@@ -64,6 +64,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import { deleteEquipment } from "@/lib/equipment";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -92,16 +93,8 @@ const equipmentSchema = z.object({
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
 export default function EquipmentPage(
-    { equipments, actionCreate, actionUpdate, actionDelete }: {
+    { equipments }: {
         equipments: Equipment[];
-        actionCreate: (formData: EquipmentFormType) => void;
-        actionUpdate: (
-            id: string | null,
-            formData: EquipmentFormType,
-        ) => Promise<void>;
-        actionDelete: (
-            id: string,
-        ) => Promise<void>;
     },
 ) {
     const [isAddEquipmentOpen, setIsAddEquipmentOpen] = useState(false);
@@ -239,7 +232,6 @@ export default function EquipmentPage(
                                     {isAllCenters && (
                                         <TableHead>Center</TableHead>
                                     )}
-                                    <TableHead>Notes</TableHead>
                                     <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -264,7 +256,9 @@ export default function EquipmentPage(
                                                             : (
                                                                 <ChevronDown className="h-4 w-4" />
                                                             )}
-                                                        {item.id}
+                                                        <span className="text-sm overflow-hidden text-ellipsis">
+                                                            {item.id}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -411,9 +405,11 @@ export default function EquipmentPage(
                                                     </TableCell>
                                                 )} */
                                                 }
-                                                <TableCell className="max-w-[200px] truncate">
+                                                {
+                                                    /* <TableCell className="max-w-[200px] truncate">
                                                     {item.notes}
-                                                </TableCell>
+                                                </TableCell> */
+                                                }
                                                 <TableCell className="text-right">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger
@@ -513,8 +509,6 @@ export default function EquipmentPage(
                             onOpenChange={setIsAddEquipmentOpen}
                             mode={ActionMode.create}
                             equipment={null}
-                            actionCreate={actionCreate}
-                            actionUpdate={actionUpdate}
                         />
                     </DialogContent>
                 </Dialog>
@@ -534,8 +528,6 @@ export default function EquipmentPage(
                             onOpenChange={setIsEditEquipmentOpen}
                             mode={ActionMode.update}
                             equipment={selectedEquipment}
-                            actionUpdate={actionUpdate}
-                            actionCreate={actionCreate}
                         />
                     </DialogContent>
                 </Dialog>
@@ -567,7 +559,7 @@ export default function EquipmentPage(
                                 <AlertDialogAction
                                     onClick={async () => {
                                         if (selectedEquipment) {
-                                            await actionDelete(
+                                            await deleteEquipment(
                                                 selectedEquipment.id,
                                             );
                                             toast({

@@ -41,6 +41,20 @@ export function EquipmentDetails({ equipment }: EquipmentDetailsProps) {
           </div>
         </div>
 
+        <div>
+          <h4 className="font-semibold mb-1">Wear Rate</h4>
+          <div className="space-y-1 text-sm">
+            <p>
+              <span className="text-muted-foreground">Usage Count:</span>{" "}
+              {equipment.usageCount}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Usage Limit:</span>{" "}
+              {equipment.usageLimit}
+            </p>
+          </div>
+        </div>
+
         {
           /* {equipment.trackUsage && (
           <div>
