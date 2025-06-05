@@ -5,7 +5,7 @@ export interface Task {
   assignedTo: string;
   dueDate: string;
   priority: 'low' | 'medium' | 'high';
-  status: 'pending' | 'in-progress' | 'completed';
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   category: 'maintenance' | 'training' | 'administrative' | 'equipment';
 }
 
@@ -18,7 +18,7 @@ const dauinTasks: Task[] = [
     assignedTo: "Alex Rodriguez",
     dueDate: "2025-03-25",
     priority: "high",
-    status: "in-progress",
+    status: "in_progress",
     category: "maintenance"
   },
   {
@@ -52,7 +52,7 @@ const malapascuaTasks: Task[] = [
     assignedTo: "Emma Wilson",
     dueDate: "2025-03-29",
     priority: "medium",
-    status: "in-progress",
+    status: "in_progress",
     category: "administrative"
   }
 ];
@@ -90,7 +90,7 @@ const sipalayTasks: Task[] = [
     assignedTo: "James Wilson",
     dueDate: "2025-03-28",
     priority: "high",
-    status: "in-progress",
+    status: "in_progress",
     category: "equipment"
   },
   {

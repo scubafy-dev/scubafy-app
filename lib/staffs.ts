@@ -1,4 +1,5 @@
 // lib/staff.ts
+"use server"
 import prisma from "@/prisma/prisma";
 import { Gender, StaffStatus, Permission } from "@app/generated/prisma";
   
@@ -21,8 +22,6 @@ permissions: Permission[];
   
 
 export async function createStaff(formData: FormData) {
-  "use server";
-
   // 1) ensure required fields
   const requiredDefaults: Record<string, string> = {
     fullName:    "Unnamed Staff",
@@ -89,7 +88,6 @@ export async function createStaff(formData: FormData) {
 }
 
 export async function updateStaff(id: string, formData: FormData) {
-  "use server";
 
   if (!id) throw new Error("Missing staff id");
 
@@ -138,14 +136,12 @@ export async function updateStaff(id: string, formData: FormData) {
 }
 
 export async function deleteStaff(id: string) {
-  "use server";
   await prisma.staff.delete({
     where: { id },
   });
 }
 
 export async function getStaffById(id: string) {
-  "use server";
   return prisma.staff.findUnique({
     where: { id },
     include: {
@@ -155,7 +151,6 @@ export async function getStaffById(id: string) {
 }
 
 export async function getAllStaff() {
-  "use server";
   const rows = await prisma.staff.findMany({
     orderBy: { fullName: "asc" },
     include: {

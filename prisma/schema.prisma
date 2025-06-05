@@ -174,14 +174,12 @@ model Equipment {
   model        String
   serialNumber String
 
-  /// purchase info
   purchaseDate DateTime?
 
-  /// service info
   lastService DateTime?
   nextService DateTime?
 
-  /// usage stats (75/100 in your UI)
+  /// usage stats (75/100 in UI)
   usageCount Int?
   usageLimit Int?
 
@@ -273,6 +271,7 @@ model Staff {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  Task      Task[]
 
   @@map("staff")
 }
@@ -311,4 +310,47 @@ model Course {
   updatedAt DateTime @updatedAt
 
   @@map("courses")
+}
+
+enum Priority {
+  low
+  medium
+  high
+}
+
+enum TaskStatus {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum TaskCategory {
+  maintenance
+  training
+  // add any other categories your app uses, e.g.:
+  // administration
+  // safety
+  // custom
+}
+
+model Task {
+  id String @id @default(uuid())
+
+  title       String
+  description String?
+
+  assignedTo   Staff  @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
+  assignedToId String
+
+  dueDate  DateTime
+  priority Priority   @default(medium)
+  status   TaskStatus @default(pending)
+
+  category TaskCategory
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
 }

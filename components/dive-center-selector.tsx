@@ -55,11 +55,11 @@ export function DiveCenterSelector() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-2 pl-0 h-10">
+          <Button variant="ghost" className="flex items-center gap-4 pl-0 h-10">
             <img
-              src="/logo scubafy.png"
+              src="/scubafy_logo.png"
               alt="Scubafy Logo"
-              className="h-16 w-auto"
+              className="h-8 w-auto"
             />
             <span className="text-lg font-medium">
               {isAllCenters ? "All Dive Centers" : currentCenter?.name}

@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { useEffect, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -17,21 +17,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
+
+import { createTask } from "@/lib/task";
+import { getAllStaff } from "@/lib/staffs";
+import { Staff } from "@/app/generated/prisma";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -46,17 +51,19 @@ const formSchema = z.object({
   dueDate: z.date({
     required_error: "Please select a due date.",
   }),
-  urgency: z.enum(["low", "medium", "high"], {
-    required_error: "Please select an urgency level.",
+  priority: z.enum(["low", "medium", "high"], {
+    required_error: "Please select a priority level.",
   }),
-})
+});
 
 interface AddTaskFormProps {
-  onSuccess: () => void
+  onSuccess: () => void;
 }
 
 export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,28 +71,53 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
       title: "",
       description: "",
     },
-  })
+  });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
-    
+    setIsSubmitting(true);
+
     // Simulate API call
-    setTimeout(() => {
-      console.log(values)
-      setIsSubmitting(false)
-      form.reset()
-      onSuccess()
-    }, 1000)
+    setTimeout(async () => {
+      try {
+        const formData = new FormData();
+        Object.entries(values).forEach(([key, value]) => {
+          formData.append(key, value.toString());
+        });
+        await createTask(formData);
+      } catch (error) {
+        console.error("Error creating task:", error);
+        setIsSubmitting(false);
+        return;
+      }
+      console.log(values);
+      setIsSubmitting(false);
+      form.reset();
+      router.refresh(); // Refresh the page to show the new task
+      onSuccess();
+    }, 1000);
   }
 
   // Sample staff data - in a real app, this would come from an API
-  const staffMembers = [
-    { id: "S-1001", name: "John Smith" },
-    { id: "S-1002", name: "Sarah Johnson" },
-    { id: "S-1003", name: "Michael Brown" },
-    { id: "S-1004", name: "Emily Davis" },
-    { id: "S-1005", name: "David Wilson" },
-  ]
+  // const staffMembers = [
+  //   { id: "S-1001", name: "John Smith" },
+  //   { id: "S-1002", name: "Sarah Johnson" },
+  //   { id: "S-1003", name: "Michael Brown" },
+  //   { id: "S-1004", name: "Emily Davis" },
+  //   { id: "S-1005", name: "David Wilson" },
+  // ];
+
+  useEffect(() => {
+    // Fetch staff members from the server or context
+    const fetchStaffMembers = async () => {
+      try {
+        const staff = await getAllStaff();
+        setStaffMembers(staff as Staff[]);
+      } catch (error) {
+        console.error("Error fetching staff members:", error);
+      }
+    };
+    fetchStaffMembers();
+  }, []);
 
   return (
     <Form {...form}>
@@ -137,7 +169,7 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
                 <SelectContent>
                   {staffMembers.map((staff) => (
                     <SelectItem key={staff.id} value={staff.id}>
-                      {staff.name}
+                      {staff.fullName}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -160,14 +192,14 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
                       variant={"outline"}
                       className={cn(
                         "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
+                        !field.value && "text-muted-foreground",
                       )}
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
+                      {field.value
+                        ? (
+                          format(field.value, "PPP")
+                        )
+                        : <span>Pick a date</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </FormControl>
@@ -178,8 +210,7 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
                     selected={field.value}
                     onSelect={field.onChange}
                     disabled={(date) =>
-                      date < new Date(new Date().setHours(0, 0, 0, 0))
-                    }
+                      date < new Date(new Date().setHours(0, 0, 0, 0))}
                     initialFocus
                   />
                 </PopoverContent>
@@ -191,14 +222,14 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
 
         <FormField
           control={form.control}
-          name="urgency"
+          name="priority"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Urgency Level</FormLabel>
+              <FormLabel>Priority Level</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select urgency level" />
+                    <SelectValue placeholder="Select priority level" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
@@ -215,10 +246,17 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full"
+          onClick={() => {
+            form.handleSubmit(onSubmit);
+          }}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? "Creating..." : "Create Task"}
         </Button>
       </form>
     </Form>
-  )
-} 
+  );
+}
