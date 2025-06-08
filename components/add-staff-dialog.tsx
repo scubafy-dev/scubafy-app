@@ -37,6 +37,7 @@ import { X } from "lucide-react";
 import { StaffMember } from "./staff-directory";
 import { StaffWithPermissions } from "@/lib/staffs";
 import { useRouter } from "next/navigation";
+import { createStaff } from "@/lib/staffs";
 
 // Define the permissions available in the system
 const accessOptions = [
@@ -57,6 +58,7 @@ const staffSchema = z.object({
   email: z.string().email("Please enter a valid email address."),
   phone: z.string().optional(),
   role: z.string().min(1, "Please enter a role."),
+  salary: z.string().optional(),
   age: z.string().optional(),
   gender: z.string().optional(),
   address: z.string().optional(),
@@ -91,6 +93,7 @@ export function AddStaffDialog(
       email: staff?.email || "",
       phone: staff?.phoneNumber || "",
       role: staff?.roleTitle || "",
+      salary: staff?.salary ? String(staff.salary) : "",
       age: staff?.age ? String(staff.age) : "",
       gender: staff?.gender || "",
       address: staff?.address || "",
@@ -282,6 +285,19 @@ export function AddStaffDialog(
                 />
               </div>
             </div>
+            <FormField
+              control={form.control}
+              name="salary"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Salary (monthly in USD)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 2000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Additional Information</h3>

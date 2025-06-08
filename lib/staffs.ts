@@ -11,6 +11,7 @@ phoneNumber: string | null;
 age: number | null;
 gender: Gender | null;
 roleTitle: string | null;
+salary: number | null;
 status: StaffStatus;
 address: string | null;
 emergencyContact: string | null;
@@ -53,6 +54,9 @@ export async function createStaff(formData: FormData) {
   const roleTitle       = (formData.get("role") as string) || null;
   const status          = formData.get("status") as StaffStatus;
 
+  const salaryStr          = formData.get("salary") as string | null;
+  const salary          = salaryStr ? Number(salaryStr) : null;
+
   const address         = (formData.get("address") as string) || null;
   const emergencyContact= (formData.get("emergencyContact") as string) || null;
   const bio             = (formData.get("bio") as string) || null;
@@ -77,6 +81,7 @@ export async function createStaff(formData: FormData) {
       gender,
       roleTitle,
       status,
+      salary,
       address,
       emergencyContact,
       bio,
@@ -100,6 +105,11 @@ export async function updateStaff(id: string, formData: FormData) {
   if (formData.get("age") !== null) {
     const ageStr = formData.get("age") as string;
     data.age = ageStr ? Number(ageStr) : null;
+  }
+
+  if (formData.get("salary") !== null) {
+    const salaryStr = formData.get("salary") as string;
+    data.salary = salaryStr ? Number(salaryStr) : null;
   }
 
   if (formData.get("gender")) {

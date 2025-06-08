@@ -131,6 +131,7 @@ export function StaffDirectory(
                 <TableHead>Role</TableHead>
                 <TableHead>Age/Gender</TableHead>
                 <TableHead>Access Permissions</TableHead>
+                <TableHead>Salary</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -138,7 +139,7 @@ export function StaffDirectory(
             <TableBody>
               {filteredStaff.map((member) => (
                 <TableRow key={member.id}>
-                  <TableCell>
+                  <TableCell className="max-w-[200px]">
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage
@@ -185,7 +186,7 @@ export function StaffDirectory(
                         </span>
                       )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="max-w-[200px]">
                     <div className="flex flex-wrap gap-1">
                       {member.permissions.map((accessId, index) => (
                         <Badge
@@ -198,6 +199,7 @@ export function StaffDirectory(
                       ))}
                     </div>
                   </TableCell>
+                  <TableCell>{member.salary}</TableCell>
                   <TableCell>
                     <Badge
                       variant={member.status === "active"
