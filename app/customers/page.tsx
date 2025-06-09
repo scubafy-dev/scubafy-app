@@ -6,8 +6,10 @@ import {
   getAllCustomers,
   updateCustomer,
 } from "@/lib/customers";
+import { useAuth } from "@/lib/use-auth";
 
 export default async function CustomersPage() {
+  const session = await useAuth("/customers");
   const customers = await getAllCustomers();
 
   return (
