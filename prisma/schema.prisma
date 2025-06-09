@@ -49,6 +49,11 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+enum Role {
+  manager
+  staff
+}
+
 /// extend User model to match next-auth
 model User {
   id            String    @id @default(cuid())
@@ -56,6 +61,7 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  role          Role?
 
   // relations for next-auth
   accounts Account[]
