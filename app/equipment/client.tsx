@@ -65,6 +65,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
 import { deleteEquipment } from "@/lib/equipment";
+import { RentEquipmentDialog } from "@/components/rent-equipment-dialog";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -101,6 +102,7 @@ export default function EquipmentPage(
     const [isDeleteEquipmentAlertOpen, setIsDeleteEquipmentAlertOpen] =
         useState(false);
     const [isEditEquipmentOpen, setIsEditEquipmentOpen] = useState(false);
+    const [isRentEquipmentOpen, setIsRentEquipmentOpen] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState<
         Equipment | null
     >(null);
@@ -443,6 +445,18 @@ export default function EquipmentPage(
                                                                 {" "}
                                                                 Edit Equipment
                                                             </DropdownMenuItem>
+                                                            <DropdownMenuItem
+                                                                onClick={() => {
+                                                                    setSelectedEquipment(
+                                                                        item,
+                                                                    );
+                                                                    setIsRentEquipmentOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                            >
+                                                                Rent Equipment
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
                                                                 className="text-destructive"
@@ -527,6 +541,24 @@ export default function EquipmentPage(
                             open={isEditEquipmentOpen}
                             onOpenChange={setIsEditEquipmentOpen}
                             mode={ActionMode.update}
+                            equipment={selectedEquipment}
+                        />
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog
+                    open={isRentEquipmentOpen}
+                    onOpenChange={setIsRentEquipmentOpen}
+                >
+                    <DialogContent className="sm:max-w-[500px] p-0 gap-0">
+                        <DialogHeader className="p-4 pb-0">
+                            <DialogTitle className="text-xl">
+                                Rent this equipmet
+                            </DialogTitle>
+                        </DialogHeader>
+                        <RentEquipmentDialog
+                            open={isRentEquipmentOpen}
+                            onOpenChange={setIsRentEquipmentOpen}
                             equipment={selectedEquipment}
                         />
                     </DialogContent>

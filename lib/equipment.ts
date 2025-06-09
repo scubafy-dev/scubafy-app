@@ -173,3 +173,24 @@ export const deleteEquipment = async (id: string) => {
         console.log("error - ", error);
     }
 }
+
+export const rentEquipment = async (id: string, rentedTo: string) => {
+    try {
+        await prisma.equipment.update({
+            where: { id },
+            data: {
+                status: EquipmentStatus.rented,
+                rentedToId: rentedTo,
+                // rentedToEmail,
+                // rentedSince: new Date(rentedSince),
+                // rentedUntil: new Date(rentedUntil),
+                // rentalRate,
+                // rentalTimeframe,
+            },
+        });
+
+    } catch (error) {
+        console.error("Error renting equipment:", error);
+        throw new Error("Failed to rent equipment");
+    }
+}
