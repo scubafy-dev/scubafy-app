@@ -1,8 +1,18 @@
 // app/api/auth/[...nextauth]/route.ts
-import NextAuth from "next-auth"
+import NextAuth, { DefaultSession } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import prisma from "@/prisma/prisma"
+import { Role } from "@/app/generated/prisma"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role?: Role;
+    } & DefaultSession["user"]
+  }
+}
 
 export const authOptions = {
   adapter: PrismaAdapter(prisma),
@@ -13,14 +23,16 @@ export const authOptions = {
     }),
   ],
   session: {
-    strategy: "database",
+    strategy: "database" as const,
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    // add user.id to the session object
-    async session({ session, user }) {
-      if (session.user) session.user.id = user.id
-      return session
+    async session({ session, user }: { session: any; user: any }) {
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.role = user.role;
+      }
+      return session;
     },
   },
 }
