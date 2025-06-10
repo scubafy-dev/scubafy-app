@@ -17,6 +17,8 @@ export interface Customer {
   
 
 export async function createCustomer(formData: FormData) {
+
+  try{
   // 1) required defaults
   const requiredDefaults: Record<string,string> = {
     fullName:           "Unnamed Customer",
@@ -48,7 +50,7 @@ export async function createCustomer(formData: FormData) {
   const roomCost           = Number(formData.get("roomCost"));
 
   // 4) create
-  await prisma.customer.create({
+  return await prisma.customer.create({
     data: {
       fullName,
       email,
@@ -59,6 +61,10 @@ export async function createCustomer(formData: FormData) {
       roomCost,
     },
   });
+}catch (error) {
+    console.error("Error creating customer:", error);
+    throw error;
+  }
 }
 
 export async function updateCustomer(id: string, formData: FormData) {

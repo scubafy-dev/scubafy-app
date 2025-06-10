@@ -37,6 +37,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import * as z from "zod";
+import { createCustomer } from "@/lib/customers";
 
 interface RentEquipmentDialogProps {
     open: boolean;
@@ -45,7 +46,14 @@ interface RentEquipmentDialogProps {
 }
 
 const formSchema = z.object({
-    rentedTo: z.string(),
+    rentedTo: z.string().optional(),
+    fullName: z.string().optional(),
+    email: z.string().email().optional(),
+}).refine((data) => {
+    return data.rentedTo || (data.fullName && data.email);
+}, {
+    message:
+        "Please provide either customer from saved list or a new name and email.",
 });
 
 export function RentEquipmentDialog(
@@ -64,7 +72,11 @@ export function RentEquipmentDialog(
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
-        defaultValues: {},
+        defaultValues: {
+            rentedTo: "",
+            fullName: "",
+            email: "",
+        },
     });
 
     useEffect(() => {
@@ -111,15 +123,28 @@ export function RentEquipmentDialog(
                 Object.entries(values).forEach(([key, value]) => {
                     formData.append(key, value.toString());
                 });
+                const existingCustomer = formData.get("rentedTo") as string;
                 if (!equipment) {
                     console.error("No equipment selected for rental.");
                     setIsSubmitting(false);
                     return;
                 }
-                await rentEquipment(
-                    equipment?.id,
-                    formData.get("rentedTo") as string,
-                );
+                if (existingCustomer) {
+                    await rentEquipment(
+                        equipment?.id,
+                        formData.get("rentedTo") as string,
+                    );
+                } else {
+                    // const newCustomer = {
+                    //     fullName: formData.get("fullName") as string,
+                    //     email: formData.get("email") as string,
+                    // };
+                    const newCustomer = await createCustomer(formData);
+                    await rentEquipment(
+                        equipment?.id,
+                        newCustomer.id,
+                    );
+                }
             } catch (error) {
                 console.error("Error creating task:", error);
                 setIsSubmitting(false);
@@ -128,7 +153,7 @@ export function RentEquipmentDialog(
             console.log(values);
             setIsSubmitting(false);
             form.reset();
-            router.refresh(); // Refresh the page to show the new task
+            router.refresh();
         }, 1000);
     }
 
@@ -165,6 +190,39 @@ export function RentEquipmentDialog(
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <div className="mt-2">
+                        Or enter name and email
+                    </div>
+                    <FormField
+                        control={form.control}
+                        name="fullName"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Name"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Email"
+                                        {...field}
+                                    />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

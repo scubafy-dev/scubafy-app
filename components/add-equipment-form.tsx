@@ -1,23 +1,41 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { CalendarIcon, DollarSign } from "lucide-react"
-import { format } from "date-fns"
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { CalendarIcon, DollarSign } from "lucide-react";
+import { format } from "date-fns";
 
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { cn } from "@/lib/utils"
-import { useToast } from "@/hooks/use-toast"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -72,20 +90,22 @@ const formSchema = z.object({
     required_error: "Please select rental timeframe.",
   }),
 }).refine(
-  (data) => !data.trackMinQuantity || (data.minQuantity !== undefined && data.minQuantity !== null),
+  (data) =>
+    !data.trackMinQuantity ||
+    (data.minQuantity !== undefined && data.minQuantity !== null),
   {
     message: "Minimum quantity is required when tracking is enabled",
     path: ["minQuantity"],
-  }
-)
+  },
+);
 
 // Use Zod's infer to get the form schema type
-type FormValues = z.infer<typeof formSchema>
+type FormValues = z.infer<typeof formSchema>;
 
 export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
-  const { toast } = useToast()
-  const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { toast } = useToast();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize the form with useForm hook
   const form = useForm<FormValues>({
@@ -107,15 +127,15 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
       rentalRate: "",
       rentalTimeframe: "per dive",
     },
-  })
+  });
 
   // Watch the tracking fields to conditionally show/hide related inputs
-  const trackUsage = form.watch('trackUsage')
-  const trackMinQuantity = form.watch('trackMinQuantity')
+  const trackUsage = form.watch("trackUsage");
+  const trackMinQuantity = form.watch("trackMinQuantity");
 
   // Form submission handler
   function onSubmit(values: FormValues) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     // Simulate API call
     setTimeout(() => {
@@ -124,19 +144,20 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
         minQuantity: values.trackMinQuantity ? values.minQuantity : null,
         usageCount: values.trackUsage ? 0 : null,
         usageLimit: values.trackUsage ? values.usageLimit : null,
-        needsMaintenance: false
-      })
-      setIsSubmitting(false)
+        needsMaintenance: false,
+      });
+      setIsSubmitting(false);
 
       toast({
         title: "Equipment added successfully",
-        description: `${values.type} (${values.serialNumber}) has been added to your inventory.`,
-      })
+        description:
+          `${values.type} (${values.serialNumber}) has been added to your inventory.`,
+      });
 
-      form.reset()
-      onSuccess()
-      router.refresh()
-    }, 1000)
+      form.reset();
+      onSuccess();
+      router.refresh();
+    }, 1000);
   }
 
   return (
@@ -148,7 +169,7 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="rental">Rental Info</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="basic" className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -158,7 +179,10 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Equipment Type</FormLabel>
                     <FormControl>
-                      <Input placeholder="Scuba Tank, BCD, Regulator, etc." {...field} />
+                      <Input
+                        placeholder="Scuba Tank, BCD, Regulator, etc."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -232,7 +256,10 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Size</FormLabel>
                     <FormControl>
-                      <Input placeholder="80 cu ft / Medium / etc." {...field} />
+                      <Input
+                        placeholder="80 cu ft / Medium / etc."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -240,7 +267,7 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
           </TabsContent>
-          
+
           <TabsContent value="details" className="space-y-4 pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -250,7 +277,10 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Storage Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="Warehouse A, Shelf B3, etc." {...field} />
+                      <Input
+                        placeholder="Warehouse A, Shelf B3, etc."
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -263,7 +293,10 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Condition</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select condition" />
@@ -290,11 +323,12 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Quantity</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        step="1" 
-                        onChange={e => field.onChange(parseInt(e.target.value))} 
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))}
                         value={field.value}
                       />
                     </FormControl>
@@ -333,11 +367,16 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Minimum Quantity</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        step="1" 
-                        onChange={e => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))} 
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : parseInt(e.target.value),
+                          )}
                         value={field.value ?? ""}
                       />
                     </FormControl>
@@ -379,11 +418,12 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                   <FormItem>
                     <FormLabel>Usage Limit</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="1" 
-                        step="1" 
-                        onChange={e => field.onChange(parseInt(e.target.value))} 
+                      <Input
+                        type="number"
+                        min="1"
+                        step="1"
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value))}
                         value={field.value}
                       />
                     </FormControl>
@@ -408,15 +448,25 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                         <FormControl>
                           <Button
                             variant={"outline"}
-                            className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
                           >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value
+                              ? format(field.value, "PPP")
+                              : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
                       </PopoverContent>
                     </Popover>
                     <FormMessage />
@@ -435,15 +485,25 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                         <FormControl>
                           <Button
                             variant={"outline"}
-                            className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            className={cn(
+                              "pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground",
+                            )}
                           >
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value
+                              ? format(field.value, "PPP")
+                              : <span>Pick a date</span>}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          initialFocus
+                        />
                       </PopoverContent>
                     </Popover>
                     <FormMessage />
@@ -452,7 +512,7 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
           </TabsContent>
-          
+
           <TabsContent value="rental" className="space-y-4 pt-4">
             <FormField
               control={form.control}
@@ -481,7 +541,11 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                     <FormControl>
                       <div className="relative">
                         <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input className="pl-8" placeholder="15.00" {...field} />
+                        <Input
+                          className="pl-8"
+                          placeholder="15.00"
+                          {...field}
+                        />
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -495,7 +559,10 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Rental Timeframe</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select timeframe" />
@@ -526,6 +593,5 @@ export function AddEquipmentForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </form>
     </Form>
-  )
+  );
 }
-
