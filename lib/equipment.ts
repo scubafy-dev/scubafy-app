@@ -174,18 +174,21 @@ export const deleteEquipment = async (id: string) => {
     }
 }
 
-export const rentEquipment = async (id: string, rentedTo: string) => {
+export const rentEquipment = async (id: string, rentedTo: string, price?: string, from?: string, to?: string) => {
+
+  const rentPrice = price ? parseFloat(price) : null;
+  const rentFrom  = from ? new Date(from) : null;
+  const rentTo  = to ? new Date(to) : null;
+
     try {
         await prisma.equipment.update({
             where: { id },
             data: {
                 status: EquipmentStatus.rented,
                 rentedToId: rentedTo,
-                // rentedToEmail,
-                // rentedSince: new Date(rentedSince),
-                // rentedUntil: new Date(rentedUntil),
-                // rentalRate,
-                // rentalTimeframe,
+                rentPrice,
+                rentFrom,
+                rentTo,
             },
         });
 

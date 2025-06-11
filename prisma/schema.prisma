@@ -177,6 +177,9 @@ model Equipment {
 
   rentedToId String?
   rentedTo   Customer? @relation(fields: [rentedToId], references: [id], onDelete: SetNull)
+  rentPrice  Float?    @default(0.0)
+  rentFrom   DateTime?
+  rentTo     DateTime?
 
   status    EquipmentStatus @default(available)
   condition Condition
