@@ -1,16 +1,28 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Users, Clock, AlertTriangle, CheckCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
-import Link from "next/link"
-import { useDiveCenter } from "@/lib/dive-center-context"
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Users,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { useDiveCenter } from "@/lib/dive-center-context";
 
 interface QuickActionsProps {
-  className?: string
+  className?: string;
 }
 
 // Mock data for each dive center
@@ -269,15 +281,20 @@ const allCentersActions = {
 };
 
 export function QuickActions({ className }: QuickActionsProps) {
-  const [activeTab, setActiveTab] = useState("upcoming")
+  const [activeTab, setActiveTab] = useState("upcoming");
   const { currentCenter, isAllCenters } = useDiveCenter();
-  
-  // Select data based on current center or show aggregated data
-  const actionsData = isAllCenters 
-    ? allCentersActions 
-    : currentCenter ? diveCenterActions[currentCenter.id as keyof typeof diveCenterActions] : diveCenterActions.dauin;
 
-  const { upcomingDives, equipmentAlerts, rentalReturns } = actionsData;
+  // Select data based on current center or show aggregated data
+  const actionsData = isAllCenters
+    ? allCentersActions
+    : currentCenter
+    ? diveCenterActions[currentCenter.id as keyof typeof diveCenterActions]
+    : diveCenterActions.dauin;
+
+  // const { upcomingDives, equipmentAlerts, rentalReturns } = actionsData;
+  const upcomingDives = actionsData?.upcomingDives || [];
+  const equipmentAlerts = actionsData?.equipmentAlerts || [];
+  const rentalReturns = actionsData?.rentalReturns || [];
 
   return (
     <Card className={cn("col-span-1", className)}>
@@ -286,15 +303,19 @@ export function QuickActions({ className }: QuickActionsProps) {
           <div>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>
-              {isAllCenters 
-                ? "Important items across all dive centers" 
+              {isAllCenters
+                ? "Important items across all dive centers"
                 : "Important items that need your attention"}
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="upcoming" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs
+          defaultValue="upcoming"
+          value={activeTab}
+          onValueChange={setActiveTab}
+        >
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upcoming">Upcoming Dives</TabsTrigger>
             <TabsTrigger value="equipment">Equipment Alerts</TabsTrigger>
@@ -324,7 +345,9 @@ export function QuickActions({ className }: QuickActionsProps) {
                     </div>
                     {isAllCenters && (
                       <div className="w-full mt-1">
-                        <span className="text-xs font-medium">{(dive as any).center}</span>
+                        <span className="text-xs font-medium">
+                          {(dive as any).center}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -354,7 +377,10 @@ export function QuickActions({ className }: QuickActionsProps) {
 
           <TabsContent value="equipment" className="space-y-3 mt-3">
             {equipmentAlerts.map((alert) => (
-              <div key={alert.id} className="flex items-center justify-between p-2 border rounded-lg">
+              <div
+                key={alert.id}
+                className="flex items-center justify-between p-2 border rounded-lg"
+              >
                 <div className="flex items-center gap-2">
                   <div
                     className={`flex h-6 w-6 items-center justify-center rounded-full ${
@@ -369,9 +395,13 @@ export function QuickActions({ className }: QuickActionsProps) {
                     <h3 className="font-medium text-sm">
                       {alert.type} {alert.code}
                     </h3>
-                    <p className="text-xs text-muted-foreground">{alert.issue}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {alert.issue}
+                    </p>
                     {isAllCenters && (
-                      <p className="text-xs font-medium mt-1">{(alert as any).center}</p>
+                      <p className="text-xs font-medium mt-1">
+                        {(alert as any).center}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -389,7 +419,10 @@ export function QuickActions({ className }: QuickActionsProps) {
 
           <TabsContent value="rentals" className="space-y-3 mt-3">
             {rentalReturns.map((rental) => (
-              <div key={rental.id} className="flex items-center justify-between p-2 border rounded-lg">
+              <div
+                key={rental.id}
+                className="flex items-center justify-between p-2 border rounded-lg"
+              >
                 <div>
                   <h3 className="font-medium text-sm">{rental.customer}</h3>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
@@ -397,7 +430,9 @@ export function QuickActions({ className }: QuickActionsProps) {
                     <div>Due: {rental.dueDate}</div>
                     {isAllCenters && (
                       <div className="w-full mt-1">
-                        <span className="text-xs font-medium">{(rental as any).center}</span>
+                        <span className="text-xs font-medium">
+                          {(rental as any).center}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -417,6 +452,5 @@ export function QuickActions({ className }: QuickActionsProps) {
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
-

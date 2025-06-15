@@ -63,9 +63,24 @@ model User {
   image         String?
   role          Role?
 
+  diveCenters DiveCenter[]
+
+  createdAt DateTime @default(now())
+
   // relations for next-auth
   accounts Account[]
   sessions Session[]
+}
+
+model DiveCenter {
+  id       String  @id @default(uuid())
+  name     String
+  location String?
+  ownerId  String
+
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("dive_center")
 }
 
 enum Status {
@@ -260,7 +275,7 @@ model Staff {
   salary      Float?
 
   address          String?
-  emergencyContact String? // “Name and phone number”
+  emergencyContact String? // "Name and phone number"
   bio              String? // notes
 
   permissions StaffPermission[]

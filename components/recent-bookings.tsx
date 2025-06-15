@@ -1,16 +1,29 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { useDiveCenter } from "@/lib/dive-center-context"
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useDiveCenter } from "@/lib/dive-center-context";
 
 interface RecentBookingsProps {
-  className?: string
+  className?: string;
 }
 
 // Mock data for each dive center
@@ -240,11 +253,26 @@ const allCentersBookings = [
 
 export function RecentBookings({ className }: RecentBookingsProps) {
   const { currentCenter, isAllCenters } = useDiveCenter();
-  
+
   // Select bookings based on current center or show aggregated data
-  const bookings = isAllCenters 
-    ? allCentersBookings 
-    : currentCenter ? diveCenterBookings[currentCenter.id as keyof typeof diveCenterBookings] : diveCenterBookings.dauin;
+  // const bookings = isAllCenters
+  //   ? allCentersBookings
+  //   : currentCenter
+  //   ? diveCenterBookings[currentCenter.id as keyof typeof diveCenterBookings]
+  //   : diveCenterBookings.dauin;
+
+  const bookings: {
+    id: string;
+    customer: {
+      name: string;
+      email: string;
+      avatar: string;
+    };
+    diveTrip: string;
+    date: string;
+    amount: string;
+    status: string;
+  }[] = [];
 
   return (
     <Card className={cn("col-span-1", className)}>
@@ -253,12 +281,17 @@ export function RecentBookings({ className }: RecentBookingsProps) {
           <div>
             <CardTitle>Recent Bookings</CardTitle>
             <CardDescription>
-              {isAllCenters 
-                ? "Recent bookings across all dive centers." 
+              {isAllCenters
+                ? "Recent bookings across all dive centers."
                 : `You have ${bookings.length} bookings this month.`}
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs px-2" asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs px-2"
+            asChild
+          >
             <Link href="/dive-trips">View All</Link>
           </Button>
         </div>
@@ -274,31 +307,50 @@ export function RecentBookings({ className }: RecentBookingsProps) {
                 <TableHead className="text-xs">Date</TableHead>
                 <TableHead className="text-xs">Amount</TableHead>
                 <TableHead className="text-xs">Status</TableHead>
-                {isAllCenters && <TableHead className="text-xs">Center</TableHead>}
+                {isAllCenters && (
+                  <TableHead className="text-xs">Center</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {bookings.map((booking) => (
                 <TableRow key={booking.id}>
-                  <TableCell className="font-medium text-xs py-2">{booking.id}</TableCell>
+                  <TableCell className="font-medium text-xs py-2">
+                    {booking.id}
+                  </TableCell>
                   <TableCell className="py-2">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={booking.customer.avatar} alt={booking.customer.name} />
-                        <AvatarFallback>{booking.customer.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage
+                          src={booking.customer.avatar}
+                          alt={booking.customer.name}
+                        />
+                        <AvatarFallback>
+                          {booking.customer.name.charAt(0)}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-xs font-medium">{booking.customer.name}</span>
-                        <span className="text-[10px] text-muted-foreground">{booking.customer.email}</span>
+                        <span className="text-xs font-medium">
+                          {booking.customer.name}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {booking.customer.email}
+                        </span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs py-2">{booking.diveTrip}</TableCell>
+                  <TableCell className="text-xs py-2">
+                    {booking.diveTrip}
+                  </TableCell>
                   <TableCell className="text-xs py-2">{booking.date}</TableCell>
-                  <TableCell className="text-xs py-2">{booking.amount}</TableCell>
+                  <TableCell className="text-xs py-2">
+                    {booking.amount}
+                  </TableCell>
                   <TableCell className="py-2">
                     <Badge
-                      variant={booking.status === "confirmed" ? "default" : "outline"}
+                      variant={booking.status === "confirmed"
+                        ? "default"
+                        : "outline"}
                       className="text-[10px] px-1.5 py-0.5"
                     >
                       {booking.status}
@@ -316,6 +368,5 @@ export function RecentBookings({ className }: RecentBookingsProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

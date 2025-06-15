@@ -1,14 +1,20 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Calendar, Users, Clock, MapPin } from "lucide-react"
-import Link from "next/link"
-import { useDiveCenter } from "@/lib/dive-center-context"
+import { cn } from "@/lib/utils";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, MapPin, Users } from "lucide-react";
+import Link from "next/link";
+import { useDiveCenter } from "@/lib/dive-center-context";
 
 interface UpcomingDivesProps {
-  className?: string
+  className?: string;
 }
 
 // Mock data for each dive center
@@ -173,11 +179,12 @@ const allDives = [
 
 export function UpcomingDives({ className }: UpcomingDivesProps) {
   const { currentCenter, isAllCenters } = useDiveCenter();
-  
+
   // Select dives based on the current center or show all dives
-  const dives = isAllCenters 
-    ? allDives 
-    : currentCenter ? diveCenterDives[currentCenter.id as keyof typeof diveCenterDives] : [];
+  // const dives = isAllCenters
+  //   ? allDives
+  //   : currentCenter ? diveCenterDives[currentCenter.id as keyof typeof diveCenterDives] : [];
+  const dives = allDives; //TODO: Replace with actual logic to get dives based on current center
 
   return (
     <Card className={cn("col-span-1", className)}>
@@ -186,12 +193,17 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
           <div>
             <CardTitle>Upcoming Dives</CardTitle>
             <CardDescription>
-              {isAllCenters 
-                ? "Upcoming dives across all centers." 
+              {isAllCenters
+                ? "Upcoming dives across all centers."
                 : `You have ${dives.length} upcoming dive trips scheduled.`}
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs px-2" asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs px-2"
+            asChild
+          >
             <Link href="/calendar">View All</Link>
           </Button>
         </div>
@@ -207,8 +219,8 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
                     dive.difficulty === "Beginner"
                       ? "bg-blue-100 text-blue-800 dark:bg-blue-800/30 dark:text-blue-400"
                       : dive.difficulty === "Intermediate"
-                        ? "bg-amber-100 text-amber-800 dark:bg-amber-800/30 dark:text-amber-400"
-                        : "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400"
+                      ? "bg-amber-100 text-amber-800 dark:bg-amber-800/30 dark:text-amber-400"
+                      : "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400"
                   }`}
                 >
                   {dive.difficulty}
@@ -233,12 +245,19 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
                 </div>
                 {isAllCenters && (
                   <div className="flex items-center text-muted-foreground col-span-2 mt-1">
-                    <span className="text-xs font-medium">{(dive as any).center}</span>
+                    <span className="text-xs font-medium">
+                      {(dive as any).center}
+                    </span>
                   </div>
                 )}
               </div>
               <div className="flex justify-end">
-                <Button variant="ghost" size="sm" className="h-7 text-xs" asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs"
+                  asChild
+                >
                   <Link href={`/dive-trips/${dive.id}`}>View Details</Link>
                 </Button>
               </div>
@@ -248,6 +267,5 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
-

@@ -1,4 +1,4 @@
-export interface DiveCenter {
+export interface DiveCenterConst {
   id: string;
   name: string;
   location: string;
@@ -16,7 +16,7 @@ export interface DiveCenter {
 // Import finances data to ensure revenue consistency
 import { financesByCenter, allFinances } from "./mock-data/finances";
 
-export const diveCenters: DiveCenter[] = [
+export const diveCentersConst: DiveCenterConst[] = [
   {
     id: "dauin",
     name: "Sea Explorers Dauin",
@@ -76,13 +76,13 @@ export const diveCenters: DiveCenter[] = [
 ];
 
 // Helper function to calculate aggregated stats for all dive centers
-export function getAggregatedStats(): DiveCenter['stats'] {
+export function getAggregatedStats(): DiveCenterConst['stats'] {
   return {
-    totalBookings: diveCenters.reduce((sum, center) => sum + center.stats.totalBookings, 0),
-    bookingsChange: Math.round(diveCenters.reduce((sum, center) => sum + center.stats.bookingsChange, 0) / diveCenters.length),
-    activeDivers: diveCenters.reduce((sum, center) => sum + center.stats.activeDivers, 0),
-    newDivers: diveCenters.reduce((sum, center) => sum + center.stats.newDivers, 0),
-    upcomingDives: diveCenters.reduce((sum, center) => sum + center.stats.upcomingDives, 0),
+    totalBookings: diveCentersConst.reduce((sum, center) => sum + center.stats.totalBookings, 0),
+    bookingsChange: Math.round(diveCentersConst.reduce((sum, center) => sum + center.stats.bookingsChange, 0) / diveCentersConst.length),
+    activeDivers: diveCentersConst.reduce((sum, center) => sum + center.stats.activeDivers, 0),
+    newDivers: diveCentersConst.reduce((sum, center) => sum + center.stats.newDivers, 0),
+    upcomingDives: diveCentersConst.reduce((sum, center) => sum + center.stats.upcomingDives, 0),
     revenue: allFinances.revenue.annual, // Use the same total as in the finances data
     revenueChange: 14, // Average of all centers, matching the financial data
   };

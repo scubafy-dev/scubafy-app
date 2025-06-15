@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createDiveCenter } from "@/lib/dive-center";
 
 export function DiveCenterSelector() {
   const {
@@ -47,7 +48,8 @@ export function DiveCenterSelector() {
 
   const handleAddCenter = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would add a new dive center to the database
+    const formData = new FormData(e.target as HTMLFormElement);
+    createDiveCenter(formData);
     setIsDialogOpen(false);
   };
 
@@ -109,6 +111,7 @@ export function DiveCenterSelector() {
                     </Label>
                     <Input
                       id="name"
+                      name="name"
                       placeholder="Sea Explorers Cebu"
                       className="col-span-3"
                     />
@@ -119,6 +122,7 @@ export function DiveCenterSelector() {
                     </Label>
                     <Input
                       id="location"
+                      name="location"
                       placeholder="Cebu, Philippines"
                       className="col-span-3"
                     />
