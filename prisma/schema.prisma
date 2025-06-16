@@ -70,6 +70,7 @@ model User {
   // relations for next-auth
   accounts Account[]
   sessions Session[]
+  DiveTrip DiveTrip[]
 }
 
 model DiveCenter {
@@ -78,7 +79,8 @@ model DiveCenter {
   location String?
   ownerId  String
 
-  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  DiveTrip DiveTrip[]
 
   @@map("dive_center")
 }
@@ -103,24 +105,28 @@ enum VehicleType {
 }
 
 model DiveTrip {
-  id          String     @id @default(uuid())
+  id          String      @id @default(uuid())
   title       String
-  date        DateTime
-  location    String
-  capacity    Int
-  booked      Int
-  price       Float
-  status      Status
-  diveMaster  String
-  description String
-  duration    String
-  difficulty  Difficulty
+  date        DateTime?
+  location    String?
+  capacity    Int?
+  booked      Int?
+  price       Float?
+  status      Status?
+  diveMaster  String?
+  description String?
+  duration    String?
+  difficulty  Difficulty?
   center      String?
-  instructor  String
+  instructor  String?
 
   // relations
   vehicle      Vehicle?
   participants Participant[]
+  diveCenterId String
+  diveCenter   DiveCenter    @relation(fields: [diveCenterId], references: [id])
+  User         User          @relation(fields: [userId], references: [id])
+  userId       String
 
   @@map("dive_trips")
 }

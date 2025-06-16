@@ -46,8 +46,8 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
     const fetchDiveCenters = async () => {
       try {
         const centers = await getAllDiveCenters();
-        //setDiveCenters(centers);
-        diveCenters.push(...centers);
+        setDiveCenters(centers);
+        // diveCenters.push(...centers);
         if (centers.length > 0) {
           setCurrentCenter(centers[0]);
         }

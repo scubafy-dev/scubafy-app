@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,24 +62,40 @@ import { FullDiveTrip } from "@/lib/dive-trips";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 import { ActionMode } from "@/types/all";
+import {
+  createDiveTrip,
+  deleteDiveTrip,
+  getAllDiveTrips,
+  updateDiveTrip,
+} from "@/lib/dive-trips";
 
-export default function DiveTripsPage(
-  { actionCreate, actionUpdate, actionDelete, diveTrips }: {
-    actionCreate: (formData: FormData) => Promise<void>;
-    actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
-    actionDelete: (id: string) => Promise<void>;
-    diveTrips: FullDiveTrip[];
-  },
-) {
+export default function DiveTripsPage() {
   const [isAddTripOpen, setIsAddTripOpen] = useState(false);
   const [isDeleteTripAlertOpen, setIsDeleteTripAlertOpen] = useState(false);
   const [isEditTripOpen, setIsEditTripOpen] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<FullDiveTrip | null>(null);
   const [activeTab, setActiveTab] = useState("trips");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  const [diveTrips, setDiveTrips] = useState<FullDiveTrip[]>([]);
+
   const { currentCenter, isAllCenters, getCenterSpecificData } =
     useDiveCenter();
   const router = useRouter();
+
+  // const diveTrips = getAllDiveTrips(currentCenter?.id ?? null);
+
+  useEffect(() => {
+    const fetchDiveTrips = async () => {
+      try {
+        const trips = await getAllDiveTrips(currentCenter?.id ?? null);
+        setDiveTrips(trips);
+      } catch (error) {
+        console.error("Failed to load dive trips:", error);
+      }
+    };
+
+    fetchDiveTrips();
+  }, [currentCenter?.id]);
 
   const toggleRowExpansion = (tripId: string) => {
     setExpandedRows((prev) =>
@@ -89,8 +105,7 @@ export default function DiveTripsPage(
     );
   };
 
-  // Get dive trips based on the selected center
-  // const diveTrips = getCenterSpecificData(diveTripsByCenter, allDiveTrips);
+  console.log("currentCenter:", currentCenter);
 
   return (
     <DashboardShell>
@@ -372,8 +387,8 @@ export default function DiveTripsPage(
             onSuccess={() => setIsAddTripOpen(false)}
             mode={ActionMode.create}
             trip={selectedTrip}
-            actionCreate={actionCreate}
-            actionUpdate={actionUpdate}
+            actionCreate={createDiveTrip}
+            actionUpdate={updateDiveTrip}
           />
         </DialogContent>
       </Dialog>
@@ -387,8 +402,8 @@ export default function DiveTripsPage(
             onSuccess={() => setIsEditTripOpen(false)}
             mode={ActionMode.update}
             trip={selectedTrip}
-            actionCreate={actionCreate}
-            actionUpdate={actionUpdate}
+            actionCreate={createDiveTrip}
+            actionUpdate={updateDiveTrip}
           />
         </DialogContent>
       </Dialog>
@@ -415,7 +430,7 @@ export default function DiveTripsPage(
               <AlertDialogAction
                 onClick={async () => {
                   if (selectedTrip) {
-                    await actionDelete(selectedTrip.id);
+                    await deleteDiveTrip(selectedTrip.id);
                     toast({
                       title: "Trip deleted successfully.",
                       description: `Center: ${

@@ -51,6 +51,10 @@ import { Badge } from "@/components/ui/badge";
 import { Anchor, Car, Ship } from "lucide-react";
 import { FullDiveTrip } from "@/lib/dive-trips";
 import { ActionMode } from "@/types/all";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { getAllStaff } from "@/lib/staffs";
+import { getAllCustomers } from "@/lib/customers";
+import { Customer, Staff } from "@/app/generated/prisma";
 
 // Sample vehicle data for demo purposes
 // In a real app, this would be fetched from an API
@@ -91,88 +95,75 @@ const SAMPLE_VEHICLES: Vehicle[] = [
 ];
 
 // Add these interfaces after the existing Vehicle interface
-interface Staff {
-  id: string;
-  name: string;
-  role: "instructor" | "divemaster";
-  certifications: string[];
-}
+// interface Staff {
+//   id: string;
+//   name: string;
+//   role: "instructor" | "divemaster";
+//   certifications: string[];
+// }
 
-interface Customer {
-  id: string;
-  name: string;
-  certification: string;
-}
+// interface Customer {
+//   id: string;
+//   name: string;
+//   certification: string;
+// }
 
-// Add sample data after SAMPLE_VEHICLES
-const SAMPLE_STAFF: Staff[] = [
-  {
-    id: "s1",
-    name: "Maria Santos",
-    role: "instructor",
-    certifications: ["PADI IDC Staff Instructor", "EFR Instructor"],
-  },
-  {
-    id: "s2",
-    name: "Alex Rodriguez",
-    role: "divemaster",
-    certifications: ["PADI Divemaster", "Rescue Diver"],
-  },
-  {
-    id: "s3",
-    name: "James Wilson",
-    role: "instructor",
-    certifications: ["SSI Open Water Instructor", "Nitrox Instructor"],
-  },
-];
+// const SAMPLE_STAFF: Staff[] = [
+//   {
+//     id: "s1",
+//     name: "Maria Santos",
+//     role: "instructor",
+//     certifications: ["PADI IDC Staff Instructor", "EFR Instructor"],
+//   },
+//   {
+//     id: "s2",
+//     name: "Alex Rodriguez",
+//     role: "divemaster",
+//     certifications: ["PADI Divemaster", "Rescue Diver"],
+//   },
+//   {
+//     id: "s3",
+//     name: "James Wilson",
+//     role: "instructor",
+//     certifications: ["SSI Open Water Instructor", "Nitrox Instructor"],
+//   },
+// ];
 
-const SAMPLE_CUSTOMERS: Customer[] = [
-  {
-    id: "c1",
-    name: "John Smith",
-    certification: "PADI Open Water",
-  },
-  {
-    id: "c2",
-    name: "Emma Wilson",
-    certification: "SSI Advanced Open Water",
-  },
-  {
-    id: "c3",
-    name: "Mike Chen",
-    certification: "PADI Rescue Diver",
-  },
-];
+// const SAMPLE_CUSTOMERS: Customer[] = [
+//   {
+//     id: "c1",
+//     name: "John Smith",
+//     certification: "PADI Open Water",
+//   },
+//   {
+//     id: "c2",
+//     name: "Emma Wilson",
+//     certification: "SSI Advanced Open Water",
+//   },
+//   {
+//     id: "c3",
+//     name: "Mike Chen",
+//     certification: "PADI Rescue Diver",
+//   },
+// ];
 
 // Extended form schema with the new fields
 const formSchema = z.object({
   title: z.string().min(2, {
     message: "Trip name must be at least 2 characters.",
   }),
-  location: z.string().min(2, {
-    message: "Location must be at least 2 characters.",
-  }),
-  status: z.string(),
-  date: z.date({
-    required_error: "A date is required.",
-  }),
+  location: z.string().optional(),
+  status: z.string().optional(),
+  date: z.date().optional(),
   // time: z.string().min(1, {
   //   message: "Time is required.",
   // }),
   time: z.string().optional(),
-  capacity: z.coerce.number().min(1, {
-    message: "Capacity must be at least 1.",
-  }),
-  price: z.string().min(1, {
-    message: "Price is required.",
-  }),
+  capacity: z.coerce.number().optional(),
+  price: z.string().optional(),
   description: z.string().optional(),
-  diveType: z.string({
-    required_error: "Please select a dive type.",
-  }),
-  vehicleId: z.string({
-    required_error: "Please select a vehicle.",
-  }),
+  diveType: z.string().optional(),
+  vehicleId: z.string().optional(),
   // Expense tracking
   expenses: z.object({
     boatInsurance: z.string().optional(),
@@ -182,22 +173,18 @@ const formSchema = z.object({
     fees: z.string().optional(),
     other: z.string().optional(),
   }),
-  instructor: z.string({
-    required_error: "Please select an instructor.",
-  }),
-  diveMaster: z.string({
-    required_error: "Please select a dive master.",
-  }),
+  instructor: z.string().optional(),
+  diveMaster: z.string().optional(),
   useCustomerDatabase: z.boolean().default(true),
   participants: z.array(
     z.object({
       id: z.string().optional(),
-      name: z.string(),
-      certification: z.string(),
-      level: z.string(),
+      name: z.string().optional(),
+      certification: z.string().optional(),
+      level: z.string().optional(),
     }),
   ),
-  selectedCustomerIds: z.array(z.string()),
+  selectedCustomerIds: z.array(z.string()).optional(),
 });
 
 export function AddTripForm(
@@ -205,7 +192,7 @@ export function AddTripForm(
     onSuccess: () => void;
     mode: ActionMode;
     trip: FullDiveTrip | null;
-    actionCreate: (formData: FormData) => Promise<void>;
+    actionCreate: (formData: FormData, diveCenterId: string) => Promise<void>;
     actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
   },
 ) {
@@ -214,11 +201,13 @@ export function AddTripForm(
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES);
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all");
-  const [staff, setStaff] = useState<Staff[]>(SAMPLE_STAFF);
-  const [customers, setCustomers] = useState<Customer[]>(SAMPLE_CUSTOMERS);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [manualParticipants, setManualParticipants] = useState<
     Array<{ name: string; certification: string }>
   >([]);
+  const { currentCenter, isAllCenters, getCenterSpecificData } =
+    useDiveCenter();
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
@@ -232,8 +221,8 @@ export function AddTripForm(
       status: trip?.status ?? "upcoming",
       location: trip?.location ?? "",
       time: "",
-      capacity: trip?.capacity ?? 0,
-      price: trip?.price.toString() ?? "0",
+      capacity: trip?.capacity,
+      price: trip?.price.toString(),
       description: trip?.description ?? "",
       diveType: "",
       vehicleId: "",
@@ -265,6 +254,30 @@ export function AddTripForm(
     }
   }, [watchVehicleId, vehicles, form]);
 
+  useEffect(() => {
+    const fetchStaffMembers = async () => {
+      try {
+        const staffData = await getAllStaff();
+        setStaff(staffData);
+      } catch (error) {
+        console.error("Error fetching staff members:", error);
+      }
+    };
+    fetchStaffMembers();
+  }, []);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const customersData = await getAllCustomers();
+        setCustomers(customersData);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+    fetchCustomers();
+  }, []);
+
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
     setManualParticipants([...manualParticipants, {
@@ -292,18 +305,6 @@ export function AddTripForm(
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    // Combine selected customers and manual participants
-    const allParticipants = values.useCustomerDatabase
-      ? values.selectedCustomerIds.map((id) => {
-        const customer = customers.find((c) => c.id === id);
-        return {
-          id: customer?.id,
-          name: customer?.name || "",
-          certification: customer?.certification || "",
-        };
-      })
-      : manualParticipants;
-
     // Calculate total expenses
     const expenses = values.expenses;
     const totalExpenses = Object.values(expenses)
@@ -312,13 +313,6 @@ export function AddTripForm(
 
     // Simulate API call
     setTimeout(() => {
-      console.log({
-        ...values,
-        participants: allParticipants,
-        instructor: staff.find((s) => s.id === values.instructor),
-        diveMaster: staff.find((s) => s.id === values.diveMaster),
-        totalExpenses,
-      });
       setIsSubmitting(false);
 
       toast({
@@ -720,17 +714,19 @@ export function AddTripForm(
                       </FormControl>
                       <SelectContent>
                         {staff
-                          .filter((s) => s.role === "instructor")
+                          // .filter((s) => s.roleTitle === "instructor")
                           .map((instructor) => (
                             <SelectItem
                               key={instructor.id}
                               value={instructor.id}
                             >
                               <div className="flex flex-col">
-                                <span>{instructor.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span>{instructor.fullName}</span>
+                                {
+                                  /* <span className="text-xs text-muted-foreground">
                                   {instructor.certifications.join(", ")}
-                                </span>
+                                </span> */
+                                }
                               </div>
                             </SelectItem>
                           ))}
@@ -758,17 +754,19 @@ export function AddTripForm(
                       </FormControl>
                       <SelectContent>
                         {staff
-                          .filter((s) => s.role === "divemaster")
+                          // .filter((s) => s.role === "divemaster")
                           .map((divemaster) => (
                             <SelectItem
                               key={divemaster.id}
                               value={divemaster.id}
                             >
                               <div className="flex flex-col">
-                                <span>{divemaster.name}</span>
-                                <span className="text-xs text-muted-foreground">
+                                <span>{divemaster.fullName}</span>
+                                {
+                                  /* <span className="text-xs text-muted-foreground">
                                   {divemaster.certifications.join(", ")}
-                                </span>
+                                </span> */
+                                }
                               </div>
                             </SelectItem>
                           ))}
@@ -915,10 +913,10 @@ export function AddTripForm(
                                   </FormControl>
                                   <div className="space-y-1 leading-none">
                                     <FormLabel className="text-sm font-medium">
-                                      {customer.name}
+                                      {customer.fullName}
                                     </FormLabel>
                                     <FormDescription className="text-xs">
-                                      {customer.certification}
+                                      {customer.certificationLevel}
                                     </FormDescription>
                                   </div>
                                 </FormItem>
@@ -1103,8 +1101,8 @@ export function AddTripForm(
                   formData.append(key, value.toString());
                 }
               });
-              if (mode === ActionMode.create) {
-                actionCreate(formData);
+              if (mode === ActionMode.create && currentCenter?.id) {
+                actionCreate(formData, currentCenter?.id);
               } else {
                 actionUpdate(trip?.id ?? null, formData);
               }

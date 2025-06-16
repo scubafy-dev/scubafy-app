@@ -1,28 +1,14 @@
+"use server"
+
 import prisma  from '@prisma/prisma';
+import { connect } from 'http2';
 import { redirect } from 'next/navigation';
+import { useAuth } from './use-auth';
 
 export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 
-export async function createDiveTrip(formData: FormData) {
-    "use server";
-    // Validate required form data fields
-    // const requiredFields = [
-    //   "title",
-    //   "date",
-    //   "location",
-    //   "capacity",
-    //   "price",
-    //   "diveMaster",
-    //   "instructor"
-    // ];
+export async function createDiveTrip(formData: FormData, diveCenterId: string) {
 
-    // for (const field of requiredFields) {
-    //   if (!formData.get(field)) {
-    //     throw new Error(`Missing required field: ${field}`);
-    //   }
-    // }
-
-    // Set default values for required fields
     const requiredDefaults = {
         title: "Sample Dive Trip",
         date: new Date().toISOString(),
@@ -33,13 +19,11 @@ export async function createDiveTrip(formData: FormData) {
         instructor: "INS-001",
     };
 
-    // For each required field, use the form value if present, otherwise use default
     for (const [key, defaultValue] of Object.entries(requiredDefaults)) {
         if (!formData.get(key)) {
             formData.append(key, defaultValue.toString());
         }
     }
-    // Set default values for optional fields
     const defaultValues = {
         booked: 0,
         status: "upcoming",
@@ -55,7 +39,6 @@ export async function createDiveTrip(formData: FormData) {
         participants: JSON.stringify([]),
     };
 
-    // For each optional field, use the form value if present, otherwise use default
     for (const [key, defaultValue] of Object.entries(defaultValues)) {
         if (!formData.get(key)) {
             formData.append(key, defaultValue);
@@ -104,6 +87,13 @@ export async function createDiveTrip(formData: FormData) {
         certification: string;
         level: string;
     }[] = [];
+
+    const { user } = await useAuth();
+    if (!user) {
+        console.error("User not authenticated");
+        return;
+    }
+
     try {
         await prisma.diveTrip.create(
             {
@@ -123,6 +113,16 @@ export async function createDiveTrip(formData: FormData) {
                     instructor,
                     vehicle: { create: vehicle },
                     participants: { createMany: { data: participants } },
+                    diveCenter: {
+                        connect: {
+                            id: diveCenterId
+                        }
+                    },
+                    User: {
+                        connect: {
+                            id: user.id, 
+                        }
+                    }
                 },
             },
         );
@@ -134,8 +134,16 @@ export async function createDiveTrip(formData: FormData) {
 }
 
 
-export const  getAllDiveTrips = async () => {
+export const  getAllDiveTrips = async (diveCenterId: string | null) => {
+    if(!diveCenterId) {
+        console.error("Dive center ID is required to fetch dive trips.");
+        return [];
+    }
+
   return prisma.diveTrip.findMany({
+    where: {
+      diveCenterId,
+    },
     include: {
       vehicle: true,
       participants: true,
@@ -147,7 +155,6 @@ export const  getAllDiveTrips = async () => {
 }
 
 export async function updateDiveTrip(id: string | null, formData: FormData) {
-    "use server";
 
     if(id === null){
         return;
@@ -206,7 +213,6 @@ export async function updateDiveTrip(id: string | null, formData: FormData) {
 }
 
 export const deleteDiveTrip = async (id: string) => {
-    "use server"
       
     try{
         // Delete participants linked to this dive trip
