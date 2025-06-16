@@ -18,7 +18,7 @@ import { Customer } from "@/lib/customers";
 export default function CustomersClient(
     { customers, createCustomer, deleteCustomer, updateCustomer }: {
         customers: Customer[];
-        createCustomer: (formData: FormData) => Promise<void>;
+        createCustomer: (formData: FormData) => Promise<Customer>;
         deleteCustomer: (id: string) => Promise<void>;
         updateCustomer: (id: string, formData: FormData) => Promise<void>;
     },

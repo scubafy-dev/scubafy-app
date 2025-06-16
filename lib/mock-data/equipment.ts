@@ -352,7 +352,7 @@ export const equipmentByCenter: Record<string, EquipmentItem[]> = {
 };
 
 // Import the dive centers data to get name mapping
-import { diveCenters } from "../dive-center-data";
+import { diveCentersConst } from "../dive-center-data";
 
 // Function to add center name to each item for the "All Centers" view
 function addCenterToEquipment(): EquipmentItem[] {
@@ -360,7 +360,7 @@ function addCenterToEquipment(): EquipmentItem[] {
   
   // Create a mapping from center ID to center name
   const centerNameMap = Object.fromEntries(
-    diveCenters.map(center => [center.id, center.name])
+    diveCentersConst.map(center => [center.id, center.name])
   );
   
   Object.entries(equipmentByCenter).forEach(([centerId, items]) => {

@@ -1,6 +1,6 @@
 // Mock customer data for each dive center
 
-import { diveCenters } from "../dive-center-data";
+import { diveCentersConst } from "../dive-center-data";
 
 export interface Equipment {
   item: string;
@@ -221,7 +221,7 @@ function addCenterToCustomers(): Customer[] {
   
   // Create a mapping from center ID to center name
   const centerNameMap = Object.fromEntries(
-    diveCenters.map(center => [center.id, center.name])
+    diveCentersConst.map(center => [center.id, center.name])
   );
   
   Object.entries(customersByCenter).forEach(([centerId, customers]) => {

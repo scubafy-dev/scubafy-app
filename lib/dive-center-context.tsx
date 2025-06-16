@@ -102,6 +102,10 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
       return allData;
     }
 
+    if (!currentCenter || !diveCenters.length) {
+      return allData;
+    }
+
     return currentCenter
       ? dataMap[currentCenter.id as keyof typeof dataMap] ||
         dataMap[diveCenters[0].id]

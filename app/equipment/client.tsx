@@ -66,6 +66,7 @@ import {
 import { useRouter } from "next/navigation";
 import { deleteEquipment } from "@/lib/equipment";
 import { RentEquipmentDialog } from "@/components/rent-equipment-dialog";
+import { Fragment } from "react";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -240,7 +241,7 @@ export default function EquipmentPage(
                             <TableBody>
                                 {equipments.length > 0
                                     ? equipments.map((item) => (
-                                        <>
+                                        <Fragment key={item.id}>
                                             <TableRow
                                                 key={item.id}
                                                 className="cursor-pointer hover:bg-muted/50"
@@ -491,7 +492,7 @@ export default function EquipmentPage(
                                                     </TableCell>
                                                 </TableRow>
                                             )}
-                                        </>
+                                        </Fragment>
                                     ))
                                     : (
                                         <TableRow>

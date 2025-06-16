@@ -49,7 +49,7 @@ const formSchema = z.object({
 export function AddCustomerForm(
   { onSuccess, createCustomer, customer, updateCustomer }: {
     onSuccess: () => void;
-    createCustomer?: (formData: FormData) => Promise<void>;
+    createCustomer?: (formData: FormData) => Promise<Customer>;
     customer: Customer | null;
     updateCustomer?: (id: string, formData: FormData) => Promise<void>;
   },
