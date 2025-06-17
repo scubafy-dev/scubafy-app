@@ -43,7 +43,11 @@ import { AddEquipmentDialog } from "@/components/add-equipment-dialog";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { EquipmentDetails } from "../components/equipment-details";
-import { Equipment, EquipmentFormType } from "@/lib/equipment";
+import {
+    Equipment,
+    EquipmentFormType,
+    makeEquipmentAvailable,
+} from "@/lib/equipment";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -67,6 +71,7 @@ import { useRouter } from "next/navigation";
 import { deleteEquipment } from "@/lib/equipment";
 import { RentEquipmentDialog } from "@/components/rent-equipment-dialog";
 import { Fragment } from "react";
+import { EquipmentStatus } from "../generated/prisma";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -421,6 +426,14 @@ export default function EquipmentPage(
                                                             <Button
                                                                 variant="ghost"
                                                                 className="h-8 w-8 p-0"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedEquipment(
+                                                                        item,
+                                                                    );
+                                                                }}
                                                             >
                                                                 <span className="sr-only">
                                                                     Open menu
@@ -451,12 +464,14 @@ export default function EquipmentPage(
                                                                     setSelectedEquipment(
                                                                         item,
                                                                     );
+
                                                                     setIsRentEquipmentOpen(
                                                                         true,
                                                                     );
                                                                 }}
                                                             >
-                                                                Rent Equipment
+                                                                Rent or Return
+                                                                Equipment
                                                             </DropdownMenuItem>
                                                             <DropdownMenuSeparator />
                                                             <DropdownMenuItem
@@ -554,7 +569,7 @@ export default function EquipmentPage(
                     <DialogContent className="sm:max-w-[500px] p-0 gap-0">
                         <DialogHeader className="p-4 pb-0">
                             <DialogTitle className="text-xl">
-                                Rent this equipmet
+                                Rent this equipmet or make it available
                             </DialogTitle>
                         </DialogHeader>
                         <RentEquipmentDialog

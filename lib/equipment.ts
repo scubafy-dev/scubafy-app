@@ -174,12 +174,15 @@ export const deleteEquipment = async (id: string) => {
     }
 }
 
-export const rentEquipment = async (id: string, rentedTo: string, price?: string, from?: string, to?: string) => {
+export const rentEquipment = async (id: string, rentedTo: string, price: string | null, from: string | null, to: string | null) => {
 
   const rentPrice = price ? parseFloat(price) : null;
+  // check if invalid date
   const rentFrom  = from ? new Date(from) : null;
   const rentTo  = to ? new Date(to) : null;
-
+  if (!id || !rentedTo) {
+    throw new Error("Missing required parameters: id and rentedTo");
+  }
     try {
         await prisma.equipment.update({
             where: { id },
@@ -195,5 +198,25 @@ export const rentEquipment = async (id: string, rentedTo: string, price?: string
     } catch (error) {
         console.error("Error renting equipment:", error);
         throw new Error("Failed to rent equipment");
+    }
+}
+
+export const makeEquipmentAvailable = async (id: string) => {
+  console.log("Making equipment available with ID:", id);
+    try {
+        await prisma.equipment.update({
+            where: { id },
+            data: {
+                status: EquipmentStatus.available,
+                rentedToId: null,
+                rentPrice: null,
+                rentFrom: null,
+                rentTo: null,
+            },
+        });
+
+    } catch (error) {
+        console.error("Error availing equipment:", error);
+        throw new Error("Failed to avail equipment");
     }
 }

@@ -21,7 +21,11 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
-import { Equipment, EquipmentFormType } from "@/lib/equipment";
+import {
+    Equipment,
+    EquipmentFormType,
+    makeEquipmentAvailable,
+} from "@/lib/equipment";
 import { ActionMode } from "@/types/all";
 import { useRouter } from "next/navigation";
 import { rentEquipment } from "@/lib/equipment";
@@ -58,8 +62,8 @@ const formSchema = z.object({
     fullName: z.string().optional(),
     email: z.string().email().optional(),
     rentPrice: z.string().optional(),
-    rentFrom: z.date().optional(),
-    rentTo: z.date().optional(),
+    rentFrom: z.date().optional().default(new Date()),
+    rentTo: z.date().optional().default(new Date()),
 }).refine((data) => {
     return data.rentedTo || (data.fullName && data.email);
 }, {
@@ -121,6 +125,7 @@ export function RentEquipmentDialog(
         //         router.refresh();
         //     }
         // }
+        onSubmit(form.getValues());
         onOpenChange(false);
     };
 
@@ -132,21 +137,32 @@ export function RentEquipmentDialog(
             try {
                 const formData = new FormData();
                 Object.entries(values).forEach(([key, value]) => {
-                    formData.append(key, value.toString());
+                    formData.append(key, value?.toString());
                 });
                 const existingCustomer = formData.get("rentedTo") as string;
+                const rentPrice = formData.get("rentPrice")
+                    ? formData.get("rentPrice") as string
+                    : null;
+                const rentFrom = formData.get("rentFrom")
+                    ? formData.get("rentFrom") as string
+                    : null;
+                const rentTo = formData.get("rentTo")
+                    ? formData.get("rentTo") as string
+                    : null;
                 if (!equipment) {
                     console.error("No equipment selected for rental.");
                     setIsSubmitting(false);
                     return;
                 }
                 if (existingCustomer) {
+                    console.log("equipment?.id - ", equipment?.id);
+
                     await rentEquipment(
                         equipment?.id,
                         formData.get("rentedTo") as string,
-                        formData.get("rentPrice") as string,
-                        formData.get("rentFrom") as string,
-                        formData.get("rentTo") as string,
+                        rentPrice,
+                        rentFrom,
+                        rentTo,
                     );
                 } else {
                     // const newCustomer = {
@@ -157,13 +173,13 @@ export function RentEquipmentDialog(
                     await rentEquipment(
                         equipment?.id,
                         newCustomer.id,
-                        formData.get("rentPrice") as string,
-                        formData.get("rentFrom") as string,
-                        formData.get("rentTo") as string,
+                        rentPrice,
+                        rentFrom,
+                        rentTo,
                     );
                 }
             } catch (error) {
-                console.error("Error creating task:", error);
+                console.error("Error renting:", error);
                 setIsSubmitting(false);
                 return;
             }
@@ -176,202 +192,243 @@ export function RentEquipmentDialog(
 
     return (
         <div className="p-4">
-            <Form {...form}>
-                <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-6"
-                >
-                    <FormField
-                        control={form.control}
-                        name="rentedTo"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Rent to</FormLabel>
-                                <Select
-                                    onValueChange={field.onChange}
-                                    defaultValue={field.value}
-                                >
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select customer" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {customers.map((customer) => (
-                                            <SelectItem
-                                                key={customer.id}
-                                                value={customer.id}
-                                            >
-                                                {customer.fullName}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <div className="mt-2">
-                        Or enter name and email
-                    </div>
-                    <FormField
-                        control={form.control}
-                        name="fullName"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input
-                                        placeholder="Name"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input
-                                        placeholder="Email"
-                                        {...field}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <div>
-                        <FormField
-                            control={form.control}
-                            name="rentPrice"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="Price"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <FormField
-                                control={form.control}
-                                name="rentFrom"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>From</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn(
-                                                            "pl-3 text-left font-normal",
-                                                            !field.value &&
-                                                                "text-muted-foreground",
-                                                        )}
-                                                    >
-                                                        {field.value
-                                                            ? format(
-                                                                field.value,
-                                                                "PPP",
-                                                            )
-                                                            : (
-                                                                <span>
-                                                                    Pick a date
-                                                                </span>
-                                                            )}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                className="w-auto p-0"
-                                                align="start"
-                                            >
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="rentTo"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-col">
-                                        <FormLabel>To</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                        variant={"outline"}
-                                                        className={cn(
-                                                            "pl-3 text-left font-normal",
-                                                            !field.value &&
-                                                                "text-muted-foreground",
-                                                        )}
-                                                    >
-                                                        {field.value
-                                                            ? format(
-                                                                field.value,
-                                                                "PPP",
-                                                            )
-                                                            : (
-                                                                <span>
-                                                                    Pick a date
-                                                                </span>
-                                                            )}
-                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                className="w-auto p-0"
-                                                align="start"
-                                            >
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                    </div>
-                    <div className="flex items-center justify-end gap-2 p-4 border-t bg-muted/50">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onOpenChange(false)}
+            {equipment
+                    ?.status ===
+                    EquipmentStatus
+                        .available
+                ? (
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(onSubmit)}
+                            className="space-y-6"
                         >
-                            Cancel
-                        </Button>
-                        <Button size="sm" onClick={handleSubmit}>
-                            Rent
+                            <FormField
+                                control={form.control}
+                                name="rentedTo"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Rent to</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select customer" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {customers.map((customer) => (
+                                                    <SelectItem
+                                                        key={customer.id}
+                                                        value={customer.id}
+                                                    >
+                                                        {customer.fullName}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="mt-2">
+                                Or enter name and email
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="fullName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Name"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Email"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div>
+                                <FormField
+                                    control={form.control}
+                                    name="rentPrice"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Price"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                                    <FormField
+                                        control={form.control}
+                                        name="rentFrom"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel>From</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant={"outline"}
+                                                                className={cn(
+                                                                    "pl-3 text-left font-normal",
+                                                                    !field
+                                                                        .value &&
+                                                                        "text-muted-foreground",
+                                                                )}
+                                                            >
+                                                                {field.value
+                                                                    ? format(
+                                                                        field
+                                                                            .value,
+                                                                        "PPP",
+                                                                    )
+                                                                    : (
+                                                                        <span>
+                                                                            Pick
+                                                                            a
+                                                                            date
+                                                                        </span>
+                                                                    )}
+                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent
+                                                        className="w-auto p-0"
+                                                        align="start"
+                                                    >
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={field
+                                                                .value}
+                                                            onSelect={field
+                                                                .onChange}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="rentTo"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-col">
+                                                <FormLabel>To</FormLabel>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                                variant={"outline"}
+                                                                className={cn(
+                                                                    "pl-3 text-left font-normal",
+                                                                    !field
+                                                                        .value &&
+                                                                        "text-muted-foreground",
+                                                                )}
+                                                            >
+                                                                {field.value
+                                                                    ? format(
+                                                                        field
+                                                                            .value,
+                                                                        "PPP",
+                                                                    )
+                                                                    : (
+                                                                        <span>
+                                                                            Pick
+                                                                            a
+                                                                            date
+                                                                        </span>
+                                                                    )}
+                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent
+                                                        className="w-auto p-0"
+                                                        align="start"
+                                                    >
+                                                        <Calendar
+                                                            mode="single"
+                                                            selected={field
+                                                                .value}
+                                                            onSelect={field
+                                                                .onChange}
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-end gap-2 p-4 border-t bg-muted/50">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => onOpenChange(false)}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button size="sm" onClick={handleSubmit}>
+                                    Rent
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                )
+                : (
+                    <div className="flex flex-col items-center justify-center h-full p-4">
+                        <Button
+                            size="sm"
+                            onClick={() => {
+                                if (
+                                    equipment
+                                        ?.id
+                                ) {
+                                    makeEquipmentAvailable(
+                                        equipment
+                                            ?.id,
+                                    );
+                                    onOpenChange(false);
+                                    router
+                                        .refresh();
+                                }
+                            }}
+                        >
+                            Make Available
                         </Button>
                     </div>
-                </form>
-            </Form>
+                )}
         </div>
     );
 }
