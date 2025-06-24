@@ -232,7 +232,6 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
                                                         0,
                                                     ),
                                                 )}
-                                        initialFocus
                                     />
                                 </PopoverContent>
                             </Popover>

@@ -1093,7 +1093,7 @@ export function AddTripForm(
           <Button
             type="submit"
             disabled={isSubmitting}
-            onClick={() => {
+            onClick={async () => {
               const formData = new FormData();
               const values = form.getValues();
               Object.entries(values).forEach(([key, value]) => {
@@ -1102,10 +1102,11 @@ export function AddTripForm(
                 }
               });
               if (mode === ActionMode.create && currentCenter?.id) {
-                actionCreate(formData, currentCenter?.id);
+                await actionCreate(formData, currentCenter?.id);
               } else {
-                actionUpdate(trip?.id ?? null, formData);
+                await actionUpdate(trip?.id ?? null, formData);
               }
+              router.refresh();
             }}
           >
             {isSubmitting

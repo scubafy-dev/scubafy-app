@@ -21,6 +21,7 @@ interface DiveCenterContextType {
   isAllCenters: boolean;
   allCentersStats: DiveCenterConst["stats"];
   centers: DiveCenter[];
+  setDiveCenters: (centers: DiveCenter[]) => void;
   setCurrentCenter: (center: DiveCenter | null) => void;
   setIsAllCenters: (isAll: boolean) => void;
   getCenterSpecificData: <T>(dataMap: Record<string, T>, allData: T) => T;
@@ -119,6 +120,7 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
         isAllCenters,
         allCentersStats,
         centers: diveCenters,
+        setDiveCenters: setDiveCenters,
         setCurrentCenter: handleCenterChange,
         setIsAllCenters: handleAllCentersChange,
         getCenterSpecificData,

@@ -23,16 +23,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createDiveCenter } from "@/lib/dive-center";
-
+import { useRouter } from "next/navigation";
+import { DiveCenter } from "@/app/generated/prisma";
 export function DiveCenterSelector() {
   const {
     currentCenter,
     isAllCenters,
     centers,
+    setDiveCenters,
     setCurrentCenter,
     setIsAllCenters,
   } = useDiveCenter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const router = useRouter();
 
   const handleSelectCenter = (centerId: string | null) => {
     if (centerId === "all") {
@@ -46,11 +49,13 @@ export function DiveCenterSelector() {
     }
   };
 
-  const handleAddCenter = (e: React.FormEvent) => {
+  const handleAddCenter = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    createDiveCenter(formData);
+    const newCenter = await createDiveCenter(formData);
     setIsDialogOpen(false);
+    setDiveCenters((prev: any) => [...prev, newCenter]);
+    router.refresh();
   };
 
   return (

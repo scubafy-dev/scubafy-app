@@ -12,9 +12,6 @@ export async function createDiveTrip(formData: FormData, diveCenterId: string) {
     const requiredDefaults = {
         title: "Sample Dive Trip",
         date: new Date().toISOString(),
-        location: "Blue Lagoon",
-        capacity: 8,
-        price: 120,
         diveMaster: "DM-001",
         instructor: "INS-001",
     };
