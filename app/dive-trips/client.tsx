@@ -95,7 +95,20 @@ export default function DiveTripsPage() {
     };
 
     fetchDiveTrips();
-  }, [currentCenter?.id]);
+  }, [currentCenter]);
+
+  useEffect(() => {
+    const fetchDiveTrips = async () => {
+      try {
+        const trips = await getAllDiveTrips(currentCenter?.id ?? null);
+        setDiveTrips(trips);
+      } catch (error) {
+        console.error("Failed to load dive trips:", error);
+      }
+    };
+
+    fetchDiveTrips();
+  });
 
   const toggleRowExpansion = (tripId: string) => {
     setExpandedRows((prev) =>
@@ -104,8 +117,6 @@ export default function DiveTripsPage() {
         : [...prev, tripId]
     );
   };
-
-  console.log("currentCenter:", currentCenter);
 
   return (
     <DashboardShell>
@@ -156,7 +167,7 @@ export default function DiveTripsPage() {
                       <TableHead className="text-center">Capacity</TableHead>
                       <TableHead className="text-center">Booked</TableHead>
                       <TableHead>Price</TableHead>
-                      Master <TableHead>Status</TableHead>
+                      <TableHead>Status</TableHead>
                       {isAllCenters && <TableHead>Center</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -251,7 +262,7 @@ export default function DiveTripsPage() {
                           </TableCell>
                         </TableRow>
                         {expandedRows.includes(trip.id) && (
-                          <TableRow key={trip.id} className="bg-muted/30">
+                          <TableRow key={`${trip.id}#`} className="bg-muted/30">
                             <TableCell
                               colSpan={isAllCenters ? 10 : 9}
                               className="p-4"
