@@ -122,24 +122,24 @@ export function DashboardNav() {
       href: "/tasks",
       label: "3",
     },
-    {
-      title: "Reports",
-      icon: FileText,
-      variant: pathname === "/reports" ? "default" : "ghost",
-      href: "/reports",
-    },
+    // {
+    //   title: "Reports",
+    //   icon: FileText,
+    //   variant: pathname === "/reports" ? "default" : "ghost",
+    //   href: "/reports",
+    // },
     {
       title: "Course Tracker",
       icon: GraduationCap,
       variant: pathname === "/course-tracker" ? "default" : "ghost",
       href: "/course-tracker",
     },
-    {
-      title: "Calendar",
-      icon: Calendar,
-      variant: pathname === "/calendar" ? "default" : "ghost",
-      href: "/calendar",
-    },
+    // {
+    //   title: "Calendar",
+    //   icon: Calendar,
+    //   variant: pathname === "/calendar" ? "default" : "ghost",
+    //   href: "/calendar",
+    // },
     {
       title: "Finances",
       icon: Wallet,

@@ -97,18 +97,18 @@ export default function DiveTripsPage() {
     fetchDiveTrips();
   }, [currentCenter]);
 
-  useEffect(() => {
-    const fetchDiveTrips = async () => {
-      try {
-        const trips = await getAllDiveTrips(currentCenter?.id ?? null);
-        setDiveTrips(trips);
-      } catch (error) {
-        console.error("Failed to load dive trips:", error);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchDiveTrips = async () => {
+  //     try {
+  //       const trips = await getAllDiveTrips(currentCenter?.id ?? null);
+  //       setDiveTrips(trips);
+  //     } catch (error) {
+  //       console.error("Failed to load dive trips:", error);
+  //     }
+  //   };
 
-    fetchDiveTrips();
-  });
+  //   fetchDiveTrips();
+  // });
 
   const toggleRowExpansion = (tripId: string) => {
     setExpandedRows((prev) =>
@@ -217,10 +217,10 @@ export default function DiveTripsPage() {
                               className={trip.status === "upcoming"
                                 ? "bg-blue-500"
                                 : trip.status === "in_progress"
-                                ? "bg-amber-500"
-                                : trip.status === "completed"
-                                ? "bg-green-500"
-                                : "bg-red-500"}
+                                  ? "bg-amber-500"
+                                  : trip.status === "completed"
+                                    ? "bg-green-500"
+                                    : "bg-red-500"}
                             >
                               {trip.status}
                             </Badge>
@@ -313,10 +313,10 @@ export default function DiveTripsPage() {
                                               <Ship className="h-4 w-4 mr-2" />
                                             )}
                                             {trip.vehicle.type ===
-                                                "speedboat" &&
+                                              "speedboat" &&
                                               <Ship className="h-4 w-4 mr-2" />}
                                             {trip.vehicle.type ===
-                                                "catamaran" &&
+                                              "catamaran" &&
                                               (
                                                 <Anchor className="h-4 w-4 mr-2" />
                                               )}
@@ -444,9 +444,8 @@ export default function DiveTripsPage() {
                     await deleteDiveTrip(selectedTrip.id);
                     toast({
                       title: "Trip deleted successfully.",
-                      description: `Center: ${
-                        selectedTrip.center ?? "N/A"
-                      }   \nTrip: ${selectedTrip.title}`,
+                      description: `Center: ${selectedTrip.center ?? "N/A"
+                        }   \nTrip: ${selectedTrip.title}`,
                     });
                     router.refresh();
                   }

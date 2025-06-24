@@ -5,6 +5,7 @@ import {
   getAllStaff,
   StaffWithPermissions,
   updateStaff,
+  deleteStaff,
 } from "@/lib/staffs";
 
 export default async function StaffPage() {
@@ -17,6 +18,7 @@ export default async function StaffPage() {
         staffs={staffs}
         createStaff={createStaff}
         updateStaff={updateStaff}
+        deleteStaff={deleteStaff}
       />
     </div>
   );

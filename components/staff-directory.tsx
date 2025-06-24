@@ -89,9 +89,10 @@ function getAccessLabel(accessId: string): string {
 
 // Main component
 export function StaffDirectory(
-  { staffs, updateStaff }: {
+  { staffs, updateStaff, deleteStaff }: {
     staffs: StaffWithPermissions[];
     updateStaff: (id: string, formData: FormData) => Promise<void>;
+    deleteStaff: (id: string) => Promise<void>;
   },
 ) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -234,7 +235,21 @@ export function StaffDirectory(
                           <Calendar className="mr-2 h-4 w-4" /> View Schedule
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive">
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => {
+                            if (confirm("Are you sure you want to remove this staff member?")) {
+                              deleteStaff(member.id).then(() => {
+                                // Optionally show a toast notification
+                                // You might need to import a toast component
+                                // toast({ title: "Staff member removed" });
+
+                                // Force a refresh of the page to show updated list
+                                window.location.reload();
+                              });
+                            }
+                          }}
+                        >
                           <Trash className="mr-2 h-4 w-4" /> Remove
                         </DropdownMenuItem>
                       </DropdownMenuContent>

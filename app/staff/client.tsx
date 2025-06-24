@@ -13,10 +13,11 @@ import { Staff } from "@app/generated/prisma";
 import { StaffWithPermissions } from "@/lib/staffs";
 
 export default function StaffClient(
-    { staffs, createStaff, updateStaff }: {
+    { staffs, createStaff, updateStaff, deleteStaff }: {
         staffs: StaffWithPermissions[];
         createStaff: (formData: FormData) => Promise<void>;
         updateStaff: (id: string, formData: FormData) => Promise<void>;
+        deleteStaff: (id: string) => Promise<void>;
     },
 ) {
     const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
@@ -39,7 +40,7 @@ export default function StaffClient(
                     <Plus className="mr-2 h-4 w-4" /> Add Staff Member
                 </Button>
             </DashboardHeader>
-            <StaffDirectory staffs={staffs} updateStaff={updateStaff} />
+            <StaffDirectory staffs={staffs} updateStaff={updateStaff} deleteStaff={deleteStaff} />
             <AddStaffDialog
                 open={showAddStaffDialog}
                 onOpenChange={setShowAddStaffDialog}
