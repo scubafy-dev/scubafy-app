@@ -196,7 +196,7 @@ export default function DiveTripsPage() {
                             <div className="flex flex-col">
                               <div className="flex items-center">
                                 <Calendar className="mr-1 h-3 w-3" />
-                                <span>{trip.date.toDateString()}</span>
+                                <span>{trip?.date && trip?.date.toDateString()}</span>
                               </div>
                             </div>
                           </TableCell>

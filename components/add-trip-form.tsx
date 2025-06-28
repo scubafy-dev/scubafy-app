@@ -221,8 +221,8 @@ export function AddTripForm(
       status: trip?.status ?? "upcoming",
       location: trip?.location ?? "",
       time: "",
-      capacity: trip?.capacity,
-      price: trip?.price.toString(),
+      capacity: trip?.capacity ?? undefined,
+      price: trip?.price ? trip.price.toString() : "",
       description: trip?.description ?? "",
       diveType: "",
       vehicleId: "",
@@ -894,20 +894,18 @@ export function AddTripForm(
                                 >
                                   <FormControl>
                                     <Checkbox
-                                      checked={field.value?.includes(
-                                        customer.id,
-                                      )}
+                                      checked={field.value?.includes(customer.id)}
                                       onCheckedChange={(checked) => {
                                         return checked
                                           ? field.onChange([
-                                            ...field.value,
-                                            customer.id,
-                                          ])
+                                              ...((field.value ?? []) as string[]),
+                                              customer.id,
+                                            ])
                                           : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== customer.id,
-                                            ),
-                                          );
+                                              (field.value ?? []).filter(
+                                                (value: string) => value !== customer.id,
+                                              ),
+                                            );
                                       }}
                                     />
                                   </FormControl>
