@@ -7,20 +7,24 @@ import { useAuth } from './use-auth';
 
 export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 
-export async function createDiveTrip(formData: FormData, diveCenterId: string) {
-
+export async function createDiveTrip(formData: any, diveCenterId: string): Promise<void> {
+    console.log('DiveTrip Data', formData, diveCenterId)
     const requiredDefaults = {
         title: "Sample Dive Trip",
-        date: new Date().toISOString(),
+        location: "Sample Location",
+        capacity: 8,
+        price: 0,
         diveMaster: "DM-001",
         instructor: "INS-001",
     };
 
+    // Apply defaults for missing values
     for (const [key, defaultValue] of Object.entries(requiredDefaults)) {
-        if (!formData.get(key)) {
-            formData.append(key, defaultValue.toString());
+        if (!formData[key]) {
+            formData[key] = defaultValue;
         }
     }
+    
     const defaultValues = {
         booked: 0,
         status: "upcoming",
@@ -28,106 +32,121 @@ export async function createDiveTrip(formData: FormData, diveCenterId: string) {
         duration: "",
         difficulty: "beginner",
         center: null,
-        vehicle: JSON.stringify({
+        vehicle: {
             name: "Default Vehicle",
             type: "boat",
             capacity: 8,
-        }),
-        participants: JSON.stringify([]),
+        },
+        participants: [],
     };
 
+    // Apply defaults for missing values
     for (const [key, defaultValue] of Object.entries(defaultValues)) {
-        if (!formData.get(key)) {
-            formData.append(key, defaultValue);
+        if (!formData[key]) {
+            formData[key] = defaultValue;
         }
     }
 
-    const id = formData.get("id") as string | null;
-    const title = formData.get("title") as string;
-    const dateStr = formData.get("date") as string;
-    const location = formData.get("location") as string;
-    const capacity = Number(formData.get("capacity"));
-    const booked = Number(formData.get("booked"));
-    const price = Number(formData.get("price"));
-    const status = formData.get("status") as
+    const id = formData.id as string | null;
+    const title = formData.title as string;
+    const dateStr = formData.date ? new Date(formData.date).toISOString() : new Date().toISOString();
+    const location = formData.location as string;
+    const capacity = Number(formData.capacity);
+    const booked = Number(formData.booked);
+    const price = Number(formData.price);
+    const status = formData.status as
         | "upcoming"
         | "in_progress"
         | "completed"
         | "cancelled";
-    const diveMaster = formData.get("diveMaster") as string;
-    const description = formData.get("description") as string;
-    const duration = formData.get("duration") as string;
-    const difficulty = formData.get("difficulty") as
+    const diveMaster = formData.diveMaster as string;
+    const description = formData.description as string;
+    const duration = formData.duration as string;
+    const difficulty = formData.difficulty as
         | "beginner"
         | "intermediate"
         | "advanced";
-    const center = (formData.get("center") as string) || null;
-    const instructor = formData.get("instructor") as string;
+    const center = (formData.center as string) || null;
+    const instructor = formData.instructor as string;
 
-    const vehicle = JSON.parse(
-        formData.get("vehicle") as string,
-    ) as {
-        name: string;
-        type: "boat" | "speedboat" | "catamaran";
-        capacity: number;
-    };
-    // const participants = JSON.parse(
-    //     formData.get("participants") as string,
-    // ) as Array<{
-    //     name: string;
-    //     certification: string;
-    //     level: string;
-    // }>;
+    let vehicle;
+    try {
+        const vehicleData = formData.vehicle || {
+            name: "Default Vehicle",
+            type: "boat" as const,
+            capacity: 8,
+        };
+        vehicle = {
+            name: vehicleData.name,
+            type: vehicleData.type as "boat" | "speedboat" | "catamaran",
+            capacity: vehicleData.capacity
+        };
+    } catch (error) {
+        console.error("Error parsing vehicle data:", error);
+        vehicle = {
+            name: "Default Vehicle",
+            type: "boat" as const,
+            capacity: 8,
+        };
+    }
 
-    const participants: {
+    let participants: {
         name: string;
         certification: string;
         level: string;
     }[] = [];
+    
+    try {
+        if (formData.participants) {
+            participants = Array.isArray(formData.participants) ? formData.participants : [];
+        }
+    } catch (error) {
+        console.error("Error parsing participants data:", error);
+        participants = [];
+    }
 
-    const { user } = await useAuth();
-    if (!user) {
-        console.error("User not authenticated");
-        return;
+    const session = await useAuth();
+    if (!session?.user?.id) {
+        console.error("User not authenticated or missing user ID");
+        throw new Error("User not authenticated");
     }
 
     try {
-        await prisma.diveTrip.create(
-            {
-                data: {
-                    title,
-                    date: new Date(dateStr),
-                    location,
-                    capacity,
-                    booked,
-                    price,
-                    status,
-                    diveMaster,
-                    description,
-                    duration,
-                    difficulty,
-                    center,
-                    instructor,
-                    vehicle: { create: vehicle },
-                    participants: { createMany: { data: participants } },
-                    diveCenter: {
-                        connect: {
-                            id: diveCenterId
-                        }
-                    },
-                    User: {
-                        connect: {
-                            id: user.id, 
-                        }
+        const result = await prisma.diveTrip.create({
+            data: {
+                title,
+                date: new Date(dateStr),
+                location,
+                capacity,
+                booked,
+                price,
+                status,
+                diveMaster,
+                description,
+                duration,
+                difficulty,
+                center,
+                instructor,
+                vehicle: { create: vehicle },
+                participants: { createMany: { data: participants } },
+                diveCenter: {
+                    connect: {
+                        id: diveCenterId
                     }
                 },
+                User: {
+                    connect: {
+                        id: session.user.id, 
+                    }
+                }
             },
-        );
+        });
+        
+        console.log("Dive trip created successfully:", result);
     } catch (error) {
-        console.log("error: ", error);
+        console.error("Error creating dive trip:", error);
+        throw error;
     }
-
-    // redirect("/diveTrips");
 }
 
 
@@ -151,32 +170,32 @@ export const  getAllDiveTrips = async (diveCenterId: string | null) => {
   });
 }
 
-export async function updateDiveTrip(id: string | null, formData: FormData) {
+export async function updateDiveTrip(id: string | null, formData: any) {
 
     if(id === null){
         return;
     }
 
-    const title = formData.get("title") as string;
-    const date = formData.get("date") as string;
-    const location = formData.get("location") as string;
-    const capacity = Number(formData.get("capacity"));
-    const booked = Number(formData.get("booked"));
-    const price = Number(formData.get("price"));
-    const status = formData.get("status") as
+    const title = formData.title as string;
+    const date = formData.date ? new Date(formData.date).toISOString() : new Date().toISOString();
+    const location = formData.location as string;
+    const capacity = Number(formData.capacity);
+    const booked = Number(formData.booked);
+    const price = Number(formData.price);
+    const status = formData.status as
         | "upcoming"
         | "in_progress"
         | "completed"
         | "cancelled";
-    const diveMaster = formData.get("diveMaster") as string;
-    const description = formData.get("description") as string;
-    const duration = formData.get("duration") as string;
-    const difficulty = formData.get("difficulty") as
+    const diveMaster = formData.diveMaster as string;
+    const description = formData.description as string;
+    const duration = formData.duration as string;
+    const difficulty = formData.difficulty as
         | "beginner"
         | "intermediate"
         | "advanced";
-    const center = (formData.get("center") as string) || null;
-    const instructor = formData.get("instructor") as string;
+    const center = (formData.center as string) || null;
+    const instructor = formData.instructor as string;
 
 
     try {
@@ -187,7 +206,7 @@ export async function updateDiveTrip(id: string | null, formData: FormData) {
                 },
                 data: {
                     title,
-                    // date,
+                    date,
                     location,
                     capacity,
                     booked,
@@ -195,8 +214,8 @@ export async function updateDiveTrip(id: string | null, formData: FormData) {
                     status,
                     diveMaster,
                     description,
-                    // duration,
-                    // difficulty,
+                    duration,
+                    difficulty,
                     center,
                     instructor,
                 },

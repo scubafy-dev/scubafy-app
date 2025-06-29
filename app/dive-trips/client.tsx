@@ -77,6 +77,7 @@ export default function DiveTripsPage() {
   const [activeTab, setActiveTab] = useState("trips");
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [diveTrips, setDiveTrips] = useState<FullDiveTrip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const { currentCenter, isAllCenters, getCenterSpecificData } =
     useDiveCenter();
@@ -87,14 +88,29 @@ export default function DiveTripsPage() {
   useEffect(() => {
     const fetchDiveTrips = async () => {
       try {
+        setIsLoading(true);
+        console.log("Fetching dive trips for center:", currentCenter?.id);
         const trips = await getAllDiveTrips(currentCenter?.id ?? null);
+        console.log("Fetched dive trips:", trips);
         setDiveTrips(trips);
       } catch (error) {
         console.error("Failed to load dive trips:", error);
+        setDiveTrips([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchDiveTrips();
+    // Always set loading to true when currentCenter changes
+    setIsLoading(true);
+    
+    if (currentCenter?.id) {
+      fetchDiveTrips();
+    } else {
+      // If no center, just set empty state and stop loading
+      setDiveTrips([]);
+      setIsLoading(false);
+    }
   }, [currentCenter]);
 
   // useEffect(() => {
@@ -155,231 +171,277 @@ export default function DiveTripsPage() {
 
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8"></TableHead>
-                      <TableHead>Trip Name</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Dive Master</TableHead>
-                      <TableHead className="text-center">Capacity</TableHead>
-                      <TableHead className="text-center">Booked</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Status</TableHead>
-                      {isAllCenters && <TableHead>Center</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {diveTrips.map((trip) => (
-                      <>
-                        <TableRow
-                          key={trip.id}
-                          className="cursor-pointer hover:bg-muted/50"
-                          onClick={() => toggleRowExpansion(trip.id)}
-                        >
-                          <TableCell>
-                            <div className="flex items-center justify-center">
-                              {expandedRows.includes(trip.id)
-                                ? <ChevronDown className="h-4 w-4" />
-                                : <ChevronRight className="h-4 w-4" />}
+              {isLoading ? (
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {/* Loading skeleton for table header */}
+                    <div className="flex space-x-4 pb-4 border-b">
+                      <div className="w-8 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-32 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-28 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    
+                    {/* Loading skeleton for table rows */}
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="flex space-x-4 py-4 border-b">
+                        <div className="w-8 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-32 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-24 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-28 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-24 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-16 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-16 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-20 h-4 bg-gray-100 rounded animate-pulse"></div>
+                        <div className="w-16 h-4 bg-gray-100 rounded animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-8"></TableHead>
+                        <TableHead>Trip Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Dive Master</TableHead>
+                        <TableHead className="text-center">Capacity</TableHead>
+                        <TableHead className="text-center">Booked</TableHead>
+                        <TableHead>Price</TableHead>
+                        <TableHead>Status</TableHead>
+                        {isAllCenters && <TableHead>Center</TableHead>}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {!isLoading && diveTrips.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={isAllCenters ? 10 : 9} className="text-center py-8">
+                            <div className="text-muted-foreground">
+                              <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p>No dive trips found</p>
+                              <p className="text-sm">Create your first dive trip to get started</p>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">{trip.title}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {trip.difficulty}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <div className="flex items-center">
-                                <Calendar className="mr-1 h-3 w-3" />
-                                <span>{trip?.date && trip?.date.toDateString()}</span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{trip.location}</TableCell>
-                          <TableCell>{trip.diveMaster}</TableCell>
-                          <TableCell className="text-center">
-                            {trip.capacity}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {trip.booked}
-                          </TableCell>
-                          <TableCell>${trip.price}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={trip.status === "completed"
-                                ? "outline"
-                                : "default"}
-                              className={trip.status === "upcoming"
-                                ? "bg-blue-500"
-                                : trip.status === "in_progress"
-                                  ? "bg-amber-500"
-                                  : trip.status === "completed"
-                                    ? "bg-green-500"
-                                    : "bg-red-500"}
-                            >
-                              {trip.status}
-                            </Badge>
-                          </TableCell>
-                          {isAllCenters && <TableCell>{trip.center}</TableCell>}
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem
-                                  onClick={() => {
-                                    setSelectedTrip(trip);
-                                    setIsEditTripOpen(true);
-                                  }}
-                                >
-                                  <Edit className="mr-2 h-4 w-4" /> Edit Trip
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() => {
-                                    setSelectedTrip(trip);
-                                    setIsDeleteTripAlertOpen(true);
-                                  }}
-                                >
-                                  <Trash className="mr-2 h-4 w-4" /> Remove
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                        {expandedRows.includes(trip.id) && (
-                          <TableRow key={`${trip.id}#`} className="bg-muted/30">
-                            <TableCell
-                              colSpan={isAllCenters ? 10 : 9}
-                              className="p-4"
+                      ) : (
+                        diveTrips.map((trip) => (
+                          <>
+                            <TableRow
+                              key={trip.id}
+                              className="cursor-pointer hover:bg-muted/50"
+                              onClick={() => toggleRowExpansion(trip.id)}
                             >
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-2">
-                                    Description
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground mb-4">
-                                    {trip.description}
-                                  </p>
-
-                                  <h4 className="text-sm font-semibold mb-2">
-                                    Duration
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground mb-4">
-                                    {trip.duration}
-                                  </p>
-
-                                  <h4 className="text-sm font-semibold mb-2">
-                                    Staff
-                                  </h4>
-                                  <div className="space-y-2 mb-4">
-                                    <div className="flex items-center text-sm text-muted-foreground">
-                                      <span className="font-medium mr-2">
-                                        Dive Master:
-                                      </span>
-                                      {trip.diveMaster}
-                                    </div>
-                                    <div className="flex items-center text-sm text-muted-foreground">
-                                      <span className="font-medium mr-2">
-                                        Instructor:
-                                      </span>
-                                      {trip.instructor}
-                                    </div>
-                                  </div>
-
-                                  <h4 className="text-sm font-semibold mb-2">
-                                    Vehicle Details
-                                  </h4>
-                                  <div className="text-sm text-muted-foreground mb-4">
-                                    {trip.vehicle &&
-                                      (
-                                        <>
-                                          <div className="flex items-center mb-1">
-                                            {trip.vehicle.type === "boat" && (
-                                              <Ship className="h-4 w-4 mr-2" />
-                                            )}
-                                            {trip.vehicle.type ===
-                                              "speedboat" &&
-                                              <Ship className="h-4 w-4 mr-2" />}
-                                            {trip.vehicle.type ===
-                                              "catamaran" &&
-                                              (
-                                                <Anchor className="h-4 w-4 mr-2" />
-                                              )}
-                                            {trip.vehicle.name}
-                                          </div>
-                                          <div className="text-xs text-muted-foreground">
-                                            Vehicle Capacity:{" "}
-                                            {trip.vehicle.capacity} persons
-                                          </div>
-                                        </>
-                                      )}
+                              <TableCell>
+                                <div className="flex items-center justify-center">
+                                  {expandedRows.includes(trip.id)
+                                    ? <ChevronDown className="h-4 w-4" />
+                                    : <ChevronRight className="h-4 w-4" />}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">{trip.title}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {trip.difficulty}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col">
+                                  <div className="flex items-center">
+                                    <Calendar className="mr-1 h-3 w-3" />
+                                    <span>{trip?.date && trip?.date.toDateString()}</span>
                                   </div>
                                 </div>
+                              </TableCell>
+                              <TableCell>{trip.location}</TableCell>
+                              <TableCell>{trip.diveMaster}</TableCell>
+                              <TableCell className="text-center">
+                                {trip.capacity}
+                              </TableCell>
+                              <TableCell className="text-center">
+                                {trip.booked}
+                              </TableCell>
+                              <TableCell>${trip.price}</TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={trip.status === "completed"
+                                    ? "outline"
+                                    : "default"}
+                                  className={trip.status === "upcoming"
+                                    ? "bg-blue-500"
+                                    : trip.status === "in_progress"
+                                      ? "bg-amber-500"
+                                      : trip.status === "completed"
+                                        ? "bg-green-500"
+                                        : "bg-red-500"}
+                                >
+                                  {trip.status}
+                                </Badge>
+                              </TableCell>
+                              {isAllCenters && <TableCell>{trip.center}</TableCell>}
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <span className="sr-only">Open menu</span>
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        setSelectedTrip(trip);
+                                        setIsEditTripOpen(true);
+                                      }}
+                                    >
+                                      <Edit className="mr-2 h-4 w-4" /> Edit Trip
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() => {
+                                        setSelectedTrip(trip);
+                                        setIsDeleteTripAlertOpen(true);
+                                      }}
+                                    >
+                                      <Trash className="mr-2 h-4 w-4" /> Remove
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                            {expandedRows.includes(trip.id) && (
+                              <TableRow key={`${trip.id}#`} className="bg-muted/30">
+                                <TableCell
+                                  colSpan={isAllCenters ? 10 : 9}
+                                  className="p-4"
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <h4 className="text-sm font-semibold mb-2">
+                                        Description
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground mb-4">
+                                        {trip.description}
+                                      </p>
 
-                                <div>
-                                  <h4 className="text-sm font-semibold mb-2 flex items-center">
-                                    <MapPin className="h-4 w-4 mr-1" />{" "}
-                                    Location Details
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground mb-4">
-                                    {trip.location}
-                                  </p>
+                                      <h4 className="text-sm font-semibold mb-2">
+                                        Duration
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground mb-4">
+                                        {trip.duration}
+                                      </p>
 
-                                  <h4 className="text-sm font-semibold mb-2 flex items-center">
-                                    <Users className="h-4 w-4 mr-1" />{" "}
-                                    Participants ({trip.participants.length})
-                                  </h4>
-                                  <div className="text-sm text-muted-foreground mb-4">
-                                    <div className="grid grid-cols-1 gap-2">
-                                      {trip.participants.map((
-                                        participant,
-                                        index,
-                                      ) => (
-                                        <div
-                                          key={index}
-                                          className="flex flex-col p-2 border rounded-md"
-                                        >
-                                          <div className="font-medium">
-                                            {participant.name}
-                                          </div>
-                                          <div className="text-xs space-y-1">
-                                            <div>
-                                              Certification:{" "}
-                                              {participant.certification}
-                                            </div>
-                                            <div>
-                                              Level: {participant.level}
-                                            </div>
-                                          </div>
+                                      <h4 className="text-sm font-semibold mb-2">
+                                        Staff
+                                      </h4>
+                                      <div className="space-y-2 mb-4">
+                                        <div className="flex items-center text-sm text-muted-foreground">
+                                          <span className="font-medium mr-2">
+                                            Dive Master:
+                                          </span>
+                                          {trip.diveMaster}
                                         </div>
-                                      ))}
+                                        <div className="flex items-center text-sm text-muted-foreground">
+                                          <span className="font-medium mr-2">
+                                            Instructor:
+                                          </span>
+                                          {trip.instructor}
+                                        </div>
+                                      </div>
+
+                                      <h4 className="text-sm font-semibold mb-2">
+                                        Vehicle Details
+                                      </h4>
+                                      <div className="text-sm text-muted-foreground mb-4">
+                                        {trip.vehicle &&
+                                          (
+                                            <>
+                                              <div className="flex items-center mb-1">
+                                                {trip.vehicle.type === "boat" && (
+                                                  <Ship className="h-4 w-4 mr-2" />
+                                                )}
+                                                {trip.vehicle.type ===
+                                                  "speedboat" &&
+                                                  <Ship className="h-4 w-4 mr-2" />}
+                                                {trip.vehicle.type ===
+                                                  "catamaran" &&
+                                                  (
+                                                    <Anchor className="h-4 w-4 mr-2" />
+                                                  )}
+                                                {trip.vehicle.name}
+                                              </div>
+                                              <div className="text-xs text-muted-foreground">
+                                                Vehicle Capacity:{" "}
+                                                {trip.vehicle.capacity} persons
+                                              </div>
+                                            </>
+                                          )}
+                                      </div>
+                                    </div>
+
+                                    <div>
+                                      <h4 className="text-sm font-semibold mb-2 flex items-center">
+                                        <MapPin className="h-4 w-4 mr-1" />{" "}
+                                        Location Details
+                                      </h4>
+                                      <p className="text-sm text-muted-foreground mb-4">
+                                        {trip.location}
+                                      </p>
+
+                                      <h4 className="text-sm font-semibold mb-2 flex items-center">
+                                        <Users className="h-4 w-4 mr-1" />{" "}
+                                        Participants ({trip.participants.length})
+                                      </h4>
+                                      <div className="text-sm text-muted-foreground mb-4">
+                                        <div className="grid grid-cols-1 gap-2">
+                                          {trip.participants.map((
+                                            participant,
+                                            index,
+                                          ) => (
+                                            <div
+                                              key={index}
+                                              className="flex flex-col p-2 border rounded-md"
+                                            >
+                                              <div className="font-medium">
+                                                {participant.name}
+                                              </div>
+                                              <div className="text-xs space-y-1">
+                                                <div>
+                                                  Certification:{" "}
+                                                  {participant.certification}
+                                                </div>
+                                                <div>
+                                                  Level: {participant.level}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

@@ -155,9 +155,6 @@ const formSchema = z.object({
   location: z.string().optional(),
   status: z.string().optional(),
   date: z.date().optional(),
-  // time: z.string().min(1, {
-  //   message: "Time is required.",
-  // }),
   time: z.string().optional(),
   capacity: z.coerce.number().optional(),
   price: z.string().optional(),
@@ -183,9 +180,11 @@ const formSchema = z.object({
       certification: z.string().optional(),
       level: z.string().optional(),
     }),
-  ),
-  selectedCustomerIds: z.array(z.string()).optional(),
+  ).default([]),
+  selectedCustomerIds: z.array(z.string()).default([]),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 export function AddTripForm(
   { onSuccess, mode, trip, actionCreate, actionUpdate }: {
@@ -206,16 +205,21 @@ export function AddTripForm(
   const [manualParticipants, setManualParticipants] = useState<
     Array<{ name: string; certification: string }>
   >([]);
-  const { currentCenter, isAllCenters, getCenterSpecificData } =
+  const { currentCenter, isAllCenters, getCenterSpecificData, centers } =
     useDiveCenter();
+  console.log('currentCenter', currentCenter);
+  console.log('isAllCenters', isAllCenters);
+
+  // Add a fallback for when currentCenter is undefined
+  const effectiveCenter = currentCenter || (centers.length > 0 ? centers[0] : null);
+  console.log('effectiveCenter', effectiveCenter);
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
     ? vehicles
     : vehicles.filter((vehicle) => vehicle.type === selectedVehicleType);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm({
     defaultValues: {
       title: trip?.title ?? "",
       status: trip?.status ?? "upcoming",
@@ -302,32 +306,46 @@ export function AddTripForm(
     setManualParticipants(updated);
   };
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: any) {
     setIsSubmitting(true);
 
-    // Calculate total expenses
-    const expenses = values.expenses;
-    const totalExpenses = Object.values(expenses)
-      .filter((value) => value !== "")
-      .reduce((sum, value) => sum + parseFloat(value || "0"), 0);
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-
-      toast({
-        title: `Trip ${
-          mode === ActionMode.create ? "created" : "updated"
-        } successfully`,
-        description: `${values.title} has been ${
-          mode === ActionMode.create ? "added to your dive trips." : "updated."
-        }`,
-      });
+    try {
+      console.log("Form submission started with values:", values);
+      console.log("Current center:", currentCenter);
+      
+      // Call the appropriate server action
+      if (mode === ActionMode.create && effectiveCenter?.id) {
+        console.log("Creating trip for center:", effectiveCenter.id);
+        await actionCreate(values, effectiveCenter.id);
+        toast({
+          title: "Trip created successfully",
+          description: `${values.title} has been added to your dive trips.`,
+        });
+      } else if (mode === ActionMode.update && trip?.id) {
+        console.log("Updating trip:", trip.id);
+        await actionUpdate(trip.id, values);
+        toast({
+          title: "Trip updated successfully",
+          description: `${values.title} has been updated.`,
+        });
+      } else {
+        console.error("Missing required data:", { mode, effectiveCenter, trip });
+        throw new Error("Missing required data for trip creation");
+      }
 
       form.reset();
       onSuccess();
       router.refresh();
-    }, 1000);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save trip. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   const getVehicleTypeIcon = (type: string) => {
@@ -347,8 +365,9 @@ export function AddTripForm(
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Tabs defaultValue="details" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="details">Trip Details</TabsTrigger>
+            <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>
@@ -455,7 +474,7 @@ export function AddTripForm(
                               )}
                             >
                               {field.value
-                                ? format(field.value, "PPP")
+                                ? format((field.value as any), "PPP")
                                 : <span>Pick a date</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
@@ -464,7 +483,7 @@ export function AddTripForm(
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
                             mode="single"
-                            selected={field.value}
+                            selected={field.value as any}
                             onSelect={field.onChange}
                             disabled={(date) => date < new Date()}
                             initialFocus
@@ -894,18 +913,14 @@ export function AddTripForm(
                                 >
                                   <FormControl>
                                     <Checkbox
-                                      checked={field.value?.includes(customer.id)}
+                                      checked={field.value?.includes(customer?.id)}
                                       onCheckedChange={(checked) => {
+                                        const currentValue = field.value || [];
                                         return checked
-                                          ? field.onChange([
-                                              ...((field.value ?? []) as string[]),
-                                              customer.id,
-                                            ])
-                                          : field.onChange(
-                                              (field.value ?? []).filter(
-                                                (value: string) => value !== customer.id,
-                                              ),
-                                            );
+                                          ? field.onChange([...currentValue, customer.id])
+                                          : field.onChange(currentValue.filter(
+                                              (value: string) => value !== customer.id,
+                                            ));
                                       }}
                                     />
                                   </FormControl>
@@ -1091,21 +1106,6 @@ export function AddTripForm(
           <Button
             type="submit"
             disabled={isSubmitting}
-            onClick={async () => {
-              const formData = new FormData();
-              const values = form.getValues();
-              Object.entries(values).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
-                  formData.append(key, value.toString());
-                }
-              });
-              if (mode === ActionMode.create && currentCenter?.id) {
-                await actionCreate(formData, currentCenter?.id);
-              } else {
-                await actionUpdate(trip?.id ?? null, formData);
-              }
-              router.refresh();
-            }}
           >
             {isSubmitting
               ? mode === ActionMode.create ? "Creating..." : "Updating..."

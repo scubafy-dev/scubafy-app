@@ -23,7 +23,7 @@ import { Equipment, EquipmentFormType } from "@/lib/equipment";
 import { ActionMode } from "@/types/all";
 import { useRouter } from "next/navigation";
 import { createEquipment, updateEquipment } from "@/lib/equipment";
-import { Condition, EquipmentStatus } from "@app/generated/prisma";
+import { Condition, EquipmentStatus, EquipmentType } from "@app/generated/prisma";
 
 interface AddEquipmentDialogProps {
   open: boolean;
@@ -39,7 +39,7 @@ export function AddEquipmentDialog(
     "basic",
   );
   const [formData, setFormData] = useState({
-    type: equipment?.type as EquipmentFormType["type"],
+    type: equipment?.type as EquipmentFormType["type"] || "BCD",
     sku: "",
     make: "",
     brand: equipment?.brand ?? "",
@@ -74,16 +74,60 @@ export function AddEquipmentDialog(
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     // Handle form submission
-    console.log(formData);
+    console.log('======>',formData);
     if (mode === ActionMode.create) {
-      createEquipment(formData);
-      router.refresh();
+      // Map form data to match EquipmentFormType interface
+      const equipmentData = {
+        type: formData.type as EquipmentFormType["type"],
+        brand: formData.brand || "Generic",
+        model: formData.model,
+        serialNumber: formData.serialNumber,
+        purchaseDate: formData.purchaseDate,
+        lastInspection: formData.lastInspection,
+        nextInspection: formData.nextInspection,
+        status: formData.status as EquipmentFormType["status"],
+        condition: formData.condition as EquipmentFormType["condition"],
+        usageCount: formData.usageCount || null,
+        usageLimit: formData.usageLimit || null,
+        notes: formData.notes || "",
+      };
+      
+      const res = await createEquipment(equipmentData);
+      console.log('create response', res);
+      
+      if (res?.success) {
+        router.refresh();
+      } else {
+        console.error('Failed to create equipment:', res?.error);
+      }
     } else {
       if (equipment) {
-        updateEquipment(equipment.id, formData);
-        router.refresh();
+        // Map form data to match EquipmentFormType interface for update
+        const equipmentData = {
+          type: formData.type as EquipmentFormType["type"],
+          brand: formData.brand || "Generic",
+          model: formData.model,
+          serialNumber: formData.serialNumber,
+          purchaseDate: formData.purchaseDate,
+          lastInspection: formData.lastInspection,
+          nextInspection: formData.nextInspection,
+          status: formData.status as EquipmentFormType["status"],
+          condition: formData.condition as EquipmentFormType["condition"],
+          usageCount: formData.usageCount || null,
+          usageLimit: formData.usageLimit || null,
+          notes: formData.notes || "",
+        };
+        
+        const res = await updateEquipment(equipment.id, equipmentData);
+        console.log('update response', res);
+        
+        if (res?.success) {
+          router.refresh();
+        } else {
+          console.error('Failed to update equipment:', res?.error);
+        }
       }
     }
     onOpenChange(false);
@@ -134,13 +178,21 @@ export function AddEquipmentDialog(
               <Label htmlFor="type" className="text-sm font-medium">
                 Equipment Type
               </Label>
-              <Input
-                id="type"
-                placeholder="Scuba Tank, BCD, Regulator, etc."
+              <Select
                 value={formData.type}
-                onChange={(e) => handleInputChange("type", e.target.value)}
-                className="h-9"
-              />
+                onValueChange={(value) => handleInputChange("type", value)}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Select equipment type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BCD">BCD</SelectItem>
+                  <SelectItem value="Regulator">Regulator</SelectItem>
+                  <SelectItem value="Wetsuit">Wetsuit</SelectItem>
+                  <SelectItem value="DiveComputer">Dive Computer</SelectItem>
+                  <SelectItem value="Fins">Fins</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="sku" className="text-sm font-medium">SKU</Label>
