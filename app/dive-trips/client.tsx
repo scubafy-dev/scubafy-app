@@ -232,7 +232,7 @@ export default function DiveTripsPage() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        diveTrips.map((trip) => (
+                        diveTrips?.map((trip) => (
                           <>
                             <TableRow
                               key={trip.id}
