@@ -21,7 +21,8 @@ export interface TaskWithAssignee {
   };
 }
 
-export async function createTask(formData: FormData) {
+export async function createTask(formData: FormData, diveCenterId: string) {
+  console.log('task payload',formData)
   // 1) Ensure required fields
   const requiredDefaults: Record<string, string> = {
     title: "Untitled Task",
@@ -37,6 +38,10 @@ export async function createTask(formData: FormData) {
 
   if (!formData.get("assignedTo")) {
     throw new Error("Missing assignee");
+  }
+
+  if (!diveCenterId) {
+    throw new Error("Missing dive center ID");
   }
 
   // 2) Default priority and status if missing
@@ -84,6 +89,7 @@ export async function createTask(formData: FormData) {
       priority,
       status,
       category,
+      diveCenterId,
     },
     include: {
       assignedTo: {
@@ -96,7 +102,7 @@ export async function createTask(formData: FormData) {
     },
   });
 
-  return task;
+  return { success: true, data: task };
 }
 
 export async function updateTask(id: string, formData: FormData) {
@@ -188,8 +194,10 @@ export async function getTaskById(id: string) {
   return task;
 }
 
-export async function getAllTasks() {
+export async function getAllTasks(diveCenterId?: string) {
+  const whereClause = diveCenterId ? { diveCenterId } : {};
   const tasks = await prisma.task.findMany({
+    where: whereClause,
     orderBy: { dueDate: "asc" },
     include: {
       assignedTo: {

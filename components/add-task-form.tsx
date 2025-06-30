@@ -37,6 +37,8 @@ import { createTask } from "@/lib/task";
 import { getAllStaff } from "@/lib/staffs";
 import { Staff } from "@/app/generated/prisma";
 import { useRouter } from "next/navigation";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -61,6 +63,9 @@ interface AddTaskFormProps {
 }
 
 export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
+  const { currentCenter, isAllCenters, getCenterSpecificData } =
+  useDiveCenter();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
   const router = useRouter();
@@ -83,7 +88,29 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
         Object.entries(values).forEach(([key, value]) => {
           formData.append(key, value.toString());
         });
-        await createTask(formData);
+        if (!currentCenter?.id) {
+          toast({
+            title: "Error",
+            description: "Dive center not found.",
+          });
+          return;
+        }
+        const res= await createTask(formData, currentCenter.id);
+        if (res?.success) {
+          toast({
+            title: "Task added successfully"
+          });
+          form.reset();
+          onSuccess();
+          router.refresh()
+        } else {
+          console.error('Failed to create task:', res);
+          toast({
+            title: "Error",
+            description: "Failed to create task. Please try again.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error creating task:", error);
         setIsSubmitting(false);

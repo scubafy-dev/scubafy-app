@@ -13,7 +13,7 @@ export default function DashboardClient() {
     // Use either the current center's stats or aggregated stats based on selection
     const stats = isAllCenters
         ? allCentersStats
-        : currentCenter?.stats || allCentersStats;
+        : (currentCenter as any)?.stats || allCentersStats;
 
     return (
         <DashboardShell>

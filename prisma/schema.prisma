@@ -83,6 +83,7 @@ model DiveCenter {
   DiveTrip DiveTrip[]
   fleetVehicles FleetVehicle[]
   customers Customer[]
+  tasks Task[]
 
   @@map("dive_center")
 }
@@ -379,8 +380,10 @@ model Task {
   dueDate  DateTime
   priority Priority   @default(medium)
   status   TaskStatus @default(pending)
-
   category TaskCategory
+
+  diveCenterId String?
+  diveCenter   DiveCenter? @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
