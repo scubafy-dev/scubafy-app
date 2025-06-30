@@ -33,47 +33,70 @@ const DiveCenterContext = createContext<DiveCenterContextType | undefined>(
 
 export function DiveCenterProvider({ children }: { children: ReactNode }) {
   const [diveCenters, setDiveCenters] = useState<DiveCenter[]>([]);
-
-  const [currentCenter, setCurrentCenter] = useState<DiveCenter | null>(
-    null,
-  );
+  const [currentCenter, setCurrentCenter] = useState<DiveCenter | null>(null);
   const [isAllCenters, setIsAllCenters] = useState(false);
   const allCentersStats = getAggregatedStats();
   const pathname = usePathname();
   const router = useRouter();
 
+  // Add logging for state changes
+  useEffect(() => {
+    console.log("DiveCenter state changed:", {
+      diveCenters: diveCenters.length,
+      currentCenter: currentCenter?.name || "null",
+      isAllCenters
+    });
+  }, [diveCenters, currentCenter, isAllCenters]);
+
   useEffect(() => {
     // Fetch dive centers from the server or any data source
     const fetchDiveCenters = async () => {
       try {
+        console.log("Fetching dive centers...");
         const centers = await getAllDiveCenters();
+        console.log("Fetched dive centers:", centers);
+        
+        if (!centers || centers.length === 0) {
+          console.warn("No dive centers found for user");
+          setDiveCenters([]);
+          setCurrentCenter(null);
+          return;
+        }
+        
         setDiveCenters(centers);
-        // diveCenters.push(...centers);
-        if (centers.length > 0) {
+        
+        // After fetching centers, check localStorage for saved selection
+        const savedCenterId = localStorage.getItem("currentCenterId");
+        const savedIsAllCenters = localStorage.getItem("isAllCenters") === "true";
+
+        if (savedIsAllCenters) {
+          console.log("Setting to all centers mode");
+          setIsAllCenters(true);
+          setCurrentCenter(null);
+        } else if (savedCenterId && centers.length > 0) {
+          const center = centers.find((c) => c.id === savedCenterId);
+          if (center) {
+            console.log("Setting saved center:", center.name);
+            setCurrentCenter(center);
+            setIsAllCenters(false);
+          } else {
+            console.log("Saved center not found, setting first center");
+            setCurrentCenter(centers[0]);
+            setIsAllCenters(false);
+          }
+        } else if (centers.length > 0) {
+          console.log("No saved selection, setting first center");
           setCurrentCenter(centers[0]);
+          setIsAllCenters(false);
         }
       } catch (error) {
         console.error("Failed to load dive centers:", error);
+        // Set empty state on error
+        setDiveCenters([]);
+        setCurrentCenter(null);
       }
     };
     fetchDiveCenters();
-  }, []);
-
-  // Load saved center selection from localStorage on initial load
-  useEffect(() => {
-    const savedCenterId = localStorage.getItem("currentCenterId");
-    const savedIsAllCenters = localStorage.getItem("isAllCenters") === "true";
-
-    if (savedIsAllCenters) {
-      setIsAllCenters(true);
-      setCurrentCenter(null);
-    } else if (savedCenterId) {
-      const center = diveCenters.find((c) => c.id === savedCenterId);
-      if (center) {
-        setCurrentCenter(center);
-        setIsAllCenters(false);
-      }
-    }
   }, []);
 
   // Save center selection to localStorage when it changes

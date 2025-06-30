@@ -41,7 +41,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import * as z from "zod";
-import { createCustomer } from "@/lib/customers";
+import { createCustomerAction } from "@/lib/customers";
 import {
     Popover,
     PopoverContent,
@@ -55,6 +55,7 @@ interface RentEquipmentDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     equipment: Equipment | null;
+    diveCenterId: string;
 }
 
 const formSchema = z.object({
@@ -62,8 +63,8 @@ const formSchema = z.object({
     fullName: z.string().optional(),
     email: z.string().email().optional(),
     rentPrice: z.string().optional(),
-    rentFrom: z.date().optional().default(new Date()),
-    rentTo: z.date().optional().default(new Date()),
+    rentFrom: z.date().optional(),
+    rentTo: z.date().optional(),
 }).refine((data) => {
     return data.rentedTo || (data.fullName && data.email);
 }, {
@@ -72,7 +73,7 @@ const formSchema = z.object({
 });
 
 export function RentEquipmentDialog(
-    { open, onOpenChange, equipment }: RentEquipmentDialogProps,
+    { open, onOpenChange, equipment, diveCenterId }: RentEquipmentDialogProps,
 ) {
     const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">(
         "basic",
@@ -91,6 +92,8 @@ export function RentEquipmentDialog(
             rentedTo: "",
             fullName: "",
             email: "",
+            rentFrom: undefined,
+            rentTo: undefined,
         },
     });
 
@@ -98,14 +101,14 @@ export function RentEquipmentDialog(
         // Fetch staff members from the server or context
         const fetchCustomers = async () => {
             try {
-                const customer = await getAllCustomers();
+                const customer = await getAllCustomers(diveCenterId);
                 setCustomers(customer as Customer[]);
             } catch (error) {
                 console.error("Error fetching customers.", error);
             }
         };
         fetchCustomers();
-    }, []);
+    }, [diveCenterId]);
 
     const handleInputChange = (field: string, value: string | boolean) => {
         setFormData((prev) => ({
@@ -139,6 +142,10 @@ export function RentEquipmentDialog(
                 Object.entries(values).forEach(([key, value]) => {
                     formData.append(key, value?.toString());
                 });
+                
+                // Add dive center ID to form data for the server action
+                formData.append("diveCenterId", diveCenterId);
+                
                 const existingCustomer = formData.get("rentedTo") as string;
                 const rentPrice = formData.get("rentPrice")
                     ? formData.get("rentPrice") as string
@@ -155,8 +162,6 @@ export function RentEquipmentDialog(
                     return;
                 }
                 if (existingCustomer) {
-                    console.log("equipment?.id - ", equipment?.id);
-
                     await rentEquipment(
                         equipment?.id,
                         formData.get("rentedTo") as string,
@@ -165,13 +170,10 @@ export function RentEquipmentDialog(
                         rentTo,
                     );
                 } else {
-                    // const newCustomer = {
-                    //     fullName: formData.get("fullName") as string,
-                    //     email: formData.get("email") as string,
-                    // };
-                    const newCustomer = await createCustomer(formData);
+                    const newCustomer = await createCustomerAction(formData);
                     await rentEquipment(
                         equipment?.id,
+                        // @ts-ignore
                         newCustomer.id,
                         rentPrice,
                         rentFrom,
@@ -183,7 +185,6 @@ export function RentEquipmentDialog(
                 setIsSubmitting(false);
                 return;
             }
-            console.log(values);
             setIsSubmitting(false);
             form.reset();
             router.refresh();

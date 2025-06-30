@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -50,7 +50,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
-import { addCourse } from "@/lib/course"; // import server action
+import { addCourse, getAllCourses } from "@/lib/course"; // import server action
 import {
     CertificationLevel,
     Course,
@@ -61,6 +61,8 @@ import { useRouter } from "next/navigation";
 
 import { EditCourseDialog } from "./EditCourseDialog";
 import { se } from "date-fns/locale";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { useToast } from "@/hooks/use-toast";
 
 // Types for the course tracker
 interface Student {
@@ -83,27 +85,16 @@ interface Dive {
     conditions: string;
 }
 
-// interface Course {
-//     id: string;
-//     title: string;
-//     level: string;
-//     startDate: string;
-//     endDate: string;
-//     instructor: string;
-//     instructorContact: string;
-//     location: string;
-//     cost: string;
-//     students: Student[];
-//     materials: string[];
-//     equipment: string[];
-//     dives: Dive[];
-//     specialNeeds: string;
-//     status: "active" | "completed" | "upcoming";
-// }
+// Add this type for courses with relations
+export type CourseWithRelations = Course & {
+    students: any[]; // Replace any with your actual student type if available
+    diveCenter?: any;
+};
 
-export default function CourseTrackerClient(
-    { courses }: { courses: Course[] },
-) {
+export default function CourseTrackerClient() {
+    const { toast } = useToast()
+    const { currentCenter } =
+        useDiveCenter();
     const [activeTab, setActiveTab] = useState("all");
     const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
     const [isEditCourseOpen, setIsEditCourseOpen] = useState(false);
@@ -116,6 +107,43 @@ export default function CourseTrackerClient(
     const [status, setStatus] = useState<CourseStatus>("upcoming");
 
     const router = useRouter();
+
+    const [isCourseListLoading, setIsCourseListLoading] = useState(false)
+    const [courseList, setCourseList] = useState<CourseWithRelations[]>([])
+
+    const fetchCourses = useCallback(async () => {
+        try {
+            setIsCourseListLoading(true);
+            const coursesData = await getAllCourses(currentCenter?.id);
+            console.log("Fetched coursesData:", coursesData);
+            setCourseList(coursesData as any);
+        } catch (error) {
+            console.error("Failed to load customersData:", error);
+            setCourseList([]);
+        } finally {
+            setIsCourseListLoading(false);
+        }
+    }, [currentCenter?.id]);
+
+    useEffect(() => {
+        // Always set loading to true when currentCenter changes
+        setIsCourseListLoading(true);
+
+        if (currentCenter?.id) {
+            fetchCourses();
+        } else {
+            // If no center, just set empty state and stop loading
+            setCourseList([]);
+            setIsCourseListLoading(false);
+        }
+    }, [currentCenter]);
+
+    // onSuccess a call
+    const handleCourseCreated = useCallback(async () => {
+        // Refresh the customer list after successful creation
+        await fetchCourses();
+        setIsCourseListLoading(false);
+    }, [fetchCourses]);
 
     // Example courses data
     //   const [courses, setCourses] = useState<Course[]>([
@@ -258,9 +286,9 @@ export default function CourseTrackerClient(
         setCourseDetailsOpen(true);
     };
 
-    const filteredCourses = activeTab === "all"
-        ? courses
-        : courses.filter((course) => course.status === activeTab);
+    const filteredCourses: CourseWithRelations[] = activeTab === "all"
+        ? courseList
+        : courseList.filter((course) => course.status === activeTab);
 
     const getLevelBadgeColor = (level: string) => {
         switch (level) {
@@ -293,13 +321,21 @@ export default function CourseTrackerClient(
     };
 
     async function handleAddCourse(formData: FormData) {
-        await addCourse(formData);
-        // Refresh client state after adding
-        // Simplest: reload page or refetch from server. For example:
-        // const res = await fetch("/api/courses"); // You need to implement this API or use a route handler to fetch courses
-        // const updatedCourses = await res.json();
-        router.refresh();
-        setIsAddCourseOpen(false);
+        if (!currentCenter?.id) {
+            throw new Error("No center selected");
+        }
+        const res = await addCourse(formData, currentCenter.id);
+        if (res?.success) {
+            toast({
+                title: "Course added successfully",
+            });
+            handleCourseCreated();
+            router.refresh();
+            setIsAddCourseOpen(false);
+        } else {
+            router.refresh();
+            setIsAddCourseOpen(false);
+        }
     }
 
     return (
@@ -326,7 +362,8 @@ export default function CourseTrackerClient(
                         <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                         <TabsTrigger value="completed">Completed</TabsTrigger>
                     </TabsList>
-                    <div className="flex items-center gap-2">
+                    {/* Future feature */}
+                    {/* <div className="flex items-center gap-2">
                         <div className="relative">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -338,7 +375,7 @@ export default function CourseTrackerClient(
                         <Button variant="outline" size="icon">
                             <Filter className="h-4 w-4" />
                         </Button>
-                    </div>
+                    </div> */}
                 </div>
 
                 <TabsContent value="all" className="space-y-4">
@@ -362,241 +399,252 @@ export default function CourseTrackerClient(
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredCourses.map((course) => (
-                                    <React.Fragment key={course.id}>
-                                        <TableRow
-                                            className="cursor-pointer hover:bg-muted/50"
-                                            onClick={() =>
-                                                toggleCourseExpansion(
-                                                    course.id,
-                                                )}
-                                        >
-                                            <TableCell
-                                                className="font-medium"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    viewCourseDetails(course);
-                                                }}
-                                            >
-                                                {course.title}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    className={getLevelBadgeColor(
-                                                        course
-                                                            .certificationLevel ||
-                                                            "",
-                                                    )}
-                                                >
-                                                    {course
-                                                        .certificationLevel ||
-                                                        "N/A"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                {course.startDate
-                                                    ?.toDateString()} -{" "}
-                                                {course.endDate
-                                                    ?.toDateString() || ""}
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                {course.instructorName}
-                                            </TableCell>
-                                            <TableCell className="hidden md:table-cell">
-                                                {course.studentsCount}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    className={getStatusBadgeColor(
-                                                        course.status || "",
-                                                    )}
-                                                >
-                                                    {course.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                {expandedCourseId === course.id
-                                                    ? (
-                                                        <ChevronUp className="h-4 w-4 mx-auto" />
-                                                    )
-                                                    : (
-                                                        <ChevronDown className="h-4 w-4 mx-auto" />
-                                                    )}
+                                {
+                                    isCourseListLoading ?
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="text-center">
+                                                Loading courses...
                                             </TableCell>
                                         </TableRow>
-                                        {expandedCourseId === course.id && (
-                                            <TableRow className="bg-muted/30">
-                                                <TableCell
-                                                    colSpan={7}
-                                                    className="p-4"
-                                                >
-                                                    <div className="space-y-4">
-                                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Location
-                                                                </h4>
-                                                                <p className="text-sm">
-                                                                    {course
-                                                                        .location}
-                                                                </p>
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Cost
-                                                                </h4>
-                                                                <p className="text-sm">
-                                                                    ${course
-                                                                        .cost}
-                                                                </p>
-                                                            </div>
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Instructor
-                                                                    Contact
-                                                                </h4>
-                                                                <p className="text-sm">
-                                                                    {course
-                                                                        .instructorContact}
-                                                                </p>
-                                                            </div>
-                                                        </div>
+                                        :
+                                        <>
+                                            {filteredCourses.map((course: any) => (
+                                                <React.Fragment key={course.id}>
+                                                    <TableRow
+                                                        className="cursor-pointer hover:bg-muted/50"
+                                                        onClick={() =>
+                                                            toggleCourseExpansion(
+                                                                course.id,
+                                                            )}
+                                                    >
+                                                        <TableCell
+                                                            className="font-medium"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                viewCourseDetails(course);
+                                                            }}
+                                                        >
+                                                            {course.title}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                className={getLevelBadgeColor(
+                                                                    course
+                                                                        .certificationLevel ||
+                                                                    "",
+                                                                )}
+                                                            >
+                                                                {course
+                                                                    .certificationLevel ||
+                                                                    "N/A"}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="hidden md:table-cell">
+                                                            {course.startDate
+                                                                ?.toDateString()} -{" "}
+                                                            {course.endDate
+                                                                ?.toDateString() || ""}
+                                                        </TableCell>
+                                                        <TableCell className="hidden md:table-cell">
+                                                            {course.instructorName}
+                                                        </TableCell>
+                                                        <TableCell className="hidden md:table-cell">
+                                                            {course.studentsCount}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Badge
+                                                                className={getStatusBadgeColor(
+                                                                    course.status || "",
+                                                                )}
+                                                            >
+                                                                {course.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {expandedCourseId === course.id
+                                                                ? (
+                                                                    <ChevronUp className="h-4 w-4 mx-auto" />
+                                                                )
+                                                                : (
+                                                                    <ChevronDown className="h-4 w-4 mx-auto" />
+                                                                )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                    {expandedCourseId === course.id && (
+                                                        <TableRow className="bg-muted/30">
+                                                            <TableCell
+                                                                colSpan={7}
+                                                                className="p-4"
+                                                            >
+                                                                <div className="space-y-4">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                                        <div>
+                                                                            <h4 className="text-sm font-semibold mb-1">
+                                                                                Location
+                                                                            </h4>
+                                                                            <p className="text-sm">
+                                                                                {course
+                                                                                    .location}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-semibold mb-1">
+                                                                                Cost
+                                                                            </h4>
+                                                                            <p className="text-sm">
+                                                                                ${course
+                                                                                    .cost}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-sm font-semibold mb-1">
+                                                                                Instructor
+                                                                                Contact
+                                                                            </h4>
+                                                                            <p className="text-sm">
+                                                                                {course
+                                                                                    .instructorContact}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
 
-                                                        <div>
-                                                            <h4 className="text-sm font-semibold mb-1">
-                                                                Students
-                                                            </h4>
-                                                            <ul className="text-sm space-y-1">
-                                                                {
-                                                                    /* {course.students
-                                                                    .map(
-                                                                        (
-                                                                            student,
-                                                                        ) => (
-                                                                            <li
-                                                                                key={student
-                                                                                    .id}
-                                                                            >
-                                                                                {student
-                                                                                    .name}
-                                                                                {" "}
-                                                                                ({student
-                                                                                    .email})
-                                                                            </li>
-                                                                        ),
+                                                                    <div>
+                                                                        <h4 className="text-sm font-semibold mb-1">
+                                                                            Students
+                                                                        </h4>
+                                                                        <ul className="text-sm space-y-1">
+                                                                            {
+                                                                                /* {course.students
+                                                                                .map(
+                                                                                    (
+                                                                                        student,
+                                                                                    ) => (
+                                                                                        <li
+                                                                                            key={student
+                                                                                                .id}
+                                                                                        >
+                                                                                            {student
+                                                                                                .name}
+                                                                                            {" "}
+                                                                                            ({student
+                                                                                                .email})
+                                                                                        </li>
+                                                                                    ),
+                                                                                )} */
+                                                                            }
+                                                                        </ul>
+                                                                    </div>
+
+                                                                    {
+                                                                        /* {course.dives.length >
+                                                                            0 && (
+                                                                        <div>
+                                                                            <h4 className="text-sm font-semibold mb-1">
+                                                                                Dives
+                                                                            </h4>
+                                                                            <ul className="text-sm space-y-1">
+                                                                                {course
+                                                                                    .dives
+                                                                                    .map(
+                                                                                        (
+                                                                                            dive,
+                                                                                        ) => (
+                                                                                            <li
+                                                                                                key={dive
+                                                                                                    .id}
+                                                                                            >
+                                                                                                {dive
+                                                                                                    .date}
+                                                                                                {" "}
+                                                                                                -
+                                                                                                {" "}
+                                                                                                {dive
+                                                                                                    .site}
+                                                                                                {" "}
+                                                                                                ({dive
+                                                                                                    .maxDepth}m)
+                                                                                            </li>
+                                                                                        ),
+                                                                                    )}
+                                                                            </ul>
+                                                                        </div>
                                                                     )} */
-                                                                }
-                                                            </ul>
-                                                        </div>
+                                                                    }
 
-                                                        {
-                                                            /* {course.dives.length >
-                                                                0 && (
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Dives
-                                                                </h4>
-                                                                <ul className="text-sm space-y-1">
-                                                                    {course
-                                                                        .dives
-                                                                        .map(
-                                                                            (
-                                                                                dive,
-                                                                            ) => (
-                                                                                <li
-                                                                                    key={dive
-                                                                                        .id}
-                                                                                >
-                                                                                    {dive
-                                                                                        .date}
-                                                                                    {" "}
-                                                                                    -
-                                                                                    {" "}
-                                                                                    {dive
-                                                                                        .site}
-                                                                                    {" "}
-                                                                                    ({dive
-                                                                                        .maxDepth}m)
-                                                                                </li>
-                                                                            ),
-                                                                        )}
-                                                                </ul>
-                                                            </div>
-                                                        )} */
-                                                        }
-
-                                                        <div className="flex justify-end">
-                                                            <div className="flex-1">
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Update
-                                                                    Status
-                                                                </h4>
-                                                                <Select
-                                                                    defaultValue={course
-                                                                        .status ??
-                                                                        "upcoming"}
-                                                                    onValueChange={(
-                                                                        value,
-                                                                    ) => {
-                                                                    }}
-                                                                >
-                                                                    <SelectTrigger className="w-[180px]">
-                                                                        <SelectValue placeholder="Select status" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="upcoming">
-                                                                            Upcoming
-                                                                        </SelectItem>
-                                                                        <SelectItem value="active">
-                                                                            Active
-                                                                        </SelectItem>
-                                                                        <SelectItem value="completed">
-                                                                            Completed
-                                                                        </SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            </div>
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="mr-2"
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    viewCourseDetails(
-                                                                        course,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <FileText className="mr-2 h-4 w-4" />
-                                                                View Full
-                                                                Details
-                                                            </Button>
-                                                            <Button
-                                                                size="sm"
-                                                                onClick={(
-                                                                    e,
-                                                                ) => {
-                                                                    e.stopPropagation();
-                                                                    setIsEditCourseOpen(
-                                                                        true,
-                                                                    );
-                                                                    setSelectedCourse(
-                                                                        course,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Edit className="mr-2 h-4 w-4" />
-                                                                Edit Course
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </React.Fragment>
-                                ))}
+                                                                    <div className="flex justify-end">
+                                                                        <div className="flex-1">
+                                                                            <h4 className="text-sm font-semibold mb-1">
+                                                                                Update
+                                                                                Status
+                                                                            </h4>
+                                                                            <Select
+                                                                                defaultValue={course
+                                                                                    .status ??
+                                                                                    "upcoming"}
+                                                                                onValueChange={(
+                                                                                    value,
+                                                                                ) => {
+                                                                                }}
+                                                                            >
+                                                                                <SelectTrigger className="w-[180px]">
+                                                                                    <SelectValue placeholder="Select status" />
+                                                                                </SelectTrigger>
+                                                                                <SelectContent>
+                                                                                    <SelectItem value="upcoming">
+                                                                                        Upcoming
+                                                                                    </SelectItem>
+                                                                                    <SelectItem value="active">
+                                                                                        Active
+                                                                                    </SelectItem>
+                                                                                    <SelectItem value="completed">
+                                                                                        Completed
+                                                                                    </SelectItem>
+                                                                                </SelectContent>
+                                                                            </Select>
+                                                                        </div>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="sm"
+                                                                            className="mr-2"
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) => {
+                                                                                e.stopPropagation();
+                                                                                viewCourseDetails(
+                                                                                    course,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <FileText className="mr-2 h-4 w-4" />
+                                                                            View Full
+                                                                            Details
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) => {
+                                                                                e.stopPropagation();
+                                                                                setIsEditCourseOpen(
+                                                                                    true,
+                                                                                );
+                                                                                setSelectedCourse(
+                                                                                    course,
+                                                                                );
+                                                                            }}
+                                                                        >
+                                                                            <Edit className="mr-2 h-4 w-4" />
+                                                                            Edit Course
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </>
+                                }
                             </TableBody>
                         </Table>
                     </div>
@@ -646,7 +694,7 @@ export default function CourseTrackerClient(
                                                     className={getLevelBadgeColor(
                                                         course
                                                             .certificationLevel ||
-                                                            "",
+                                                        "",
                                                     )}
                                                 >
                                                     {course
@@ -898,7 +946,7 @@ export default function CourseTrackerClient(
                                                     className={getLevelBadgeColor(
                                                         course
                                                             .certificationLevel ||
-                                                            "",
+                                                        "",
                                                     )}
                                                 >
                                                     {course.certificationLevel}
@@ -1147,7 +1195,7 @@ export default function CourseTrackerClient(
                                                     className={getLevelBadgeColor(
                                                         course
                                                             .certificationLevel ||
-                                                            "",
+                                                        "",
                                                     )}
                                                 >
                                                     {course.certificationLevel}
@@ -1373,7 +1421,7 @@ export default function CourseTrackerClient(
                                                     className={getLevelBadgeColor(
                                                         selectedCourse
                                                             ?.certificationLevel ||
-                                                            "",
+                                                        "",
                                                     )}
                                                 >
                                                     {selectedCourse
@@ -1383,7 +1431,7 @@ export default function CourseTrackerClient(
                                                     className={getStatusBadgeColor(
                                                         selectedCourse
                                                             ?.status ||
-                                                            "active",
+                                                        "active",
                                                     )}
                                                 >
                                                     {selectedCourse?.status}
@@ -1448,7 +1496,8 @@ export default function CourseTrackerClient(
                                         </div>
                                     </div>
 
-                                    <div className="md:col-span-2">
+                                    {/* Temporarily invisible course materials */}
+                                    <div className="invisible md:col-span-2">
                                         <h3 className="text-sm font-medium mb-2">
                                             Materials & Equipment
                                         </h3>
@@ -1512,6 +1561,7 @@ export default function CourseTrackerClient(
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
 
                                 <div className="space-y-2">
@@ -1887,6 +1937,7 @@ export default function CourseTrackerClient(
                         <EditCourseDialog
                             selectedCourse={selectedCourse}
                             setIsEditCourseOpen={setIsEditCourseOpen}
+                            onSuccess={handleCourseCreated}
                         />
                     </Dialog>
                 )}

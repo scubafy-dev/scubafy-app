@@ -27,13 +27,16 @@ import {
 import { updateCourse } from "@/lib/course";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 export function EditCourseDialog(
-    { selectedCourse, setIsEditCourseOpen }: {
+    { selectedCourse, setIsEditCourseOpen,onSuccess }: {
         selectedCourse: Course;
         setIsEditCourseOpen: React.Dispatch<React.SetStateAction<boolean>>;
+        onSuccess:any;
     },
 ) {
+    const {toast}=useToast()
     const router = useRouter();
     const [level, setLevel] = React.useState<CourseCertificationLevel>(
         selectedCourse.certificationLevel || "openWater",
@@ -49,6 +52,10 @@ export function EditCourseDialog(
 
     async function handleUpdateCourse(formData: FormData) {
         await updateCourse(selectedCourse.id, formData);
+        toast({
+            title: "Course updated successfully",
+        });
+        onSuccess()
         router.refresh();
         setIsEditCourseOpen(false);
     }
@@ -56,7 +63,7 @@ export function EditCourseDialog(
     return (
         <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-                <DialogTitle>Add New Course</DialogTitle>
+                <DialogTitle>Edit Course Informations</DialogTitle>
                 <DialogDescription>
                     Create a new diving course. You can add students and dives
                     after creating the course.

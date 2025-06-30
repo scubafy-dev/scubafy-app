@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -38,16 +38,18 @@ import { StaffMember } from "./staff-directory";
 import { StaffWithPermissions } from "@/lib/staffs";
 import { useRouter } from "next/navigation";
 import { createStaff } from "@/lib/staffs";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { useToast } from "./ui/use-toast";
 
 // Define the permissions available in the system
 const accessOptions = [
-  { id: "dive-trips", label: "Dive Trips" },
+  { id: "diveTrips", label: "Dive Trips" },
   { id: "customers", label: "Customers" },
   { id: "equipment", label: "Equipment" },
   { id: "staff", label: "Staff" },
   { id: "tasks", label: "Tasks" },
   { id: "reports", label: "Reports" },
-  { id: "course-tracker", label: "Course Tracker" },
+  { id: "courseTracker", label: "Course Tracker" },
   { id: "calendar", label: "Calendar" },
   { id: "finances", label: "Finances" },
 ];
@@ -77,15 +79,19 @@ interface AddStaffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   staff?: StaffWithPermissions | null;
-  createStaff?: (formData: FormData) => Promise<void>;
+  createStaff?: (formData: FormData, diveCenterId: string) => Promise<void>;
   updateStaff?: (id: string, formData: FormData) => Promise<void>;
+  onSuccess?:any;
 }
 
 export function AddStaffDialog(
-  { open, onOpenChange, staff, createStaff, updateStaff }: AddStaffDialogProps,
+  { open, onOpenChange, staff, createStaff, updateStaff, onSuccess }: AddStaffDialogProps,
 ) {
+  console.log('staffInfo',staff)
   const router = useRouter();
-
+  const { currentCenter } = useDiveCenter()
+  const {toast} =useToast()
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<StaffFormValues>({
     resolver: zodResolver(staffSchema),
     defaultValues: {
@@ -104,40 +110,51 @@ export function AddStaffDialog(
     },
   });
 
-  function onSubmit(values: StaffFormValues) {
-    // Convert the form values to match StaffMember type
-    // const staffData = {
-    //   ...values,
-    //   // Ensure compatibility with StaffMember type which still has specialties and certification
-    //   specialties: values.access,
-    //   certification: values.role, // Use role as certification for backward compatibility
-    // };
+  useEffect(() => {
+    form.reset({
+      name: staff?.fullName || "",
+      email: staff?.email || "",
+      phone: staff?.phoneNumber || "",
+      role: staff?.roleTitle || "",
+      salary: staff?.salary ? String(staff.salary) : "",
+      age: staff?.age ? String(staff.age) : "",
+      gender: staff?.gender || "",
+      address: staff?.address || "",
+      emergencyContact: staff?.emergencyContact || "",
+      bio: staff?.bio || "",
+      access: staff?.permissions || [],
+      status: staff?.status || "active",
+    });
+  }, [staff, form]);
 
+  async function onSubmit(values: StaffFormValues) {
+    setIsSubmitting(true);
     const formData = new FormData();
-
     Object.entries(values).forEach(([key, val]) => {
       if (val == null) return;
-
       if (Array.isArray(val)) {
-        // for permissions, tags, whatever array field you have...
-        val.forEach((item) => {
-          formData.append(key, item);
-        });
+        val.forEach((item) => formData.append(key, item));
       } else {
         formData.append(key, String(val));
       }
     });
-
-    if (createStaff) {
-      createStaff(formData);
-    } else if (updateStaff && staff) {
-      updateStaff(staff.id, formData);
+    try {
+      if (createStaff && currentCenter?.id) {
+        await createStaff(formData, currentCenter.id);
+        toast({ title: "Staff added successfully" });
+      } else if (updateStaff && staff) {
+        await updateStaff(staff.id, formData);
+        toast({ title: "Staff updated successfully" });
+        onSuccess()
+      }
+      form.reset();
+      onOpenChange(false);
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      toast({ title: "Error", description: "Operation failed.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Reset form and close dialog
-    form.reset();
-    onOpenChange(false);
-    router.refresh();
   }
 
   return (
@@ -405,8 +422,8 @@ export function AddStaffDialog(
               <DialogClose asChild>
                 <Button type="button" variant="outline">Cancel</Button>
               </DialogClose>
-              <Button type="submit">
-                {createStaff ? "Add" : "Update"} Staff Member
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? (createStaff ? "Adding..." : "Updating...") : (createStaff ? "Add" : "Update")} Staff Member
               </Button>
             </DialogFooter>
           </form>

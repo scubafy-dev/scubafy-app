@@ -2,31 +2,32 @@
 "use server"
 import prisma from "@/prisma/prisma";
 import { Gender, StaffStatus, Permission } from "@app/generated/prisma";
-  
-export interface StaffWithPermissions {
-id: string;
-fullName: string;
-email: string;
-phoneNumber: string | null;
-age: number | null;
-gender: Gender | null;
-roleTitle: string | null;
-salary: number | null;
-status: StaffStatus;
-address: string | null;
-emergencyContact: string | null;
-bio: string | null;
-createdAt: Date;
-updatedAt: Date;
-permissions: Permission[];  
-}
-  
 
-export async function createStaff(formData: FormData) {
+export interface StaffWithPermissions {
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
+  age: number | null;
+  gender: Gender | null;
+  roleTitle: string | null;
+  salary: number | null;
+  status: StaffStatus;
+  address: string | null;
+  emergencyContact: string | null;
+  bio: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  permissions: Permission[];
+}
+
+
+export async function createStaff(formData: FormData, diveCenterId: string) {
   // 1) ensure required fields
+  console.log('formData server',formData)
   const requiredDefaults: Record<string, string> = {
-    fullName:    "Unnamed Staff",
-    email:       "no-email@example.com",
+    fullName: "Unnamed Staff",
+    email: "no-email@example.com",
     phoneNumber: "",
   };
   for (const [key, def] of Object.entries(requiredDefaults)) {
@@ -39,27 +40,27 @@ export async function createStaff(formData: FormData) {
   }
 
   // 3) extract & cast
-  const fullName        = formData.get("name") as string;
-  const email           = formData.get("email") as string;
-  const phoneNumber     = formData.get("phone") as string;
+  const fullName = formData.get("name") as string;
+  const email = formData.get("email") as string;
+  const phoneNumber = formData.get("phone") as string;
 
-  const ageStr          = formData.get("age") as string | null;
-  const age             = ageStr ? Number(ageStr) : null;
+  const ageStr = formData.get("age") as string | null;
+  const age = ageStr ? Number(ageStr) : null;
 
-  const genderValue     = formData.get("gender") as Gender | null;
-  const gender          = genderValue && Object.values(Gender).includes(genderValue)
+  const genderValue = formData.get("gender") as Gender | null;
+  const gender = genderValue && Object.values(Gender).includes(genderValue)
     ? (genderValue as Gender)
     : null;
 
-  const roleTitle       = (formData.get("role") as string) || null;
-  const status          = formData.get("status") as StaffStatus;
+  const roleTitle = (formData.get("role") as string) || null;
+  const status = formData.get("status") as StaffStatus;
 
-  const salaryStr          = formData.get("salary") as string | null;
-  const salary          = salaryStr ? Number(salaryStr) : null;
+  const salaryStr = formData.get("salary") as string | null;
+  const salary = salaryStr ? Number(salaryStr) : null;
 
-  const address         = (formData.get("address") as string) || null;
-  const emergencyContact= (formData.get("emergencyContact") as string) || null;
-  const bio             = (formData.get("bio") as string) || null;
+  const address = (formData.get("address") as string) || null;
+  const emergencyContact = (formData.get("emergencyContact") as string) || null;
+  const bio = (formData.get("bio") as string) || null;
 
   // collect all checked permissions (may be zero)
   const permissions = formData.getAll("access") as string[];
@@ -70,9 +71,13 @@ export async function createStaff(formData: FormData) {
   console.log("Creating staff with permissions: ", perms);
   console.log("Creating staff with email: ", email);
 
+  // Add this:
+  if (!diveCenterId) {
+    throw new Error("Missing dive center ID");
+  }
 
   // 4) create in DB
-  await prisma.staff.create({
+  const created = await prisma.staff.create({
     data: {
       fullName,
       email,
@@ -85,22 +90,25 @@ export async function createStaff(formData: FormData) {
       address,
       emergencyContact,
       bio,
+      diveCenterId,
       permissions: {
         create: perms,
       },
     },
   });
+
+  return { success: true, data: created }; 
 }
 
 export async function updateStaff(id: string, formData: FormData) {
-
+  console.log('formData server',formData)
   if (!id) throw new Error("Missing staff id");
 
   // build up scalar fields
   const data: Record<string, any> = {};
-  if (formData.get("name"))     data.fullName         = formData.get("name");
-  if (formData.get("email"))        data.email            = formData.get("email");
-  if (formData.get("phone"))  data.phoneNumber      = formData.get("phone");
+  if (formData.get("name")) data.fullName = formData.get("name");
+  if (formData.get("email")) data.email = formData.get("email");
+  if (formData.get("phone")) data.phoneNumber = formData.get("phone");
 
   if (formData.get("age") !== null) {
     const ageStr = formData.get("age") as string;
@@ -117,11 +125,11 @@ export async function updateStaff(id: string, formData: FormData) {
     if (Object.values(Gender).includes(g)) data.gender = g;
   }
 
-  if (formData.get("role"))       data.roleTitle        = formData.get("role");
-  if (formData.get("status"))          data.status           = formData.get("status");
-  if (formData.get("address"))         data.address          = formData.get("address");
-  if (formData.get("emergencyContact"))data.emergencyContact = formData.get("emergencyContact");
-  if (formData.get("bio"))             data.bio              = formData.get("bio");
+  if (formData.get("role")) data.roleTitle = formData.get("role");
+  if (formData.get("status")) data.status = formData.get("status");
+  if (formData.get("address")) data.address = formData.get("address");
+  if (formData.get("emergencyContact")) data.emergencyContact = formData.get("emergencyContact");
+  if (formData.get("bio")) data.bio = formData.get("bio");
 
   // handle permissions if they're present
   let permsUpdate = undefined;
@@ -132,7 +140,7 @@ export async function updateStaff(id: string, formData: FormData) {
       .map((p) => ({ permission: p as Permission }));
     permsUpdate = {
       deleteMany: {},
-      create:     perms,
+      create: perms,
     };
   }
 
@@ -160,9 +168,13 @@ export async function getStaffById(id: string) {
   });
 }
 
-export async function getAllStaff() {
+export async function getAllStaff(diveCenterId?: string) {
+  "use server";
+  const whereClause = diveCenterId ? { diveCenterId } : {};
+
   const rows = await prisma.staff.findMany({
     orderBy: { fullName: "asc" },
+    where: whereClause,
     include: {
       permissions: { select: { permission: true } },
     },
@@ -173,3 +185,17 @@ export async function getAllStaff() {
     permissions: permissions.map((p) => p.permission),
   }))
 }
+
+// export async function getAllStaff() {
+//   const rows = await prisma.staff.findMany({
+//     orderBy: { fullName: "asc" },
+//     include: {
+//       permissions: { select: { permission: true } },
+//     },
+//   });
+
+//   return rows.map(({ permissions, ...staff }) => ({
+//     ...staff,
+//     permissions: permissions.map((p) => p.permission),
+//   }))
+// }

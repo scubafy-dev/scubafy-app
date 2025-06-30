@@ -2,6 +2,7 @@
 
 import prisma  from '@prisma/prisma';
 import { redirect } from 'next/navigation';
+import { NextResponse } from 'next/server';
 import {
   EquipmentType,
   EquipmentStatus,
@@ -39,73 +40,73 @@ export type Equipment = {
   notes: string | null;
 }
 
+// Helper function to map string equipment types to enum values
+function mapEquipmentType(typeString: string): EquipmentType {
+  const typeMap: Record<string, EquipmentType> = {
+    'Scuba Tank': EquipmentType.BCD, // Map to closest available type
+    'BCD': EquipmentType.BCD,
+    'Regulator': EquipmentType.Regulator,
+    'Wetsuit': EquipmentType.Wetsuit,
+    'Dive Computer': EquipmentType.DiveComputer,
+    'DiveComputer': EquipmentType.DiveComputer,
+    'Fins': EquipmentType.Fins,
+    'Tank': EquipmentType.BCD, // Map tank to BCD as closest
+    'Cylinder': EquipmentType.BCD, // Map cylinder to BCD as closest
+  };
+  
+  // If the string is already a valid enum value, use it directly
+  if (Object.values(EquipmentType).includes(typeString as EquipmentType)) {
+    return typeString as EquipmentType;
+  }
+  
+  return typeMap[typeString] || EquipmentType.BCD; // Default to BCD if not found
+}
+
 export async function createEquipment(formData: EquipmentFormType) {
   // 1) Ensure all required fields have *something*
-  const requiredDefaults: Record<string,string> = {
-    type: EquipmentType.BCD,
-    brand: "Generic",
-    model: "Model X",
-    serialNumber: "SN-0000-0000",
-  };
-  // 2) Set up defaults for all the optional bits
-  const optionalDefaults: Record<string,string> = {
-    purchaseDate: new Date().toISOString(),
-    lastInspection:  new Date().toISOString(),
-    nextService:  new Date().toISOString(),
-    usageCount:   "0",
-    usageLimit:   "100",
-    status:       EquipmentStatus.available,
-    condition:    Condition.excellent,
-    notes:        "",
-  };
+  console.log('Equipments========>',formData)
+  
+  // 2) Pull everything out, casting to the right types
+  const type         = mapEquipmentType(formData.type as string);
+  const brand        = formData.brand        || "Generic";
+  const modelName    = formData.model        || "Model X";
+  const serialNumber = formData.serialNumber || "SN-0000-0000";
 
-  // 3) Pull everything out, casting to the right types
-  const type         = formData.type         as EquipmentType;
-  const brand        = requiredDefaults.brand        as string;
-  const modelName    = formData.model        as string;
-  const serialNumber = formData.serialNumber as string;
+  const purchaseDate = formData.purchaseDate ? new Date(formData.purchaseDate) : new Date();
+  const lastService  = formData.lastInspection ? new Date(formData.lastInspection) : new Date();
+  const nextService  = formData.nextInspection ? new Date(formData.nextInspection) : new Date();
 
-  const purchaseDate = new Date();
-  const lastService  = new Date(formData.lastInspection  as string);
-  const nextService  = new Date(formData.nextInspection  as string);
+  const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : 0;
+  const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : 100;
 
-  const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : null;
-  const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : null;
+  const status       = formData.status    || EquipmentStatus.available;
+  const condition    = formData.condition || Condition.excellent;
+  const notes        = formData.notes     || "";
 
-  const status       = optionalDefaults.status    as EquipmentStatus;
-  const condition    = formData.condition as Condition;
-  const notes        = optionalDefaults.notes     as string;
-
-  // 4) Create it in the database
+  // 3) Create it in the database
   try {
-    await prisma.equipment.create({
+    const created = await prisma.equipment.create({
       data: {
         type,
         brand,
         model: modelName,
         serialNumber,
-
         purchaseDate,
         lastService,
         nextService,
-
         usageCount,
         usageLimit,
-
         status,
         condition,
         notes,
       },
     });
+    return { success: true, data: created };
   } catch (err) {
     console.error("Could not create equipment:", err);
+    return { success: false, error: err };
   }
-
-  // if you want to redirect:
-  // redirect("/equipment");
 }
-
-
 
 export const  getAllEquipments = async () => {
   return prisma.equipment.findMany();
@@ -113,51 +114,48 @@ export const  getAllEquipments = async () => {
 
 export async function updateEquipment(id: string | null, formData: EquipmentFormType) {
     if(id === null){
-        return;
+        return { success: false, error: "No ID provided" };
     }
 
-    const type         = formData.type         as EquipmentType;
-    const brand        = "Generic";
-    const modelName    = formData.model        as string;
-    const serialNumber = formData.serialNumber as string;
+    const type         = mapEquipmentType(formData.type as string);
+    const brand        = formData.brand        || "Generic";
+    const modelName    = formData.model        || "Model X";
+    const serialNumber = formData.serialNumber || "SN-0000-0000";
   
-    const purchaseDate = new Date();
-    const lastService  = new Date(formData.lastInspection  as string);
-    const nextService  = new Date(formData.nextInspection  as string);
+    const purchaseDate = formData.purchaseDate ? new Date(formData.purchaseDate) : new Date();
+    const lastService  = formData.lastInspection ? new Date(formData.lastInspection) : new Date();
+    const nextService  = formData.nextInspection ? new Date(formData.nextInspection) : new Date();
   
-    const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : null;
-    const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : null;
+    const usageCount   = formData.usageCount ? parseInt(formData.usageCount as string, 10) : 0;
+    const usageLimit   = formData.usageLimit ? parseInt(formData.usageLimit as string, 10) : 100;
   
-    const status       = formData.status    as EquipmentStatus;
-    const condition    = formData.condition as Condition;
-    const notes        = formData.notes     as string;
-
+    const status       = formData.status    || EquipmentStatus.available;
+    const condition    = formData.condition || Condition.excellent;
+    const notes        = formData.notes     || "";
 
     try {
-        await prisma.equipment.update(
-            {
-                where: {
-                    id
-                },
-                data: {
-                    type,
-                    brand,
-                    serialNumber,
-                    purchaseDate,
-                    lastService,
-                    nextService,
-                    usageCount,
-                    usageLimit,
-                    status,
-                    condition,
-                    notes,
-                },
+        const updated = await prisma.equipment.update({
+            where: { id },
+            data: {
+                type,
+                brand,
+                model: modelName,
+                serialNumber,
+                purchaseDate,
+                lastService,
+                nextService,
+                usageCount,
+                usageLimit,
+                status,
+                condition,
+                notes,
             },
-        );
+        });
+        return { success: true, data: updated };
     } catch (error) {
-        console.log("error: ", error);
+        console.error("Could not update equipment:", error);
+        return { success: false, error: error };
     }
-
 }
 
 export const deleteEquipment = async (id: string) => {      

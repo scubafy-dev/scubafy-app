@@ -63,7 +63,8 @@ import {
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
-    AlertDialogOverlay,
+    AlertDialogFooter,
+    AlertDialogHeader,
     AlertDialogPortal,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -576,6 +577,7 @@ export default function EquipmentPage(
                             open={isRentEquipmentOpen}
                             onOpenChange={setIsRentEquipmentOpen}
                             equipment={selectedEquipment}
+                            diveCenterId={currentCenter?.id || ''}
                         />
                     </DialogContent>
                 </Dialog>
@@ -584,49 +586,34 @@ export default function EquipmentPage(
                     open={isDeleteEquipmentAlertOpen}
                     onOpenChange={setIsDeleteEquipmentAlertOpen}
                 >
-                    <AlertDialogPortal>
-                        <AlertDialogOverlay />
-                        <AlertDialogContent>
-                            <AlertDialogTitle>
-                                Are you sure?
-                            </AlertDialogTitle>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                This will remove this equipment related data
-                                from our servers.
+                                This will remove this equipment related data from our
+                                servers.
                             </AlertDialogDescription>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 25,
-                                    justifyContent: "flex-end",
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={async () => {
+                                    if (selectedEquipment) {
+                                        await deleteEquipment(selectedEquipment.id);
+                                        toast({
+                                            title: "Equipment deleted successfully.",
+                                            description: `Id: ${
+                                                selectedEquipment.id ?? "N/A"
+                                            }`,
+                                        });
+                                        router.refresh();
+                                    }
                                 }}
                             >
-                                <AlertDialogCancel>
-                                    Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={async () => {
-                                        if (selectedEquipment) {
-                                            await deleteEquipment(
-                                                selectedEquipment.id,
-                                            );
-                                            toast({
-                                                title:
-                                                    "Equipment deleted successfully.",
-                                                description: `Id: ${
-                                                    selectedEquipment.id ??
-                                                        "N/A"
-                                                }`,
-                                            });
-                                            router.refresh();
-                                        }
-                                    }}
-                                >
-                                    Yes, delete this equipment
-                                </AlertDialogAction>
-                            </div>
-                        </AlertDialogContent>
-                    </AlertDialogPortal>
+                                Yes, delete this equipment
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
                 </AlertDialog>
             </div>
         </DashboardShell>

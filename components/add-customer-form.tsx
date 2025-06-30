@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Customer } from "@/lib/customers";
+import { useDiveCenter } from "@/lib/dive-center-context";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -49,11 +50,12 @@ const formSchema = z.object({
 export function AddCustomerForm(
   { onSuccess, createCustomer, customer, updateCustomer }: {
     onSuccess: () => void;
-    createCustomer?: (formData: FormData) => Promise<Customer>;
+    createCustomer?: (formData: FormData, diveCenterId: string) => Promise<any>;
     customer: Customer | null;
     updateCustomer?: (id: string, formData: FormData) => Promise<void>;
   },
 ) {
+  const { currentCenter } = useDiveCenter()
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -74,41 +76,67 @@ export function AddCustomerForm(
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      console.log(values);
-      const formData = new FormData();
-      Object.entries(values).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          formData.append(key, value.toString());
-        }
-      });
-      if (updateCustomer) {
-        if (!customer) {
-          toast({
-            title: "Error",
-            description: "Customer not found.",
-          });
-          return;
-        }
-        updateCustomer(customer.id, formData);
-        toast({
-          title: "Customer added successfully",
-          description:
-            `${values.fullName} has been added to your customer database.`,
+    setTimeout(async () => {
+      try {
+        console.log(values);
+        const formData = new FormData();
+        Object.entries(values).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            formData.append(key, value.toString());
+          }
         });
-      } else if (createCustomer) {
-        createCustomer(formData);
-        toast({
-          title: "Customer added successfully",
-          description:
-            `${values.fullName} has been added to your customer database.`,
-        });
-      }
-      setIsSubmitting(false);
 
-      form.reset();
-      onSuccess();
-      router.refresh();
+        if (updateCustomer) {
+          if (!customer) {
+            toast({
+              title: "Error",
+              description: "Customer not found.",
+            });
+            return;
+          }
+          await updateCustomer(customer.id, formData);
+          toast({
+            title: "Customer updated successfully",
+            description: `${values.fullName} has been updated.`,
+          });
+          form.reset();
+          onSuccess();
+        } else if (createCustomer) {
+          if (!currentCenter?.id) {
+            toast({
+              title: "Error",
+              description: "Dive center not found.",
+            });
+            return;
+          }
+          const res = await createCustomer(formData, currentCenter.id);
+          console.log('customer added res', res);
+          if (res?.success) {
+            toast({
+              title: "Customer added successfully",
+              description: `${values.fullName} has been added to your customer database.`,
+            });
+            form.reset();
+            onSuccess();
+          } else {
+            console.error('Failed to create customer:', res?.error);
+            toast({
+              title: "Error",
+              description: "Failed to create customer. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save customer. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
     }, 1000);
   }
 
@@ -256,8 +284,8 @@ export function AddCustomerForm(
             {isSubmitting
               ? createCustomer ? "Adding..." : "Updating"
               : createCustomer
-              ? "Add Customer"
-              : "Update Customer"}
+                ? "Add Customer"
+                : "Update Customer"}
           </Button>
         </div>
       </form>

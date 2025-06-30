@@ -73,8 +73,8 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogOverlay,
   AlertDialogPortal,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -84,10 +84,11 @@ import { useRouter } from "next/navigation";
 import { set } from "date-fns";
 
 export function CustomersTable(
-  { customers, deleteCustomer, updateCustomer }: {
+  { customers, deleteCustomer, updateCustomer, isLoading }: {
     customers: Customer[];
     deleteCustomer: (id: string) => Promise<void>;
     updateCustomer: (id: string, formData: FormData) => Promise<void>;
+    isLoading?: boolean;
   },
 ) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -667,7 +668,16 @@ export function CustomersTable(
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading customers...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length
               ? (
                 table.getRowModel().rows.map((row: Row<Customer>) => (
                   <TableRow
@@ -748,40 +758,33 @@ export function CustomersTable(
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
       >
-        <AlertDialogPortal>
-          <AlertDialogOverlay />
-          <AlertDialogContent>
-            <AlertDialogTitle>
-              Are you sure?
-            </AlertDialogTitle>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will remove this customer related data from our servers.
             </AlertDialogDescription>
-            <div
-              style={{ display: "flex", gap: 25, justifyContent: "flex-end" }}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (selectedCustomer) {
+                  await deleteCustomer(selectedCustomer.id);
+                  toast({
+                    title: "Customer deleted successfully.",
+                    description: `id: ${
+                      selectedCustomer.id ?? "N/A"
+                    }   \n name: ${selectedCustomer.fullName}`,
+                  });
+                  setDeleteDialogOpen(false);
+                }
+              }}
             >
-              <AlertDialogCancel>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={async () => {
-                  if (selectedCustomer) {
-                    await deleteCustomer(selectedCustomer.id);
-                    toast({
-                      title: "Customer deleted successfully.",
-                      description: `id: ${
-                        selectedCustomer.id ?? "N/A"
-                      }   \n name: ${selectedCustomer.fullName}`,
-                    });
-                    router.refresh();
-                  }
-                }}
-              >
-                Yes, delete this customer
-              </AlertDialogAction>
-            </div>
-          </AlertDialogContent>
-        </AlertDialogPortal>
+              Yes, delete this customer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
       </AlertDialog>
     </div>
   );

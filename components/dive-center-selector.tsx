@@ -54,7 +54,8 @@ export function DiveCenterSelector() {
     const formData = new FormData(e.target as HTMLFormElement);
     const newCenter = await createDiveCenter(formData);
     setIsDialogOpen(false);
-    setDiveCenters((prev: any) => [...prev, newCenter]);
+    // @ts-ignore
+    setDiveCenters((prev:any) => [...prev, newCenter]);
     router.refresh();
   };
 
@@ -78,6 +79,7 @@ export function DiveCenterSelector() {
           <DropdownMenuItem
             className={isAllCenters ? "bg-muted" : ""}
             onClick={() => handleSelectCenter("all")}
+            disabled
           >
             All Dive Centers
           </DropdownMenuItem>

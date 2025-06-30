@@ -3,7 +3,7 @@
 import prisma from "@/prisma/prisma";
 import type { CourseCertificationLevel, CourseStatus } from "@/app/generated/prisma";
 
-export async function addCourse(formData: FormData) {
+export async function addCourse(formData: FormData, diveCenterId: string) {
 
   const title = formData.get("title") as string;
   let certificationLevelStr = formData.get("level") as string | null;
@@ -33,7 +33,7 @@ export async function addCourse(formData: FormData) {
   const studentsCountStr = formData.get("studentsCount") as string | null;
   const studentsCount = studentsCountStr ? parseInt(studentsCountStr, 10) : 0;
 
-  await prisma.course.create({
+  const created= await prisma.course.create({
     data: {
       title,
       certificationLevel,
@@ -46,8 +46,11 @@ export async function addCourse(formData: FormData) {
       cost,
       specialNeeds,
       studentsCount,
+      diveCenterId,
     },
   });
+
+  return { success: true, data: created }; 
 }
 
 export async function updateCourse(id: string, formData: FormData) {
@@ -106,8 +109,10 @@ export async function getCourseById(id: string) {
   });
 }
 
-export async function getAllCourses() {
+export async function getAllCourses(diveCenterId?: string) {
   return prisma.course.findMany({
+    where: diveCenterId ? { diveCenterId } : {},
     orderBy: { startDate: "desc" },
+    include: { students: true, diveCenter: true },
   });
 }
