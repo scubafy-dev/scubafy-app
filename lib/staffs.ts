@@ -24,6 +24,7 @@ export interface StaffWithPermissions {
 
 export async function createStaff(formData: FormData, diveCenterId: string) {
   // 1) ensure required fields
+  console.log('formData server',formData)
   const requiredDefaults: Record<string, string> = {
     fullName: "Unnamed Staff",
     email: "no-email@example.com",
@@ -100,7 +101,7 @@ export async function createStaff(formData: FormData, diveCenterId: string) {
 }
 
 export async function updateStaff(id: string, formData: FormData) {
-
+  console.log('formData server',formData)
   if (!id) throw new Error("Missing staff id");
 
   // build up scalar fields

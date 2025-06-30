@@ -43,13 +43,13 @@ import { useToast } from "./ui/use-toast";
 
 // Define the permissions available in the system
 const accessOptions = [
-  { id: "dive-trips", label: "Dive Trips" },
+  { id: "diveTrips", label: "Dive Trips" },
   { id: "customers", label: "Customers" },
   { id: "equipment", label: "Equipment" },
   { id: "staff", label: "Staff" },
   { id: "tasks", label: "Tasks" },
   { id: "reports", label: "Reports" },
-  { id: "course-tracker", label: "Course Tracker" },
+  { id: "courseTracker", label: "Course Tracker" },
   { id: "calendar", label: "Calendar" },
   { id: "finances", label: "Finances" },
 ];

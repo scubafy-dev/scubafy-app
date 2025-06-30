@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,46 +85,68 @@ export default function DiveTripsPage() {
 
   // const diveTrips = getAllDiveTrips(currentCenter?.id ?? null);
 
-  useEffect(() => {
-    const fetchDiveTrips = async () => {
-      try {
-        setIsLoading(true);
-        console.log("Fetching dive trips for center:", currentCenter?.id);
-        const trips = await getAllDiveTrips(currentCenter?.id ?? null);
-        console.log("Fetched dive trips:", trips);
-        setDiveTrips(trips);
-      } catch (error) {
-        console.error("Failed to load dive trips:", error);
-        setDiveTrips([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const fetchDiveTrips = useCallback(async () => {
+        try {
+          setIsLoading(true);
+            const diveTripsData = await getAllDiveTrips(currentCenter?.id ?? null);
+            console.log("Fetched diveTripsData:", diveTripsData);
+            setDiveTrips(diveTripsData as any);
+        } catch (error) {
+            console.error("Failed to load customersData:", error);
+            setDiveTrips([]);
+        } finally {
+          setIsLoading(false);
+        }
+    }, [currentCenter?.id]);
 
-    // Always set loading to true when currentCenter changes
-    setIsLoading(true);
-    
-    if (currentCenter?.id) {
-      fetchDiveTrips();
-    } else {
-      // If no center, just set empty state and stop loading
-      setDiveTrips([]);
-      setIsLoading(false);
-    }
-  }, [currentCenter]);
+    useEffect(() => {
+        // Always set loading to true when currentCenter changes
+        setIsLoading(true);
+
+        if (currentCenter?.id) {
+          fetchDiveTrips();
+        } else {
+            // If no center, just set empty state and stop loading
+            setDiveTrips([]);
+            setIsLoading(false);
+        }
+    }, [currentCenter]);
+
+    // onSuccess a call
+    const handleCourseCreated = useCallback(async () => {
+        // Refresh the customer list after successful creation
+        await fetchDiveTrips();
+        setIsLoading(false);
+    }, [fetchDiveTrips]);
 
   // useEffect(() => {
   //   const fetchDiveTrips = async () => {
   //     try {
+  //       setIsLoading(true);
+  //       console.log("Fetching dive trips for center:", currentCenter?.id);
   //       const trips = await getAllDiveTrips(currentCenter?.id ?? null);
+  //       console.log("Fetched dive trips:", trips);
   //       setDiveTrips(trips);
   //     } catch (error) {
   //       console.error("Failed to load dive trips:", error);
+  //       setDiveTrips([]);
+  //     } finally {
+  //       setIsLoading(false);
   //     }
   //   };
 
-  //   fetchDiveTrips();
-  // });
+  //   // Always set loading to true when currentCenter changes
+  //   setIsLoading(true);
+    
+  //   if (currentCenter?.id) {
+  //     fetchDiveTrips();
+  //   } else {
+  //     // If no center, just set empty state and stop loading
+  //     setDiveTrips([]);
+  //     setIsLoading(false);
+  //   }
+  // }, [currentCenter]);
+
 
   const toggleRowExpansion = (tripId: string) => {
     setExpandedRows((prev) =>
@@ -457,7 +479,10 @@ export default function DiveTripsPage() {
             <DialogTitle>Add New Dive Trip</DialogTitle>
           </DialogHeader>
           <AddTripForm
-            onSuccess={() => setIsAddTripOpen(false)}
+            onSuccess={() => {
+              handleCourseCreated()
+              setIsAddTripOpen(false)}
+            }
             mode={ActionMode.create}
             trip={selectedTrip}
             actionCreate={createDiveTrip}

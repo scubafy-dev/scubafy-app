@@ -367,7 +367,7 @@ export function AddTripForm(
         <Tabs defaultValue="details" className="space-y-4">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="details">Trip Details</TabsTrigger>
-            <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
+            {/* <TabsTrigger value="vehicle">Vehicle</TabsTrigger> */}
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
             <TabsTrigger value="expenses">Expenses</TabsTrigger>

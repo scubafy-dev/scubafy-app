@@ -94,7 +94,7 @@ export function DashboardNav() {
       icon: Anchor,
       variant: pathname === "/dive-trips" ? "default" : "ghost",
       href: "/dive-trips",
-      label: "5",
+      //label: "5",
     },
     {
       title: "Customers",
@@ -107,7 +107,7 @@ export function DashboardNav() {
       icon: LifeBuoy,
       variant: pathname === "/equipment" ? "default" : "ghost",
       href: "/equipment",
-      label: "2",
+      //label: "2",
     },
     {
       title: "Staff",
@@ -120,7 +120,7 @@ export function DashboardNav() {
       icon: ClipboardList,
       variant: pathname === "/tasks" ? "default" : "ghost",
       href: "/tasks",
-      label: "3",
+      //label: "3",
     },
     // {
     //   title: "Reports",
