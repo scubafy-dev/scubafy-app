@@ -84,6 +84,7 @@ model DiveCenter {
   fleetVehicles FleetVehicle[]
   customers Customer[]
   tasks Task[]
+  staff Staff[]
 
   @@map("dive_center")
 }
@@ -306,6 +307,9 @@ model Staff {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   Task      Task[]
+
+  diveCenterId String?
+  diveCenter   DiveCenter? @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
   @@map("staff")
 }

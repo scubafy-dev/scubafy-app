@@ -173,6 +173,7 @@ export function RentEquipmentDialog(
                     const newCustomer = await createCustomerAction(formData);
                     await rentEquipment(
                         equipment?.id,
+                        // @ts-ignore
                         newCustomer.id,
                         rentPrice,
                         rentFrom,
