@@ -3,93 +3,110 @@ import prisma from "@prisma/prisma";
 import type { CertificationLevel } from "@/app/generated/prisma";
 
 export interface Customer {
-    id: string;
-    fullName: string;
-    email: string;
-    phoneNumber: string | null;
-    certificationLevel: CertificationLevel | null;
-    roomNumber: string | null;
-    numberOfNights: number | null;
-    roomCost: number | null;
-    createdAt: Date;
-    updatedAt: Date;
-  }
-  
+  id: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string | null;
+  certificationLevel: CertificationLevel | null;
+  roomNumber: string | null;
+  numberOfNights: number | null;
+  roomCost: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export async function createCustomer(formData: FormData) {
 
-  try{
-  // 1) required defaults
-  const requiredDefaults: Record<string,string> = {
-    fullName:           "Unnamed Customer",
-    email:              "no-email@example.com",
-    phoneNumber:        "",
-    certificationLevel: "openWater",
-  };
-  for (const [key, def] of Object.entries(requiredDefaults)) {
-    if (!formData.get(key)) formData.append(key, def);
-  }
+export async function createCustomer(formData: FormData, diveCenterId: string) {
+  try {
+    console.log('customer Data server', formData)
+    // 1) required defaults
+    const requiredDefaults: Record<string, string> = {
+      fullName: "Unnamed Customer",
+      email: "no-email@example.com",
+      phoneNumber: "",
+      certificationLevel: "openWater",
+    };
+    for (const [key, def] of Object.entries(requiredDefaults)) {
+      if (!formData.get(key)) formData.append(key, def);
+    }
 
-  // 2) optional defaults
-  const optionalDefaults: Record<string,string> = {
-    roomNumber:     "",
-    numberOfNights: "0",
-    roomCost:       "0",
-  };
-  for (const [key, def] of Object.entries(optionalDefaults)) {
-    if (!formData.get(key)) formData.append(key, def);
-  }
+    // 2) optional defaults
+    const optionalDefaults: Record<string, string> = {
+      roomNumber: "",
+      numberOfNights: "0",
+      roomCost: "0",
+    };
+    for (const [key, def] of Object.entries(optionalDefaults)) {
+      if (!formData.get(key)) formData.append(key, def);
+    }
 
-  // 3) extract & cast
-  const fullName           = formData.get("fullName")           as string;
-  const email              = formData.get("email")              as string;
-  const phoneNumber        = formData.get("phoneNumber")        as string;
-  const certificationLevel = formData.get("certificationLevel") as CertificationLevel;
-  const roomNumber         = (formData.get("roomNumber") as string) || null;
-  const numberOfNights     = Number(formData.get("numberOfNights"));
-  const roomCost           = Number(formData.get("roomCost"));
+    // 3) extract & cast
+    const fullName = formData.get("fullName") as string;
+    const email = formData.get("email") as string;
+    const phoneNumber = formData.get("phoneNumber") as string;
+    const certificationLevel = formData.get("certificationLevel") as CertificationLevel;
+    const roomNumber = formData.get("room") as string;
+    const numberOfNights = Number(formData.get("numberOfNights"));
+    const roomCost = Number(formData.get("roomCost"));
 
-  // 4) create
-  return await prisma.customer.create({
-    data: {
-      fullName,
-      email,
-      phoneNumber,
-      certificationLevel,
-      roomNumber,
-      numberOfNights,
-      roomCost,
-    },
-  });
-}catch (error) {
+    // 4) create
+    const created = await prisma.customer.create({
+      data: {
+        fullName,
+        email,
+        phoneNumber,
+        certificationLevel,
+        roomNumber,
+        numberOfNights,
+        roomCost,
+        diveCenterId, // Connect to the dive center
+      },
+    });
+    return { success: true, data: created };
+  } catch (error) {
     console.error("Error creating customer:", error);
     throw error;
   }
 }
 
+// Server action for creating customers (can be used in client components)
+export async function createCustomerAction(formData: FormData) {
+  "use server";
+
+  // Get dive center ID from the form data or context
+  const diveCenterId = formData.get("diveCenterId") as string;
+
+  if (!diveCenterId) {
+    throw new Error("No dive center ID provided");
+  }
+
+  return createCustomer(formData, diveCenterId);
+}
+
 export async function updateCustomer(id: string, formData: FormData) {
-    try{
-        if (!id) throw new Error("Missing customer id");
+  console.log('update customer server', formData)
+  try {
+    if (!id) throw new Error("Missing customer id");
 
-        // build up the data object only with present fields
-        const data: Record<string, any> = {};
-        if (formData.get("fullName"))           data.fullName           = formData.get("fullName");
-        if (formData.get("email"))              data.email              = formData.get("email");
-        if (formData.get("phoneNumber"))        data.phoneNumber        = formData.get("phoneNumber");
-        if (formData.get("certificationLevel")) data.certificationLevel = formData.get("certificationLevel");
-        if (formData.get("roomNumber"))         data.roomNumber         = formData.get("roomNumber");
-        if (formData.get("numberOfNights"))     data.numberOfNights     = Number(formData.get("numberOfNights"));
-        if (formData.get("roomCost"))           data.roomCost           = Number(formData.get("roomCost"));
+    // build up the data object only with present fields
+    const data: Record<string, any> = {};
+    if (formData.get("fullName")) data.fullName = formData.get("fullName");
+    if (formData.get("email")) data.email = formData.get("email");
+    if (formData.get("phoneNumber")) data.phoneNumber = formData.get("phoneNumber");
+    if (formData.get("certificationLevel")) data.certificationLevel = formData.get("certificationLevel");
+    if (formData.get("room")) data.roomNumber = formData.get("room");
+    if (formData.get("numberOfNights")) data.numberOfNights = Number(formData.get("numberOfNights"));
+    if (formData.get("roomCost")) data.roomCost = Number(formData.get("roomCost"));
 
-        await prisma.customer.update({
-            where: { id },
-            data,
-        });
-    }
-    catch (error) {
-        console.error("Error updating customer:", error);
-        throw error;
-    }
+    await prisma.customer.update({
+      where: { id },
+      data,
+    });
+  }
+  catch (error) {
+    console.error("Error updating customer:", error);
+    throw error;
+  }
 }
 
 export async function deleteCustomer(id: string) {
@@ -97,13 +114,13 @@ export async function deleteCustomer(id: string) {
     if (!id) throw new Error("Missing customer id");
     // Check if the customer exists
     await prisma.customer.delete({
-        where: { id },
+      where: { id },
     });
-}
-    catch (error) {
-        console.error("Error deleting customer:", error);
-        throw error;
-    }
+  }
+  catch (error) {
+    console.error("Error deleting customer:", error);
+    throw error;
+  }
 }
 
 export async function getCustomerById(id: string) {
@@ -113,9 +130,12 @@ export async function getCustomerById(id: string) {
   });
 }
 
-export async function getAllCustomers() {
+export async function getAllCustomers(diveCenterId?: string) {
   "use server";
+  const whereClause = diveCenterId ? { diveCenterId } : {};
+
   return await prisma.customer.findMany({
+    where: whereClause,
     orderBy: { createdAt: "desc" },
   });
 }

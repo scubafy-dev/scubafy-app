@@ -459,6 +459,7 @@ export function AddTripForm(
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
+                  //@ts-ignore
                   name="date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
@@ -913,9 +914,12 @@ export function AddTripForm(
                                 >
                                   <FormControl>
                                     <Checkbox
-                                      checked={field.value?.includes(customer?.id)}
+                                      checked={((field.value || []) as string[]).includes(
+                                        customer?.id,
+                                      )}
                                       onCheckedChange={(checked) => {
-                                        const currentValue = field.value || [];
+                                        const currentValue =
+                                          (field.value as string[] | undefined) || [];
                                         return checked
                                           ? field.onChange([...currentValue, customer.id])
                                           : field.onChange(currentValue.filter(

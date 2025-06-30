@@ -82,6 +82,7 @@ model DiveCenter {
   owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   DiveTrip DiveTrip[]
   fleetVehicles FleetVehicle[]
+  customers Customer[]
 
   @@map("dive_center")
 }
@@ -237,9 +238,13 @@ model Customer {
   numberOfNights     Int?                @default(0)
   roomCost           Float?              @default(0.0)
 
+  // Relations
+  diveCenterId       String
+  diveCenter         DiveCenter          @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+  Equipment          Equipment[]
+
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
-  Equipment Equipment[]
 
   @@map("customers")
 }
