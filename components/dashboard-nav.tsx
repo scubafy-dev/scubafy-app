@@ -140,12 +140,14 @@ export function DashboardNav() {
     //   variant: pathname === "/calendar" ? "default" : "ghost",
     //   href: "/calendar",
     // },
-    {
-      title: "Finances",
-      icon: Wallet,
-      variant: pathname === "/finances" ? "default" : "ghost",
-      href: "/finances",
-    },
+    
+    ////Temporarily gets off
+    // {
+    //   title: "Finances",
+    //   icon: Wallet,
+    //   variant: pathname === "/finances" ? "default" : "ghost",
+    //   href: "/finances",
+    // },
     {
       title: "Settings",
       icon: Settings,

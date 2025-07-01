@@ -129,7 +129,7 @@ export function StaffDirectory(
   return (
     <Card>
       <CardContent>
-        <div className="flex items-center justify-between gap-4 mb-4">
+        {/* <div className="flex items-center justify-between gap-4 mb-4">
           <div className="flex-1">
             <Input
               placeholder="Search staff by name, email, or role..."
@@ -138,7 +138,7 @@ export function StaffDirectory(
               className="w-full md:w-[300px]"
             />
           </div>
-        </div>
+        </div> */}
         <div className="rounded-md border">
           <Table>
             <TableHeader>

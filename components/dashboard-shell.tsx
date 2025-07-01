@@ -31,14 +31,15 @@ export function DashboardShell({ children, className }: DashboardShellProps) {
               <DiveCenterSelector />
             </div>
           </div>
-          <div className="hidden md:flex items-center relative max-w-sm w-full">
+          {/* Temporarily off */}
+          {/* <div className="hidden md:flex items-center relative max-w-sm w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search..."
               className="pl-8 bg-muted/40 border-none focus-visible:ring-1"
             />
-          </div>
+          </div> */}
           <div className="flex items-center gap-2">
             <UserNav />
           </div>
