@@ -615,7 +615,8 @@ export function CustomersTable(
           </DialogContent>
         )}
       </Dialog>
-      <div className="flex items-center py-4">
+      {/* Search and filter temporarily hidden */}
+      {/* <div className="flex items-center py-4">
         <Input
           placeholder="Filter names..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -648,7 +649,7 @@ export function CustomersTable(
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </div> */}
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -713,7 +714,8 @@ export function CustomersTable(
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
+      
+      {/* <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
@@ -736,7 +738,7 @@ export function CustomersTable(
             Next
           </Button>
         </div>
-      </div>
+      </div> */}
 
       <Dialog
         open={updateDialogOpen}

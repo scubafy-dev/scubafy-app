@@ -135,7 +135,12 @@ export default function SettingsClient() {
                                 Configure how you receive notifications.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+
+                        {/* Temporarily showing coming soon */}
+                        <CardHeader>
+                            <p className="text-center">Coming Soon...</p>
+                        </CardHeader>
+                        {/* <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
                                     <Label htmlFor="email-notifications">
@@ -195,7 +200,7 @@ export default function SettingsClient() {
                             <Button onClick={handleSave} disabled={isSaving}>
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
-                        </CardFooter>
+                        </CardFooter> */}
                     </Card>
                 </TabsContent>
 
@@ -207,7 +212,11 @@ export default function SettingsClient() {
                                 Customize the look and feel of your dashboard.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                         {/* Temporarily showing coming soon */}
+                         <CardHeader>
+                            <p className="text-center">Coming Soon...</p>
+                        </CardHeader>
+                        {/* <CardContent className="space-y-6">
                             <div className="space-y-2">
                                 <Label>Theme</Label>
                                 <div className="flex items-center space-x-4">
@@ -316,7 +325,7 @@ export default function SettingsClient() {
                             <Button onClick={handleSave} disabled={isSaving}>
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
-                        </CardFooter>
+                        </CardFooter> */}
                     </Card>
                 </TabsContent>
             </Tabs>

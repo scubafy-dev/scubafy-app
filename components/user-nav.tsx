@@ -41,11 +41,14 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
+
+        {/* Temporarily off */}
+        {/* <DropdownMenuGroup>
           <DropdownMenuItem>Profile</DropdownMenuItem>
           <DropdownMenuItem>Settings</DropdownMenuItem>
           <DropdownMenuItem>Notifications</DropdownMenuItem>
-        </DropdownMenuGroup>
+        </DropdownMenuGroup> */}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/signin" })}>
           Log out
