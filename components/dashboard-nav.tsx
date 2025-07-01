@@ -83,18 +83,24 @@ export function DashboardNav() {
   const { collapsed, setCollapsed } = useSidebar()
 
   const links: NavLink[] = [
-    {
-      title: "Overview",
-      icon: BarChart3,
-      variant: pathname === "/" ? "default" : "ghost",
-      href: "/",
-    },
+    // {
+    //   title: "Overview",
+    //   icon: BarChart3,
+    //   variant: pathname === "/" ? "default" : "ghost",
+    //   href: "/",
+    // },
+    // {
+    //   title: "Dive Trips",
+    //   icon: Anchor,
+    //   variant: pathname === "/dive-trips" ? "default" : "ghost",
+    //   href: "/dive-trips",
+    //   //label: "5",
+    // },
     {
       title: "Dive Trips",
       icon: Anchor,
-      variant: pathname === "/dive-trips" ? "default" : "ghost",
+      variant: pathname === "/" || pathname === "/dive-trips" ? "default" : "ghost",
       href: "/dive-trips",
-      //label: "5",
     },
     {
       title: "Customers",
