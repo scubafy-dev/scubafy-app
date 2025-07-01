@@ -219,12 +219,13 @@ export function AddTripForm(
     ? vehicles
     : vehicles.filter((vehicle) => vehicle.type === selectedVehicleType);
 
-  const form = useForm<FormData>({
+  const form = useForm({
     defaultValues: {
       title: trip?.title ?? "",
       status: trip?.status ?? "upcoming",
       location: trip?.location ?? "",
       time: "",
+      date: trip?.date ? new Date(trip.date) : undefined,
       capacity: trip?.capacity ?? undefined,
       price: trip?.price ? trip.price.toString() : "",
       description: trip?.description ?? "",
@@ -241,7 +242,6 @@ export function AddTripForm(
       instructor: trip?.instructor ?? "",
       diveMaster: trip?.diveMaster ?? "",
       useCustomerDatabase: true,
-      date: trip?.date ? new Date(trip.date) : undefined,
       participants: [],
       selectedCustomerIds: [],
     },
@@ -282,24 +282,6 @@ export function AddTripForm(
     };
     fetchCustomers();
   }, []);
-
-  // Set selectedCustomerIds and manualParticipants in update mode after customers are loaded
-  useEffect(() => {
-    if (mode === ActionMode.update && trip && customers.length > 0) {
-      const customerIds = customers.map(c => c.id);
-      const selectedCustomerIds = (trip.participants || [])
-        .filter(p => p.id && customerIds.includes(p.id))
-        .map(p => p.id);
-      const manualParticipants = (trip.participants || [])
-        .filter(p => !p.id || !customerIds.includes(p.id))
-        .map(p => ({
-          name: p.name,
-          certification: p.certification,
-        }));
-      form.setValue('selectedCustomerIds', selectedCustomerIds as string[]);
-      setManualParticipants(manualParticipants);
-    }
-  }, [mode, trip, customers]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
