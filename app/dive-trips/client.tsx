@@ -85,39 +85,39 @@ export default function DiveTripsPage() {
 
   // const diveTrips = getAllDiveTrips(currentCenter?.id ?? null);
 
-    const fetchDiveTrips = useCallback(async () => {
-        try {
-          setIsLoading(true);
-            const diveTripsData = await getAllDiveTrips(currentCenter?.id ?? null);
-            console.log("Fetched diveTripsData:", diveTripsData);
-            setDiveTrips(diveTripsData as any);
-        } catch (error) {
-            console.error("Failed to load customersData:", error);
-            setDiveTrips([]);
-        } finally {
-          setIsLoading(false);
-        }
-    }, [currentCenter?.id]);
+  const fetchDiveTrips = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const diveTripsData = await getAllDiveTrips(currentCenter?.id ?? null);
+      console.log("Fetched diveTripsData:", diveTripsData);
+      setDiveTrips(diveTripsData as any);
+    } catch (error) {
+      console.error("Failed to load customersData:", error);
+      setDiveTrips([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentCenter?.id]);
 
-    useEffect(() => {
-        // Always set loading to true when currentCenter changes
-        setIsLoading(true);
+  useEffect(() => {
+    // Always set loading to true when currentCenter changes
+    setIsLoading(true);
 
-        if (currentCenter?.id) {
-          fetchDiveTrips();
-        } else {
-            // If no center, just set empty state and stop loading
-            setDiveTrips([]);
-            setIsLoading(false);
-        }
-    }, [currentCenter]);
+    if (currentCenter?.id) {
+      fetchDiveTrips();
+    } else {
+      // If no center, just set empty state and stop loading
+      setDiveTrips([]);
+      setIsLoading(false);
+    }
+  }, [currentCenter]);
 
-    // onSuccess a call
-    const handleCourseCreated = useCallback(async () => {
-        // Refresh the customer list after successful creation
-        await fetchDiveTrips();
-        setIsLoading(false);
-    }, [fetchDiveTrips]);
+  // onSuccess a call
+  const handleCourseCreated = useCallback(async () => {
+    // Refresh the customer list after successful creation
+    await fetchDiveTrips();
+    setIsLoading(false);
+  }, [fetchDiveTrips]);
 
   // useEffect(() => {
   //   const fetchDiveTrips = async () => {
@@ -137,7 +137,7 @@ export default function DiveTripsPage() {
 
   //   // Always set loading to true when currentCenter changes
   //   setIsLoading(true);
-    
+
   //   if (currentCenter?.id) {
   //     fetchDiveTrips();
   //   } else {
@@ -173,7 +173,11 @@ export default function DiveTripsPage() {
           </TabsList>
 
           {activeTab === "trips" && (
-            <Button onClick={() => setIsAddTripOpen(true)}>
+            <Button onClick={() => {
+              setSelectedTrip(null);
+              setIsAddTripOpen(false);
+              setTimeout(() => setIsAddTripOpen(true), 0);
+            }}>
               <Plus className="mr-2 h-4 w-4" /> Add Trip
             </Button>
           )}
@@ -208,7 +212,7 @@ export default function DiveTripsPage() {
                       <div className="w-20 h-4 bg-gray-200 rounded animate-pulse"></div>
                       <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
                     </div>
-                    
+
                     {/* Loading skeleton for table rows */}
                     {[...Array(5)].map((_, index) => (
                       <div key={index} className="flex space-x-4 py-4 border-b">
@@ -473,18 +477,20 @@ export default function DiveTripsPage() {
         </TabsContent>
       </Tabs>
 
+      {/* For adding new trip modal */}
       <Dialog open={isAddTripOpen} onOpenChange={setIsAddTripOpen}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Dive Trip</DialogTitle>
           </DialogHeader>
           <AddTripForm
+            key={isAddTripOpen ? 'add-trip-form-' + String(Date.now()) : 'add-trip-form'}
             onSuccess={() => {
               handleCourseCreated()
-              setIsAddTripOpen(false)}
-            }
+              setIsAddTripOpen(false)
+            }}
             mode={ActionMode.create}
-            trip={selectedTrip}
+            trip={null}
             actionCreate={createDiveTrip}
             actionUpdate={updateDiveTrip}
           />
@@ -511,7 +517,7 @@ export default function DiveTripsPage() {
         onOpenChange={setIsDeleteTripAlertOpen}
       >
         <AlertDialogPortal>
-          <AlertDialogOverlay />
+          <AlertDialogOverlay className="bg-black/30" />
           <AlertDialogContent>
             <AlertDialogTitle>
               Are you sure?
@@ -531,9 +537,8 @@ export default function DiveTripsPage() {
                     await deleteDiveTrip(selectedTrip.id);
                     toast({
                       title: "Trip deleted successfully.",
-                      description: `Center: ${selectedTrip.center ?? "N/A"
-                        }   \nTrip: ${selectedTrip.title}`,
                     });
+                    await handleCourseCreated();
                     router.refresh();
                   }
                 }}

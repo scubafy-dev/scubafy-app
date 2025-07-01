@@ -97,9 +97,14 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
     }[] = [];
     
     try {
-        if (formData.participants) {
-            participants = Array.isArray(formData.participants) ? formData.participants : [];
+        if (formData.participants && Array.isArray(formData.participants)) {
+            participants = formData.participants.map((participant: any) => ({
+                name: participant.name,
+                certification: participant.certification,
+                level: participant.level,
+            }));
         }
+        console.log('Processed participants:', participants);
     } catch (error) {
         console.error("Error parsing participants data:", error);
         participants = [];
@@ -112,6 +117,19 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
     }
 
     try {
+        console.log('Creating dive trip with data:', {
+            title,
+            date: dateStr,
+            location,
+            capacity,
+            price,
+            status,
+            diveMaster,
+            instructor,
+            participantsCount: participants.length,
+            participants: participants
+        });
+
         const result = await prisma.diveTrip.create({
             data: {
                 title,
@@ -128,7 +146,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 center,
                 instructor,
                 vehicle: { create: vehicle },
-                participants: { createMany: { data: participants } },
+                participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
                 diveCenter: {
                     connect: {
                         id: diveCenterId
@@ -145,6 +163,11 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         console.log("Dive trip created successfully:", result);
     } catch (error) {
         console.error("Error creating dive trip:", error);
+        console.error("Error details:", {
+            participants,
+            participantsLength: participants.length,
+            formData: formData
+        });
         throw error;
     }
 }

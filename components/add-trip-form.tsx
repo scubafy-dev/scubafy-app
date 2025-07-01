@@ -219,7 +219,7 @@ export function AddTripForm(
     ? vehicles
     : vehicles.filter((vehicle) => vehicle.type === selectedVehicleType);
 
-  const form = useForm({
+  const form = useForm<FormData>({
     defaultValues: {
       title: trip?.title ?? "",
       status: trip?.status ?? "upcoming",
@@ -241,6 +241,7 @@ export function AddTripForm(
       instructor: trip?.instructor ?? "",
       diveMaster: trip?.diveMaster ?? "",
       useCustomerDatabase: true,
+      date: trip?.date ? new Date(trip.date) : undefined,
       participants: [],
       selectedCustomerIds: [],
     },
@@ -261,7 +262,7 @@ export function AddTripForm(
   useEffect(() => {
     const fetchStaffMembers = async () => {
       try {
-        const staffData = await getAllStaff();
+        const staffData = await getAllStaff(currentCenter?.id);
         setStaff(staffData);
       } catch (error) {
         console.error("Error fetching staff members:", error);
@@ -273,7 +274,7 @@ export function AddTripForm(
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const customersData = await getAllCustomers();
+        const customersData = await getAllCustomers(currentCenter?.id);
         setCustomers(customersData);
       } catch (error) {
         console.error("Error fetching customers:", error);
@@ -281,6 +282,24 @@ export function AddTripForm(
     };
     fetchCustomers();
   }, []);
+
+  // Set selectedCustomerIds and manualParticipants in update mode after customers are loaded
+  useEffect(() => {
+    if (mode === ActionMode.update && trip && customers.length > 0) {
+      const customerIds = customers.map(c => c.id);
+      const selectedCustomerIds = (trip.participants || [])
+        .filter(p => p.id && customerIds.includes(p.id))
+        .map(p => p.id);
+      const manualParticipants = (trip.participants || [])
+        .filter(p => !p.id || !customerIds.includes(p.id))
+        .map(p => ({
+          name: p.name,
+          certification: p.certification,
+        }));
+      form.setValue('selectedCustomerIds', selectedCustomerIds as string[]);
+      setManualParticipants(manualParticipants);
+    }
+  }, [mode, trip, customers]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
@@ -310,19 +329,45 @@ export function AddTripForm(
     setIsSubmitting(true);
 
     try {
-      console.log("Form submission started with values:", values);
-      console.log("Current center:", currentCenter);
+      // Build participants array
+      let participants = [];
+
+      // Add manual participants
+      participants = [
+        ...manualParticipants.map((p) => ({
+          name: p.name,
+          certification: p.certification,
+          level: 'Unknown', // Add level field as required by schema
+        })),
+      ];
+
+      // Add selected customers from database
+      if (values.selectedCustomerIds && Array.isArray(values.selectedCustomerIds)) {
+        const selectedCustomers = customers.filter((c) =>
+          values.selectedCustomerIds.includes(c.id)
+        );
+        participants = [
+          ...participants,
+          ...selectedCustomers.map((c) => ({
+            id: c.id,
+            name: c.fullName,
+            certification: c.certificationLevel,
+            level: 'Unknown', // Add level field as required by schema
+          })),
+        ];
+      }
       
+      // Set the participants field in the values object
+      values.participants = participants;
+      console.log('formValues',values)
       // Call the appropriate server action
       if (mode === ActionMode.create && effectiveCenter?.id) {
-        console.log("Creating trip for center:", effectiveCenter.id);
         await actionCreate(values, effectiveCenter.id);
         toast({
           title: "Trip created successfully",
           description: `${values.title} has been added to your dive trips.`,
         });
       } else if (mode === ActionMode.update && trip?.id) {
-        console.log("Updating trip:", trip.id);
         await actionUpdate(trip.id, values);
         toast({
           title: "Trip updated successfully",
@@ -370,7 +415,7 @@ export function AddTripForm(
             {/* <TabsTrigger value="vehicle">Vehicle</TabsTrigger> */}
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
           </TabsList>
 
           {/* Trip Details Tab */}
