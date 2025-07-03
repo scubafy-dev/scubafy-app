@@ -68,6 +68,7 @@ import {
   getAllDiveTrips,
   updateDiveTrip,
 } from "@/lib/dive-trips";
+import React from "react";
 
 export default function DiveTripsPage() {
   const [isAddTripOpen, setIsAddTripOpen] = useState(false);
@@ -232,7 +233,7 @@ export default function DiveTripsPage() {
                         </TableRow>
                       ) : (
                         diveTrips?.map((trip) => (
-                          <>
+                          <React.Fragment key={trip.id}>
                             <TableRow
                               key={trip.id}
                               className="cursor-pointer hover:bg-muted/50"
@@ -321,7 +322,7 @@ export default function DiveTripsPage() {
                               </TableCell>
                             </TableRow>
                             {expandedRows.includes(trip.id) && (
-                              <TableRow key={`${trip.id}#`} className="bg-muted/30">
+                              <TableRow key={`${trip.id}-expanded`} className="bg-muted/30">
                                 <TableCell
                                   colSpan={isAllCenters ? 10 : 9}
                                   className="p-4"
@@ -364,29 +365,31 @@ export default function DiveTripsPage() {
                                         Vehicle Details
                                       </h4>
                                       <div className="text-sm text-muted-foreground mb-4">
-                                        {trip.vehicle &&
-                                          (
-                                            <>
-                                              <div className="flex items-center mb-1">
-                                                {trip.vehicle.type === "boat" && (
-                                                  <Ship className="h-4 w-4 mr-2" />
-                                                )}
-                                                {trip.vehicle.type ===
-                                                  "speedboat" &&
-                                                  <Ship className="h-4 w-4 mr-2" />}
-                                                {trip.vehicle.type ===
-                                                  "catamaran" &&
-                                                  (
-                                                    <Anchor className="h-4 w-4 mr-2" />
-                                                  )}
-                                                {trip.vehicle.name}
-                                              </div>
-                                              <div className="text-xs text-muted-foreground">
-                                                Vehicle Capacity:{" "}
-                                                {trip.vehicle.capacity} persons
-                                              </div>
-                                            </>
-                                          )}
+                                        {trip.fleetVehicle && (
+                                          <>
+                                            <div className="flex items-center mb-1">
+                                              {trip.fleetVehicle.type === "boat" && (
+                                                <Ship className="h-4 w-4 mr-2" />
+                                              )}
+                                              {trip.fleetVehicle.type === "speedboat" && (
+                                                <Ship className="h-4 w-4 mr-2" />
+                                              )}
+                                              {trip.fleetVehicle.type === "liveaboard" && (
+                                                <Ship className="h-4 w-4 mr-2" />
+                                              )}
+                                              {trip.fleetVehicle.type === "car" && (
+                                                <Car className="h-4 w-4 mr-2" />
+                                              )}
+                                              {trip.fleetVehicle.type === "custom" && (
+                                                <Anchor className="h-4 w-4 mr-2" />
+                                              )}
+                                              {trip.fleetVehicle.name}
+                                            </div>
+                                            <div className="text-xs text-muted-foreground">
+                                              Vehicle Capacity: {trip.fleetVehicle.capacity} persons
+                                            </div>
+                                          </>
+                                        )}
                                       </div>
                                     </div>
 
@@ -401,29 +404,19 @@ export default function DiveTripsPage() {
 
                                       <h4 className="text-sm font-semibold mb-2 flex items-center">
                                         <Users className="h-4 w-4 mr-1" />{" "}
-                                        Participants ({trip.participants.length})
+                                        Participants ({trip.participants?.length || 0})
                                       </h4>
                                       <div className="text-sm text-muted-foreground mb-4">
                                         <div className="grid grid-cols-1 gap-2">
-                                          {trip.participants.map((
-                                            participant,
-                                            index,
-                                          ) => (
+                                          {trip.participants?.map((participant: any, index: number) => (
                                             <div
-                                              key={index}
+                                              key={participant.id || `${participant.name}-${index}`}
                                               className="flex flex-col p-2 border rounded-md"
                                             >
-                                              <div className="font-medium">
-                                                {participant.name}
-                                              </div>
+                                              <div className="font-medium">{participant.name}</div>
                                               <div className="text-xs space-y-1">
-                                                <div>
-                                                  Certification:{" "}
-                                                  {participant.certification}
-                                                </div>
-                                                <div>
-                                                  Level: {participant.level}
-                                                </div>
+                                                <div>Certification: {participant.certification}</div>
+                                                <div>Level: {participant.level}</div>
                                               </div>
                                             </div>
                                           ))}
@@ -434,7 +427,7 @@ export default function DiveTripsPage() {
                                 </TableCell>
                               </TableRow>
                             )}
-                          </>
+                          </React.Fragment>
                         ))
                       )}
                     </TableBody>

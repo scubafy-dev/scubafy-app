@@ -9,6 +9,27 @@ export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 
 export async function createDiveTrip(formData: any, diveCenterId: string): Promise<void> {
     console.log('DiveTrip Data', formData, diveCenterId)
+    
+    // Validate fleetVehicleId first
+    const fleetVehicleId = formData.fleetVehicleId as string;
+    if (!fleetVehicleId) {
+        throw new Error("fleetVehicleId is required");
+    }
+    
+    // Check if the fleetVehicle exists
+    try {
+        const fleetVehicle = await prisma.fleetVehicle.findUnique({
+            where: { id: fleetVehicleId }
+        });
+        if (!fleetVehicle) {
+            throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+        }
+        console.log('Found fleetVehicle:', fleetVehicle);
+    } catch (error) {
+        console.error('Error validating fleetVehicle:', error);
+        throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
+    }
+    
     const requiredDefaults = {
         title: "Sample Dive Trip",
         location: "Sample Location",
@@ -32,11 +53,6 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         duration: "",
         difficulty: "beginner",
         center: null,
-        vehicle: {
-            name: "Default Vehicle",
-            type: "boat",
-            capacity: 8,
-        },
         participants: [],
     };
 
@@ -68,27 +84,6 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         | "advanced";
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
-
-    let vehicle;
-    try {
-        const vehicleData = formData.vehicle || {
-            name: "Default Vehicle",
-            type: "boat" as const,
-            capacity: 8,
-        };
-        vehicle = {
-            name: vehicleData.name,
-            type: vehicleData.type as "boat" | "speedboat" | "catamaran",
-            capacity: vehicleData.capacity
-        };
-    } catch (error) {
-        console.error("Error parsing vehicle data:", error);
-        vehicle = {
-            name: "Default Vehicle",
-            type: "boat" as const,
-            capacity: 8,
-        };
-    }
 
     let participants: {
         name: string;
@@ -128,6 +123,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
             status,
             diveMaster,
             instructor,
+            fleetVehicleId,
             participantsCount: participants.length,
             participants: participants
         });
@@ -147,18 +143,10 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 difficulty,
                 center,
                 instructor,
-                vehicle: { create: vehicle },
+                fleetVehicleId,
                 participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
-                diveCenter: {
-                    connect: {
-                        id: diveCenterId
-                    }
-                },
-                User: {
-                    connect: {
-                        id: session.user.id, 
-                    }
-                }
+                diveCenterId,
+                userId: session.user.id,
             },
         });
         
@@ -186,7 +174,7 @@ export const  getAllDiveTrips = async (diveCenterId: string | null) => {
       diveCenterId,
     },
     include: {
-      vehicle: true,
+      fleetVehicle: true,
       participants: true,
     },
     orderBy: {
@@ -199,6 +187,26 @@ export async function updateDiveTrip(id: string | null, formData: any) {
 
     if(id === null){
         return;
+    }
+
+    // Validate fleetVehicleId first
+    const fleetVehicleId = formData.fleetVehicleId as string;
+    if (!fleetVehicleId) {
+        throw new Error("fleetVehicleId is required");
+    }
+    
+    // Check if the fleetVehicle exists
+    try {
+        const fleetVehicle = await prisma.fleetVehicle.findUnique({
+            where: { id: fleetVehicleId }
+        });
+        if (!fleetVehicle) {
+            throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+        }
+        console.log('Found fleetVehicle for update:', fleetVehicle);
+    } catch (error) {
+        console.error('Error validating fleetVehicle for update:', error);
+        throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
     }
 
     const title = formData.title as string;
@@ -245,6 +253,21 @@ export async function updateDiveTrip(id: string | null, formData: any) {
     }
 
     try {
+        console.log('Updating dive trip with data:', {
+            id,
+            title,
+            date,
+            location,
+            capacity,
+            price,
+            status,
+            diveMaster,
+            instructor,
+            fleetVehicleId,
+            participantsCount: participants.length,
+            participants: participants
+        });
+
         // Update the trip main fields
         await prisma.diveTrip.update(
             {
@@ -265,21 +288,35 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                     difficulty,
                     center,
                     instructor,
+                    fleetVehicleId,
                 },
             },
         );
 
         // --- Update participants ---
+        console.log('Deleting existing participants for trip:', id);
         // Delete all existing participants for this trip
         await prisma.participant.deleteMany({ where: { diveTripId: id } });
+        
         // Re-create participants if any
         if (participants.length > 0) {
+            console.log('Creating new participants:', participants);
             await prisma.participant.createMany({
                 data: participants.map(p => ({ ...p, diveTripId: id })),
             });
+        } else {
+            console.log('No participants to create');
         }
+        
+        console.log('Dive trip updated successfully');
     } catch (error) {
-        console.log("error: ", error);
+        console.error("Error updating dive trip:", error);
+        console.error("Error details:", {
+            participants,
+            participantsLength: participants.length,
+            formData: formData
+        });
+        throw error;
     }
 
     // redirect("/diveTrips");
@@ -293,11 +330,6 @@ export const deleteDiveTrip = async (id: string) => {
             where: { diveTripId: id },
             })
         
-        // Delete vehicle linked to this dive trip
-        await prisma.vehicle.deleteMany({
-        where: { diveTripId: id },
-        })
-
         const res = await prisma.diveTrip.delete({
             where: {
                 id

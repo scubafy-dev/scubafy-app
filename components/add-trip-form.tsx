@@ -56,44 +56,7 @@ import { useDiveCenter } from "@/lib/dive-center-context";
 import { getAllStaff } from "@/lib/staffs";
 import { getAllCustomers } from "@/lib/customers";
 import { Customer, Staff } from "@/app/generated/prisma";
-
-// Sample vehicle data for demo purposes
-// In a real app, this would be fetched from an API
-interface Vehicle {
-  id: string;
-  name: string;
-  type: "boat" | "car" | "liveaboard";
-  size: string;
-  capacity: number;
-  imageUrl?: string;
-}
-
-const SAMPLE_VEHICLES: Vehicle[] = [
-  {
-    id: "v1",
-    name: "Sea Explorer",
-    type: "boat",
-    size: "42 ft",
-    capacity: 12,
-    imageUrl: "/vehicles/boat1.jpg",
-  },
-  {
-    id: "v2",
-    name: "Reef Ranger",
-    type: "liveaboard",
-    size: "85 ft",
-    capacity: 24,
-    imageUrl: "/vehicles/liveaboard1.jpg",
-  },
-  {
-    id: "v3",
-    name: "Dive Transport",
-    type: "car",
-    size: "SUV",
-    capacity: 7,
-    imageUrl: "/vehicles/car1.jpg",
-  },
-];
+import { getAllFleetVehicles } from "@/lib/vehicles";
 
 // Add these interfaces after the existing Vehicle interface
 // interface Staff {
@@ -161,7 +124,7 @@ const formSchema = z.object({
   price: z.string().optional(),
   description: z.string().optional(),
   diveType: z.string().optional(),
-  vehicleId: z.string().optional(),
+  fleetVehicleId: z.string().optional(),
   // Expense tracking
   expenses: z.object({
     boatInsurance: z.string().optional(),
@@ -194,14 +157,14 @@ export function AddTripForm(
     trip: FullDiveTrip | null;
     actionCreate: (formData: FormData, diveCenterId: string) => Promise<void>;
     actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
-    setIsAddTripOpen?: any
-    setIsEditTripOpen?: any
+    setIsAddTripOpen?: any;
+    setIsEditTripOpen?: any;
   },
 ) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES);
+  const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all");
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -226,11 +189,11 @@ export function AddTripForm(
       location: trip?.location ?? "",
       time: "",
       date: trip?.date ? new Date(trip.date) : undefined,
-      capacity: trip?.capacity ?? undefined,
+      capacity: trip?.capacity ?? 0,
       price: trip?.price ? trip.price.toString() : "",
       description: trip?.description ?? "",
       diveType: "",
-      vehicleId: "",
+      fleetVehicleId: trip?.fleetVehicleId ?? "",
       expenses: {
         boatInsurance: "",
         fuel: "",
@@ -248,7 +211,7 @@ export function AddTripForm(
   });
 
   // Update capacity when vehicle is selected
-  const watchVehicleId = form.watch("vehicleId");
+  const watchVehicleId = form.watch("fleetVehicleId");
 
   useEffect(() => {
     if (watchVehicleId) {
@@ -287,29 +250,22 @@ export function AddTripForm(
   // Prefill participants when editing a trip
   useEffect(() => {
     if (mode === ActionMode.update && trip && Array.isArray(trip.participants)) {
-      // Split participants into those with customerId (from DB) and those without (manual)
       const selectedCustomerIds: string[] = [];
       const manualParts: Array<{ name: string; certification: string }> = [];
-      
-      trip.participants.forEach((p) => {
+      trip.participants.forEach((p: any) => {
         if (p.customerId) {
-          // This participant is linked to a customer in the database
           selectedCustomerIds.push(p.customerId);
         } else {
-          // This is a manual participant (not in customer database)
           manualParts.push({
             name: p.name || '',
             certification: p.certification || '',
           });
         }
       });
-      
       setManualParticipants(manualParts);
-      console.log('selectedCustomerIds to set:', selectedCustomerIds);
       form.reset({ ...form.getValues(), selectedCustomerIds: selectedCustomerIds as any });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, trip, customers]);
+  }, [mode, trip, customers, form]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
@@ -336,6 +292,21 @@ export function AddTripForm(
   };
 
   console.log('tripData for Update', trip)
+
+  useEffect(() => {
+    async function fetchVehicles() {
+      if (effectiveCenter?.id) {
+        try {
+          const realVehicles = await getAllFleetVehicles(effectiveCenter.id);
+          setVehicles(realVehicles);
+        } catch (error) {
+          console.error("Error fetching vehicles:", error);
+          setVehicles([]);
+        }
+      }
+    }
+    fetchVehicles();
+  }, [effectiveCenter]);
 
   async function onSubmit(values: any) {
     console.log('form value',values)
@@ -582,7 +553,12 @@ export function AddTripForm(
                     <FormItem>
                       <FormLabel>Capacity</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} {...field} />
+                        <Input 
+                          type="number" 
+                          min={1} 
+                          value={field.value || 0}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormDescription>
                         Maximum number of divers
@@ -707,7 +683,7 @@ export function AddTripForm(
 
               <FormField
                 control={form.control}
-                name="vehicleId"
+                name="fleetVehicleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Select Vehicle</FormLabel>

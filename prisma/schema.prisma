@@ -79,13 +79,13 @@ model DiveCenter {
   location String?
   ownerId  String
 
-  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  DiveTrip DiveTrip[]
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  DiveTrip      DiveTrip[]
   fleetVehicles FleetVehicle[]
-  customers Customer[]
-  tasks Task[]
-  staff Staff[]
-  courses Course[]
+  customers     Customer[]
+  tasks         Task[]
+  staff         Staff[]
+  courses       Course[]
 
   @@map("dive_center")
 }
@@ -135,31 +135,19 @@ model DiveTrip {
   instructor  String?
 
   // relations
-  vehicle      Vehicle?
-  participants Participant[]
-  diveCenterId String
-  diveCenter   DiveCenter    @relation(fields: [diveCenterId], references: [id])
-  User         User          @relation(fields: [userId], references: [id])
-  userId       String
+  fleetVehicleId String
+  fleetVehicle   FleetVehicle  @relation(fields: [fleetVehicleId], references: [id])
+  participants   Participant[]
+  diveCenterId   String
+  diveCenter     DiveCenter    @relation(fields: [diveCenterId], references: [id])
+  User           User          @relation(fields: [userId], references: [id])
+  userId         String
 
   @@map("dive_trips")
 }
 
-model Vehicle {
-  id       String      @id @default(uuid())
-  name     String
-  type     VehicleType
-  capacity Int
-
-  // one-to-one back to DiveTrip
-  diveTrip   DiveTrip @relation(fields: [diveTripId], references: [id])
-  diveTripId String   @unique
-
-  @@map("vehicles")
-}
-
 model Participant {
-  id            String @id @default(uuid())
+  id            String  @id @default(uuid())
   name          String
   certification String
   level         String
@@ -243,14 +231,13 @@ model Customer {
   roomCost           Float?              @default(0.0)
 
   // Relations
-  diveCenterId       String
-  diveCenter         DiveCenter          @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
-  Equipment          Equipment[]
-  courses Course[] @relation("CourseStudents")
+  diveCenterId String
+  diveCenter   DiveCenter  @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+  Equipment    Equipment[]
+  courses      Course[]    @relation("CourseStudents")
 
-
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("customers")
 }
@@ -305,7 +292,7 @@ model Staff {
   emergencyContact String? // "Name and phone number"
   bio              String? // notes
 
-  permissions StaffPermission[]
+  permissions            StaffPermission[]
   vehicleCrewAssignments VehicleCrewAssignment[]
 
   createdAt DateTime @default(now())
@@ -345,7 +332,7 @@ model Course {
   location           String?
   cost               Float?
   specialNeeds       String?
-  studentsCount      Int @default(0)
+  studentsCount      Int                       @default(0)
 
   diveCenterId String
   diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
@@ -390,8 +377,8 @@ model Task {
   assignedToId String
 
   dueDate  DateTime
-  priority Priority   @default(medium)
-  status   TaskStatus @default(pending)
+  priority Priority     @default(medium)
+  status   TaskStatus   @default(pending)
   category TaskCategory
 
   diveCenterId String?
@@ -408,39 +395,42 @@ model FleetVehicle {
   id                 String           @id @default(uuid())
   name               String
   type               FleetVehicleType
-  size               String           // e.g., "42 ft" or "SUV"
+  size               String // e.g., "42 ft" or "SUV"
   capacity           Int
   description        String?
   registrationNumber String?
   insuranceInfo      String?
   imageUrl           String?
-  
+
   // Relations
-  diveCenterId       String
-  diveCenter         DiveCenter       @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
-  
+  diveCenterId String
+  diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+
+  // Add reverse relation to DiveTrip
+  diveTrips DiveTrip[]
+
   // Crew assignments
-  crewAssignments    VehicleCrewAssignment[]
-  
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  crewAssignments VehicleCrewAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("fleet_vehicles")
 }
 
 // Junction table for vehicle crew assignments
 model VehicleCrewAssignment {
-  id              String       @id @default(uuid())
-  vehicleId       String
-  staffId         String
-  role            String?      // e.g., "Captain", "Engineer"
-  
+  id        String  @id @default(uuid())
+  vehicleId String
+  staffId   String
+  role      String? // e.g., "Captain", "Engineer"
+
   // Relations
-  vehicle         FleetVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  staff           Staff        @relation(fields: [staffId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime     @default(now())
-  
+  vehicle FleetVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  staff   Staff        @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
   @@unique([vehicleId, staffId])
   @@map("vehicle_crew_assignments")
 }
