@@ -163,6 +163,7 @@ model Participant {
   name          String
   certification String
   level         String
+  customerId    String?
 
   // many-to-one back to DiveTrip
   diveTrip   DiveTrip @relation(fields: [diveTripId], references: [id])

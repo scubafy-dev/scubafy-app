@@ -94,6 +94,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         name: string;
         certification: string;
         level: string;
+        customerId: string;
     }[] = [];
     
     try {
@@ -102,6 +103,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 name: participant.name,
                 certification: participant.certification,
                 level: participant.level,
+                customerId: participant?.customerId
             }));
         }
         console.log('Processed participants:', participants);
@@ -220,8 +222,30 @@ export async function updateDiveTrip(id: string | null, formData: any) {
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
 
+    // --- Handle participants like in createDiveTrip ---
+    let participants: {
+        name: string;
+        certification: string;
+        level: string;
+        customerId: string;
+    }[] = [];
+    try {
+        if (formData.participants && Array.isArray(formData.participants)) {
+            participants = formData.participants.map((participant: any) => ({
+                name: participant.name,
+                certification: participant.certification,
+                level: participant.level,
+                customerId: participant?.customerId
+            }));
+        }
+        console.log('Processed participants (update):', participants);
+    } catch (error) {
+        console.error("Error parsing participants data (update):", error);
+        participants = [];
+    }
 
     try {
+        // Update the trip main fields
         await prisma.diveTrip.update(
             {
                 where: {
@@ -244,6 +268,16 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                 },
             },
         );
+
+        // --- Update participants ---
+        // Delete all existing participants for this trip
+        await prisma.participant.deleteMany({ where: { diveTripId: id } });
+        // Re-create participants if any
+        if (participants.length > 0) {
+            await prisma.participant.createMany({
+                data: participants.map(p => ({ ...p, diveTripId: id })),
+            });
+        }
     } catch (error) {
         console.log("error: ", error);
     }

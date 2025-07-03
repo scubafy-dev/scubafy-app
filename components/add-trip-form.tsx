@@ -9,6 +9,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -187,12 +188,14 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function AddTripForm(
-  { onSuccess, mode, trip, actionCreate, actionUpdate }: {
+  { onSuccess, mode, trip, actionCreate, actionUpdate, setIsAddTripOpen, setIsEditTripOpen }: {
     onSuccess: () => void;
     mode: ActionMode;
     trip: FullDiveTrip | null;
     actionCreate: (formData: FormData, diveCenterId: string) => Promise<void>;
     actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
+    setIsAddTripOpen?: any
+    setIsEditTripOpen?: any
   },
 ) {
   const { toast } = useToast();
@@ -207,12 +210,9 @@ export function AddTripForm(
   >([]);
   const { currentCenter, isAllCenters, getCenterSpecificData, centers } =
     useDiveCenter();
-  console.log('currentCenter', currentCenter);
-  console.log('isAllCenters', isAllCenters);
 
   // Add a fallback for when currentCenter is undefined
   const effectiveCenter = currentCenter || (centers.length > 0 ? centers[0] : null);
-  console.log('effectiveCenter', effectiveCenter);
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
@@ -275,6 +275,7 @@ export function AddTripForm(
     const fetchCustomers = async () => {
       try {
         const customersData = await getAllCustomers(currentCenter?.id);
+        console.log('customers',customersData)
         setCustomers(customersData);
       } catch (error) {
         console.error("Error fetching customers:", error);
@@ -282,6 +283,33 @@ export function AddTripForm(
     };
     fetchCustomers();
   }, []);
+
+  // Prefill participants when editing a trip
+  useEffect(() => {
+    if (mode === ActionMode.update && trip && Array.isArray(trip.participants)) {
+      // Split participants into those with customerId (from DB) and those without (manual)
+      const selectedCustomerIds: string[] = [];
+      const manualParts: Array<{ name: string; certification: string }> = [];
+      
+      trip.participants.forEach((p) => {
+        if (p.customerId) {
+          // This participant is linked to a customer in the database
+          selectedCustomerIds.push(p.customerId);
+        } else {
+          // This is a manual participant (not in customer database)
+          manualParts.push({
+            name: p.name || '',
+            certification: p.certification || '',
+          });
+        }
+      });
+      
+      setManualParticipants(manualParts);
+      console.log('selectedCustomerIds to set:', selectedCustomerIds);
+      form.reset({ ...form.getValues(), selectedCustomerIds: selectedCustomerIds as any });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, trip, customers]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
@@ -307,7 +335,10 @@ export function AddTripForm(
     setManualParticipants(updated);
   };
 
+  console.log('tripData for Update', trip)
+
   async function onSubmit(values: any) {
+    console.log('form value',values)
     setIsSubmitting(true);
 
     try {
@@ -317,6 +348,7 @@ export function AddTripForm(
       // Add manual participants
       participants = [
         ...manualParticipants.map((p) => ({
+          id: uuidv4(),
           name: p.name,
           certification: p.certification,
           level: 'Unknown', // Add level field as required by schema
@@ -331,26 +363,29 @@ export function AddTripForm(
         participants = [
           ...participants,
           ...selectedCustomers.map((c) => ({
-            id: c.id,
+            id: uuidv4(), // Generate new UUID for participant
             name: c.fullName,
-            certification: c.certificationLevel,
+            certification: c.certificationLevel || 'Unknown',
             level: 'Unknown', // Add level field as required by schema
+            customerId: c.id, // Link to the customer in the database
           })),
         ];
       }
-      
+      console.log('after adding participents from DB', participants)
       // Set the participants field in the values object
       values.participants = participants;
-      console.log('formValues',values)
+      console.log('formValues', values)
       // Call the appropriate server action
       if (mode === ActionMode.create && effectiveCenter?.id) {
         await actionCreate(values, effectiveCenter.id);
+        onSuccess();
         toast({
           title: "Trip created successfully",
           description: `${values.title} has been added to your dive trips.`,
         });
       } else if (mode === ActionMode.update && trip?.id) {
         await actionUpdate(trip.id, values);
+        onSuccess();
         toast({
           title: "Trip updated successfully",
           description: `${values.title} has been updated.`,
@@ -361,7 +396,6 @@ export function AddTripForm(
       }
 
       form.reset();
-      onSuccess();
       router.refresh();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -394,7 +428,7 @@ export function AddTripForm(
         <Tabs defaultValue="details" className="space-y-4">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="details">Trip Details</TabsTrigger>
-            {/* <TabsTrigger value="vehicle">Vehicle</TabsTrigger> */}
+            <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
             {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
@@ -684,7 +718,7 @@ export function AddTripForm(
                           className={cn(
                             "cursor-pointer hover:border-primary transition-colors",
                             field.value === vehicle.id &&
-                              "border-2 border-primary",
+                            "border-2 border-primary",
                           )}
                           onClick={() => field.onChange(vehicle.id)}
                         >
@@ -950,8 +984,8 @@ export function AddTripForm(
                                         return checked
                                           ? field.onChange([...currentValue, customer.id])
                                           : field.onChange(currentValue.filter(
-                                              (value: string) => value !== customer.id,
-                                            ));
+                                            (value: string) => value !== customer.id,
+                                          ));
                                       }}
                                     />
                                   </FormControl>
@@ -1131,7 +1165,10 @@ export function AddTripForm(
         </Tabs>
 
         <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button variant="outline" type="button" onClick={onSuccess}>
+          <Button variant="outline" type="button" onClick={() => {
+            setIsAddTripOpen && setIsAddTripOpen(false)
+            setIsEditTripOpen && setIsEditTripOpen(false)
+          }}>
             Cancel
           </Button>
           <Button
@@ -1141,8 +1178,8 @@ export function AddTripForm(
             {isSubmitting
               ? mode === ActionMode.create ? "Creating..." : "Updating..."
               : mode === ActionMode.create
-              ? "Create Trip"
-              : "Update Trip"}
+                ? "Create Trip"
+                : "Update Trip"}
           </Button>
         </div>
       </form>

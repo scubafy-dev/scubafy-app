@@ -100,6 +100,7 @@ export default function DiveTripsPage() {
   }, [currentCenter?.id]);
 
   useEffect(() => {
+    console.log("useEffect triggered: currentCenter", currentCenter);
     // Always set loading to true when currentCenter changes
     setIsLoading(true);
 
@@ -113,39 +114,11 @@ export default function DiveTripsPage() {
   }, [currentCenter]);
 
   // onSuccess a call
-  const handleCourseCreated = useCallback(async () => {
+  const handleTripCreated = useCallback(async () => {
     // Refresh the customer list after successful creation
     await fetchDiveTrips();
     setIsLoading(false);
   }, [fetchDiveTrips]);
-
-  // useEffect(() => {
-  //   const fetchDiveTrips = async () => {
-  //     try {
-  //       setIsLoading(true);
-  //       console.log("Fetching dive trips for center:", currentCenter?.id);
-  //       const trips = await getAllDiveTrips(currentCenter?.id ?? null);
-  //       console.log("Fetched dive trips:", trips);
-  //       setDiveTrips(trips);
-  //     } catch (error) {
-  //       console.error("Failed to load dive trips:", error);
-  //       setDiveTrips([]);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   };
-
-  //   // Always set loading to true when currentCenter changes
-  //   setIsLoading(true);
-
-  //   if (currentCenter?.id) {
-  //     fetchDiveTrips();
-  //   } else {
-  //     // If no center, just set empty state and stop loading
-  //     setDiveTrips([]);
-  //     setIsLoading(false);
-  //   }
-  // }, [currentCenter]);
 
 
   const toggleRowExpansion = (tripId: string) => {
@@ -486,9 +459,10 @@ export default function DiveTripsPage() {
           <AddTripForm
             key={isAddTripOpen ? 'add-trip-form-' + String(Date.now()) : 'add-trip-form'}
             onSuccess={() => {
-              handleCourseCreated()
+              handleTripCreated()
               setIsAddTripOpen(false)
             }}
+            setIsAddTripOpen={setIsAddTripOpen}
             mode={ActionMode.create}
             trip={null}
             actionCreate={createDiveTrip}
@@ -497,17 +471,27 @@ export default function DiveTripsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isEditTripOpen} onOpenChange={setIsEditTripOpen}>
+      <Dialog open={isEditTripOpen} onOpenChange={(open) => {
+        console.log("Dialog open state changed:", open);
+        setIsEditTripOpen(open);
+        if (!open) {
+          setSelectedTrip(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Update Dive Trip</DialogTitle>
           </DialogHeader>
           <AddTripForm
-            onSuccess={() => setIsEditTripOpen(false)}
+            onSuccess={() => {
+              handleTripCreated()
+              setIsEditTripOpen(false)}
+            }
             mode={ActionMode.update}
             trip={selectedTrip}
             actionCreate={createDiveTrip}
             actionUpdate={updateDiveTrip}
+            setIsEditTripOpen={setIsEditTripOpen}
           />
         </DialogContent>
       </Dialog>
@@ -538,7 +522,7 @@ export default function DiveTripsPage() {
                     toast({
                       title: "Trip deleted successfully.",
                     });
-                    await handleCourseCreated();
+                    await handleTripCreated();
                     router.refresh();
                   }
                 }}
