@@ -24,17 +24,23 @@ import { ActionMode } from "@/types/all";
 import { useRouter } from "next/navigation";
 import { createEquipment, updateEquipment } from "@/lib/equipment";
 import { Condition, EquipmentStatus, EquipmentType } from "@app/generated/prisma";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { useToast } from "./ui/use-toast";
 
 interface AddEquipmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   equipment: Equipment | null;
   mode: ActionMode;
+  handleEquipmentCreated?:any;
 }
 
 export function AddEquipmentDialog(
-  { open, onOpenChange, equipment, mode }: AddEquipmentDialogProps,
+  {handleEquipmentCreated, open, onOpenChange, equipment, mode }: AddEquipmentDialogProps,
 ) {
+  const { currentCenter, isAllCenters, getCenterSpecificData } =
+    useDiveCenter();
+  const { toast } = useToast()
   const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">(
     "basic",
   );
@@ -74,9 +80,16 @@ export function AddEquipmentDialog(
     }));
   };
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
+    if (!currentCenter?.id) {
+      toast({
+        title: "Error",
+        description: "Dive center not found.",
+      });
+      return;
+    }
     // Handle form submission
-    console.log('======>',formData);
+    console.log('======>', formData);
     if (mode === ActionMode.create) {
       // Map form data to match EquipmentFormType interface
       const equipmentData = {
@@ -93,12 +106,13 @@ export function AddEquipmentDialog(
         usageLimit: formData.usageLimit || null,
         notes: formData.notes || "",
       };
-      
-      const res = await createEquipment(equipmentData);
+
+      const res = await createEquipment(equipmentData, currentCenter?.id);
       console.log('create response', res);
-      
+
       if (res?.success) {
         router.refresh();
+        handleEquipmentCreated()
       } else {
         console.error('Failed to create equipment:', res?.error);
       }
@@ -119,12 +133,13 @@ export function AddEquipmentDialog(
           usageLimit: formData.usageLimit || null,
           notes: formData.notes || "",
         };
-        
+
         const res = await updateEquipment(equipment.id, equipmentData);
         console.log('update response', res);
-        
+
         if (res?.success) {
           router.refresh();
+          handleEquipmentCreated()
         } else {
           console.error('Failed to update equipment:', res?.error);
         }

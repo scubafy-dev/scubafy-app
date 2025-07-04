@@ -86,6 +86,7 @@ model DiveCenter {
   tasks         Task[]
   staff         Staff[]
   courses       Course[]
+  equipment     Equipment[]
 
   @@map("dive_center")
 }
@@ -208,6 +209,10 @@ model Equipment {
   status    EquipmentStatus @default(available)
   condition Condition
   notes     String?
+
+  // Relations
+  diveCenterId String
+  diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
   @@map("equipment")
 }

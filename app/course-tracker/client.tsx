@@ -1497,7 +1497,7 @@ export default function CourseTrackerClient() {
                                     </div>
 
                                     {/* Temporarily invisible course materials */}
-                                    <div className="invisible md:col-span-2">
+                                    <div className="md:col-span-2">
                                         <h3 className="text-sm font-medium mb-2">
                                             Materials & Equipment
                                         </h3>
@@ -1831,7 +1831,7 @@ export default function CourseTrackerClient() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="cost">Cost ($)</Label>
+                                    <Label htmlFor="cost">Price of course ($)</Label>
                                     <Input
                                         id="cost"
                                         type="number"
