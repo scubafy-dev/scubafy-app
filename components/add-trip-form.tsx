@@ -217,14 +217,6 @@ export function AddTripForm(
   // Update capacity when vehicle is selected
   const watchVehicleId = form.watch("fleetVehicleId");
 
-  useEffect(() => {
-    if (watchVehicleId) {
-      const selectedVehicle = vehicles.find((v) => v.id === watchVehicleId);
-      if (selectedVehicle) {
-        form.setValue("capacity", selectedVehicle.capacity);
-      }
-    }
-  }, [watchVehicleId, vehicles, form]);
 
   useEffect(() => {
     const fetchStaffMembers = async () => {
