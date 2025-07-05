@@ -144,6 +144,10 @@ model DiveTrip {
   User           User          @relation(fields: [userId], references: [id])
   userId         String
 
+  // New many-to-many relationships
+  instructorAssignments TripInstructorAssignment[]
+  diveMasterAssignments TripDiveMasterAssignment[]
+
   @@map("dive_trips")
 }
 
@@ -307,6 +311,10 @@ model Staff {
   diveCenterId String?
   diveCenter   DiveCenter? @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
+  // New reverse relationships
+  instructorAssignments TripInstructorAssignment[]
+  diveMasterAssignments TripDiveMasterAssignment[]
+
   @@map("staff")
 }
 
@@ -438,4 +446,36 @@ model VehicleCrewAssignment {
 
   @@unique([vehicleId, staffId])
   @@map("vehicle_crew_assignments")
+}
+
+// Junction table for trip instructor assignments
+model TripInstructorAssignment {
+  id        String  @id @default(uuid())
+  tripId    String
+  staffId   String
+
+  // Relations
+  trip   DiveTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  staff  Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, staffId])
+  @@map("trip_instructor_assignments")
+}
+
+// Junction table for trip dive master assignments
+model TripDiveMasterAssignment {
+  id        String  @id @default(uuid())
+  tripId    String
+  staffId   String
+
+  // Relations
+  trip   DiveTrip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  staff  Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([tripId, staffId])
+  @@map("trip_dive_master_assignments")
 }

@@ -101,7 +101,6 @@ export default function DiveTripsPage() {
   }, [currentCenter?.id]);
 
   useEffect(() => {
-    console.log("useEffect triggered: currentCenter", currentCenter);
     // Always set loading to true when currentCenter changes
     setIsLoading(true);
 
@@ -213,8 +212,9 @@ export default function DiveTripsPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Location</TableHead>
                         <TableHead>Dive Master</TableHead>
+                        <TableHead>Instructor</TableHead>
                         <TableHead className="text-center">Capacity</TableHead>
-                        <TableHead className="text-center">Booked</TableHead>
+                        {/* <TableHead className="text-center">Booked</TableHead> */}
                         <TableHead>Price</TableHead>
                         <TableHead>Status</TableHead>
                         {isAllCenters && <TableHead>Center</TableHead>}
@@ -223,7 +223,7 @@ export default function DiveTripsPage() {
                     <TableBody>
                       {!isLoading && diveTrips.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={isAllCenters ? 10 : 9} className="text-center py-8">
+                          <TableCell colSpan={isAllCenters ? 11 : 10} className="text-center py-8">
                             <div className="text-muted-foreground">
                               <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               <p>No dive trips found</p>
@@ -261,13 +261,48 @@ export default function DiveTripsPage() {
                                 </div>
                               </TableCell>
                               <TableCell>{trip.location}</TableCell>
-                              <TableCell>{trip.diveMaster}</TableCell>
+                              {/* Dive MAsters and Instructor Cell Data */}
+                              <TableCell>
+                                {trip.diveMasterData && trip.diveMasterData.length > 0 ? (
+                                  <div className="text-xs">
+                                    {trip.diveMasterData.map((diveMaster: any, index: number) => (
+                                      <span key={diveMaster.id}>
+                                        {diveMaster.fullName}
+                                        {index < trip.diveMasterData.length - 1 && ', '}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : trip.diveMaster ? (
+                                  trip.diveMaster
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">Not assigned</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {trip.instructorData && trip.instructorData.length > 0 ? (
+                                  <div className="text-xs">
+                                    {trip.instructorData.map((instructor: any, index: number) => (
+                                      <span key={instructor.id}>
+                                        {instructor.fullName}
+                                        {index < trip.instructorData.length - 1 && ', '}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : trip.instructor ? (
+                                  trip.instructor
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">Not assigned</span>
+                                )}
+                              </TableCell>
+
                               <TableCell className="text-center">
                                 {trip.capacity}
                               </TableCell>
-                              <TableCell className="text-center">
+
+                              {/* <TableCell className="text-center">
                                 {trip.booked}
-                              </TableCell>
+                              </TableCell> */}
+
                               <TableCell>${trip.price}</TableCell>
                               <TableCell>
                                 <Badge
@@ -324,7 +359,7 @@ export default function DiveTripsPage() {
                             {expandedRows.includes(trip.id) && (
                               <TableRow key={`${trip.id}-expanded`} className="bg-muted/30">
                                 <TableCell
-                                  colSpan={isAllCenters ? 10 : 9}
+                                  colSpan={isAllCenters ? 11 : 10}
                                   className="p-4"
                                 >
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -340,7 +375,7 @@ export default function DiveTripsPage() {
                                         Duration
                                       </h4>
                                       <p className="text-sm text-muted-foreground mb-4">
-                                        {trip.duration}
+                                        {trip.duration || '2 hours'}
                                       </p>
 
                                       <h4 className="text-sm font-semibold mb-2">
@@ -349,15 +384,41 @@ export default function DiveTripsPage() {
                                       <div className="space-y-2 mb-4">
                                         <div className="flex items-center text-sm text-muted-foreground">
                                           <span className="font-medium mr-2">
-                                            Dive Master:
+                                            Dive Masters:
                                           </span>
-                                          {trip.diveMaster}
+                                          {trip.diveMasterData && trip.diveMasterData.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                              {trip.diveMasterData.map((diveMaster: any, index: number) => (
+                                                <Badge key={diveMaster.id} variant="outline" className="text-xs">
+                                                  {diveMaster.fullName}
+                                                  {index < trip.diveMasterData.length - 1 && ', '}
+                                                </Badge>
+                                              ))}
+                                            </div>
+                                          ) : trip.diveMaster ? (
+                                            <span>{trip.diveMaster}</span>
+                                          ) : (
+                                            <span className="text-muted-foreground">Not assigned</span>
+                                          )}
                                         </div>
                                         <div className="flex items-center text-sm text-muted-foreground">
                                           <span className="font-medium mr-2">
-                                            Instructor:
+                                            Instructors:
                                           </span>
-                                          {trip.instructor}
+                                          {trip.instructorData && trip.instructorData.length > 0 ? (
+                                            <div className="flex flex-wrap gap-1">
+                                              {trip.instructorData.map((instructor: any, index: number) => (
+                                                <Badge key={instructor.id} variant="outline" className="text-xs">
+                                                  {instructor.fullName}
+                                                  {index < trip.instructorData.length - 1 && ', '}
+                                                </Badge>
+                                              ))}
+                                            </div>
+                                          ) : trip.instructor ? (
+                                            <span>{trip.instructor}</span>
+                                          ) : (
+                                            <span className="text-muted-foreground">Not assigned</span>
+                                          )}
                                         </div>
                                       </div>
 
@@ -465,7 +526,7 @@ export default function DiveTripsPage() {
       </Dialog>
 
       <Dialog open={isEditTripOpen} onOpenChange={(open) => {
-        console.log("Dialog open state changed:", open);
+        //console.log("Dialog open state changed:", open);
         setIsEditTripOpen(open);
         if (!open) {
           setSelectedTrip(null);

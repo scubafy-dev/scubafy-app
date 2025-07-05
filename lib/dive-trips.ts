@@ -4,6 +4,7 @@ import prisma  from '@prisma/prisma';
 import { connect } from 'http2';
 import { redirect } from 'next/navigation';
 import { useAuth } from './use-auth';
+import { getStaffById } from './staffs';
 
 export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 
@@ -75,15 +76,26 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         | "in_progress"
         | "completed"
         | "cancelled";
-    const diveMaster = formData.diveMaster as string;
-    const description = formData.description as string;
-    const duration = formData.duration as string;
-    const difficulty = formData.difficulty as
-        | "beginner"
-        | "intermediate"
-        | "advanced";
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
+    
+    // Handle multiple instructors
+    let instructorIds: string[] = [];
+    if (formData.selectedInstructorIds && Array.isArray(formData.selectedInstructorIds)) {
+        instructorIds = formData.selectedInstructorIds;
+    }
+    
+    // Handle multiple dive masters
+    let diveMasterIds: string[] = [];
+    if (formData.selectedDiveMasterIds && Array.isArray(formData.selectedDiveMasterIds)) {
+        diveMasterIds = formData.selectedDiveMasterIds;
+    }
+    
+    // For backward compatibility, join multiple instructor IDs with comma
+    const instructorString = instructorIds.length > 0 ? instructorIds.join(',') : instructor;
+    
+    // For backward compatibility, join multiple dive master IDs with comma
+    const diveMasterString = diveMasterIds.length > 0 ? diveMasterIds.join(',') : formData.diveMaster;
 
     let participants: {
         name: string;
@@ -121,8 +133,8 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
             capacity,
             price,
             status,
-            diveMaster,
-            instructor,
+            diveMaster: diveMasterString,
+            instructor: instructorString,
             fleetVehicleId,
             participantsCount: participants.length,
             participants: participants
@@ -137,16 +149,24 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 booked,
                 price,
                 status,
-                diveMaster,
-                description,
-                duration,
-                difficulty,
+                diveMaster: diveMasterString,
+                description: formData.description,
+                duration: formData.duration,
+                difficulty: formData.difficulty,
                 center,
-                instructor,
+                instructor: instructorString,
                 fleetVehicleId,
                 participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
                 diveCenterId,
                 userId: session.user.id,
+                // Create instructor assignments
+                instructorAssignments: instructorIds.length > 0 ? {
+                    create: instructorIds.map(staffId => ({ staffId }))
+                } : undefined,
+                // Create dive master assignments
+                diveMasterAssignments: diveMasterIds.length > 0 ? {
+                    create: diveMasterIds.map(staffId => ({ staffId }))
+                } : undefined,
             },
         });
         
@@ -169,18 +189,85 @@ export const  getAllDiveTrips = async (diveCenterId: string | null) => {
         return [];
     }
 
-  return prisma.diveTrip.findMany({
+  const trips = await prisma.diveTrip.findMany({
     where: {
       diveCenterId,
     },
     include: {
       fleetVehicle: true,
       participants: true,
+      instructorAssignments: {
+        include: {
+          staff: true
+        }
+      },
+      diveMasterAssignments: {
+        include: {
+          staff: true
+        }
+      },
     },
     orderBy: {
       date: 'asc',
     },
   });
+
+  // Helper function to fetch full staff data for instructor IDs
+  const fetchInstructorData = async (instructorString: string | null) => {
+    if (!instructorString) return [];
+    
+    const instructorIds = instructorString.split(',').filter(id => id.trim() !== '');
+    const instructorData = [];
+    
+    for (const id of instructorIds) {
+      try {
+        const staff = await getStaffById(id.trim());
+        if (staff) {
+          instructorData.push(staff);
+        }
+      } catch (error) {
+        console.error(`Error fetching staff with ID ${id}:`, error);
+      }
+    }
+    
+    return instructorData;
+  };
+
+  // Helper function to fetch full staff data for dive master IDs
+  const fetchDiveMasterData = async (diveMasterString: string | null) => {
+    if (!diveMasterString) return [];
+    
+    const diveMasterIds = diveMasterString.split(',').filter(id => id.trim() !== '');
+    const diveMasterData = [];
+    
+    for (const id of diveMasterIds) {
+      try {
+        const staff = await getStaffById(id.trim());
+        if (staff) {
+          diveMasterData.push(staff);
+        }
+      } catch (error) {
+        console.error(`Error fetching staff with ID ${id}:`, error);
+      }
+    }
+    
+    return diveMasterData;
+  };
+
+  // Fetch full instructor and dive master data for each trip
+  const tripsWithStaffData = await Promise.all(
+    trips.map(async (trip) => {
+      const instructorData = await fetchInstructorData(trip.instructor);
+      const diveMasterData = await fetchDiveMasterData(trip.diveMaster);
+      return {
+        ...trip,
+        instructorData, // Add the full instructor data
+        diveMasterData, // Add the full dive master data
+      };
+    })
+  );
+
+  return tripsWithStaffData;
 }
 
 export async function updateDiveTrip(id: string | null, formData: any) {
@@ -220,15 +307,26 @@ export async function updateDiveTrip(id: string | null, formData: any) {
         | "in_progress"
         | "completed"
         | "cancelled";
-    const diveMaster = formData.diveMaster as string;
-    const description = formData.description as string;
-    const duration = formData.duration as string;
-    const difficulty = formData.difficulty as
-        | "beginner"
-        | "intermediate"
-        | "advanced";
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
+
+    // Handle multiple instructors
+    let instructorIds: string[] = [];
+    if (formData.selectedInstructorIds && Array.isArray(formData.selectedInstructorIds)) {
+        instructorIds = formData.selectedInstructorIds;
+    }
+    
+    // Handle multiple dive masters
+    let diveMasterIds: string[] = [];
+    if (formData.selectedDiveMasterIds && Array.isArray(formData.selectedDiveMasterIds)) {
+        diveMasterIds = formData.selectedDiveMasterIds;
+    }
+    
+    // For backward compatibility, join multiple instructor IDs with comma
+    const instructorString = instructorIds.length > 0 ? instructorIds.join(',') : instructor;
+    
+    // For backward compatibility, join multiple dive master IDs with comma
+    const diveMasterString = diveMasterIds.length > 0 ? diveMasterIds.join(',') : formData.diveMaster;
 
     // --- Handle participants like in createDiveTrip ---
     let participants: {
@@ -261,8 +359,8 @@ export async function updateDiveTrip(id: string | null, formData: any) {
             capacity,
             price,
             status,
-            diveMaster,
-            instructor,
+            diveMaster: diveMasterString,
+            instructor: instructorString,
             fleetVehicleId,
             participantsCount: participants.length,
             participants: participants
@@ -282,16 +380,40 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                     booked,
                     price,
                     status,
-                    diveMaster,
-                    description,
-                    duration,
-                    difficulty,
+                    diveMaster: diveMasterString,
+                    description: formData.description,
+                    duration: formData.duration,
+                    difficulty: formData.difficulty,
                     center,
-                    instructor,
+                    instructor: instructorString,
                     fleetVehicleId,
                 },
             },
         );
+
+        // --- Update instructor assignments ---
+        console.log('Deleting existing instructor assignments for trip:', id);
+        await prisma.tripInstructorAssignment.deleteMany({ where: { tripId: id } });
+        
+        // Re-create instructor assignments if any
+        if (instructorIds.length > 0) {
+            console.log('Creating new instructor assignments:', instructorIds);
+            await prisma.tripInstructorAssignment.createMany({
+                data: instructorIds.map(staffId => ({ tripId: id, staffId })),
+            });
+        }
+
+        // --- Update dive master assignments ---
+        console.log('Deleting existing dive master assignments for trip:', id);
+        await prisma.tripDiveMasterAssignment.deleteMany({ where: { tripId: id } });
+        
+        // Re-create dive master assignments if any
+        if (diveMasterIds.length > 0) {
+            console.log('Creating new dive master assignments:', diveMasterIds);
+            await prisma.tripDiveMasterAssignment.createMany({
+                data: diveMasterIds.map(staffId => ({ tripId: id, staffId })),
+            });
+        }
 
         // --- Update participants ---
         console.log('Deleting existing participants for trip:', id);
@@ -329,6 +451,16 @@ export const deleteDiveTrip = async (id: string) => {
         await prisma.participant.deleteMany({
             where: { diveTripId: id },
             })
+        
+        // Delete instructor assignments linked to this dive trip
+        await prisma.tripInstructorAssignment.deleteMany({
+            where: { tripId: id },
+        })
+        
+        // Delete dive master assignments linked to this dive trip
+        await prisma.tripDiveMasterAssignment.deleteMany({
+            where: { tripId: id },
+        })
         
         const res = await prisma.diveTrip.delete({
             where: {
