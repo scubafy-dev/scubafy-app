@@ -24,6 +24,7 @@ interface DiveCenterContextType {
   setDiveCenters: (centers: DiveCenter[]) => void;
   setCurrentCenter: (center: DiveCenter | null) => void;
   setIsAllCenters: (isAll: boolean) => void;
+  updateCenter: (updatedCenter: DiveCenter) => void;
   getCenterSpecificData: <T>(dataMap: Record<string, T>, allData: T) => T;
 }
 
@@ -117,6 +118,20 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Function to update a specific center in the centers array
+  const updateCenter = (updatedCenter: DiveCenter) => {
+    setDiveCenters(prevCenters => 
+      prevCenters.map(center => 
+        center.id === updatedCenter.id ? updatedCenter : center
+      )
+    );
+    
+    // If this is the current center, update it as well
+    if (currentCenter?.id === updatedCenter.id) {
+      setCurrentCenter(updatedCenter);
+    }
+  };
+
   // Generic function to get data specific to the current center
   const getCenterSpecificData = <T,>(
     dataMap: Record<string, T>,
@@ -146,6 +161,7 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
         setDiveCenters: setDiveCenters,
         setCurrentCenter: handleCenterChange,
         setIsAllCenters: handleAllCentersChange,
+        updateCenter,
         getCenterSpecificData,
       }}
     >

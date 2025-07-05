@@ -7,7 +7,7 @@ export default async function DashboardPage() {
   const session = await useAuth("/");
   return (
     <div>
-      <DiveTripsPage />
+      <DashboardClient />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { Button } from "@/components/ui/button";
@@ -20,12 +20,91 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { getIndividualDiveCenters, updateDiveCenter } from "@/lib/dive-center";
 
 export default function SettingsClient() {
     const { toast } = useToast();
     const { theme, setTheme, accentColor, setAccentColor } = useTheme();
     const [activeTab, setActiveTab] = useState("general");
     const [isSaving, setIsSaving] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [diveCenterData, setDiveCenterData] = useState<any>(null);
+    const { currentCenter, isAllCenters, getCenterSpecificData, setDiveCenters, setCurrentCenter, updateCenter } = useDiveCenter();
+
+    // Fetch dive center data when component mounts
+    useEffect(() => {
+        const fetchDiveCenterData = async () => {
+            if (currentCenter?.id) {
+                try {
+                    setIsLoading(true);
+                    const data = await getIndividualDiveCenters(currentCenter.id);
+                    setDiveCenterData(data);
+                } catch (error) {
+                    console.error("Error fetching dive center data:", error);
+                    toast({
+                        title: "Error",
+                        description: "Failed to load dive center data.",
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchDiveCenterData();
+    }, [currentCenter?.id, toast]);
+
+    const handleSaveDiveCenter = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentCenter?.id) {
+            toast({
+                title: "Error",
+                description: "No dive center selected.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const formData = new FormData(e.target as HTMLFormElement);
+
+            // Debug: Log the form data
+            console.log("Form data being sent:");
+            for (const [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            console.log("Current center ID:", currentCenter.id);
+
+            const updatedCenter = await updateDiveCenter(currentCenter.id, formData);
+
+            // Update the dive center context with new data
+            if (updatedCenter) {
+                // Update the center in context using the new updateCenter function
+                updateCenter(updatedCenter);
+
+                toast({
+                    title: "Success",
+                    description: "Dive center settings updated successfully.",
+                });
+
+                // Refresh the dive center data
+                const refreshedData = await getIndividualDiveCenters(currentCenter.id);
+                setDiveCenterData(refreshedData);
+            }
+        } catch (error) {
+            console.error("Error updating dive center:", error);
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to update dive center settings.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     const handleSave = () => {
         setIsSaving(true);
@@ -41,6 +120,7 @@ export default function SettingsClient() {
         }, 1000);
     };
 
+
     return (
         <DashboardShell>
             <DashboardHeader
@@ -53,94 +133,104 @@ export default function SettingsClient() {
                 </Button>
             </DashboardHeader>
 
-            <Tabs
-                defaultValue="general"
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-            >
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="general">General</TabsTrigger>
-                    <TabsTrigger value="notifications">
-                        Notifications
-                    </TabsTrigger>
-                    <TabsTrigger value="appearance">Appearance</TabsTrigger>
-                </TabsList>
+            <>
+                {
+                    isLoading ?
+                        <div className="flex items-center justify-center h-64">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                                <p className="text-muted-foreground">Loading dive center data...</p>
+                            </div>
+                        </div>
+                        :
+                        <Tabs
+                            defaultValue="general"
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            className="w-full"
+                        >
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="general">General</TabsTrigger>
+                                <TabsTrigger value="notifications">
+                                    Notifications
+                                </TabsTrigger>
+                                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                            </TabsList>
 
-                <TabsContent value="general">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>General Settings</CardTitle>
-                            <CardDescription>
-                                Manage your dive center's basic information.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="company-name">
-                                    Dive Center Name
-                                </Label>
-                                <Input
-                                    id="company-name"
-                                    defaultValue="Scubafy Dive Center"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="contact-email">
-                                    Contact Email
-                                </Label>
-                                <Input
-                                    id="contact-email"
-                                    type="email"
-                                    defaultValue="info@scubafy.com"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="contact-phone">
-                                    Contact Phone
-                                </Label>
-                                <Input
-                                    id="contact-phone"
-                                    defaultValue="+1 (555) 123-4567"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
-                                <Textarea
-                                    id="address"
-                                    defaultValue="123 Ocean Drive, Beach City, FL 33123"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="website">Website</Label>
-                                <Input
-                                    id="website"
-                                    defaultValue="https://scubafy.com"
-                                />
-                            </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-end">
-                            <Button onClick={handleSave} disabled={isSaving}>
-                                {isSaving ? "Saving..." : "Save Changes"}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </TabsContent>
+                            <TabsContent value="general">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Dive Center Settings</CardTitle>
+                                        <CardDescription>
+                                            Manage your dive center's basic information.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <form onSubmit={handleSaveDiveCenter}>
+                                        <CardContent className="space-y-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="name">
+                                                    Dive Center Name
+                                                </Label>
+                                                <Input
+                                                    id="name"
+                                                    name="name"
+                                                    defaultValue={diveCenterData?.name || ""}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="email">
+                                                    Contact Email
+                                                </Label>
+                                                <Input
+                                                    id="email"
+                                                    name="email"
+                                                    type="email"
+                                                    defaultValue={diveCenterData?.email || ""}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="contact">
+                                                    Contact Phone
+                                                </Label>
+                                                <Input
+                                                    id="contact"
+                                                    name="contact"
+                                                    defaultValue={diveCenterData?.contact || ""}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="location">Location</Label>
+                                                <Textarea
+                                                    id="location"
+                                                    name="location"
+                                                    defaultValue={diveCenterData?.location || ""}
+                                                />
+                                            </div>
+                                        </CardContent>
+                                        <CardFooter className="flex justify-end">
+                                            <Button type="submit" disabled={isSaving}>
+                                                {isSaving ? "Saving..." : "Save Changes"}
+                                            </Button>
+                                        </CardFooter>
+                                    </form>
+                                </Card>
+                            </TabsContent>
 
-                <TabsContent value="notifications">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Notification Settings</CardTitle>
-                            <CardDescription>
-                                Configure how you receive notifications.
-                            </CardDescription>
-                        </CardHeader>
+                            <TabsContent value="notifications">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Notification Settings</CardTitle>
+                                        <CardDescription>
+                                            Configure how you receive notifications.
+                                        </CardDescription>
+                                    </CardHeader>
 
-                        {/* Temporarily showing coming soon */}
-                        <CardHeader>
-                            <p className="text-center">Coming Soon...</p>
-                        </CardHeader>
-                        {/* <CardContent className="space-y-6">
+                                    {/* Temporarily showing coming soon */}
+                                    <CardHeader>
+                                        <p className="text-center">Coming Soon...</p>
+                                    </CardHeader>
+                                    {/* <CardContent className="space-y-6">
                             <div className="flex items-center justify-between">
                                 <div className="space-y-0.5">
                                     <Label htmlFor="email-notifications">
@@ -201,22 +291,22 @@ export default function SettingsClient() {
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
                         </CardFooter> */}
-                    </Card>
-                </TabsContent>
+                                </Card>
+                            </TabsContent>
 
-                <TabsContent value="appearance">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Appearance Settings</CardTitle>
-                            <CardDescription>
-                                Customize the look and feel of your dashboard.
-                            </CardDescription>
-                        </CardHeader>
-                         {/* Temporarily showing coming soon */}
-                         <CardHeader>
-                            <p className="text-center">Coming Soon...</p>
-                        </CardHeader>
-                        {/* <CardContent className="space-y-6">
+                            <TabsContent value="appearance">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Appearance Settings</CardTitle>
+                                        <CardDescription>
+                                            Customize the look and feel of your dashboard.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    {/* Temporarily showing coming soon */}
+                                    <CardHeader>
+                                        <p className="text-center">Coming Soon...</p>
+                                    </CardHeader>
+                                    {/* <CardContent className="space-y-6">
                             <div className="space-y-2">
                                 <Label>Theme</Label>
                                 <div className="flex items-center space-x-4">
@@ -326,9 +416,12 @@ export default function SettingsClient() {
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
                         </CardFooter> */}
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                                </Card>
+                            </TabsContent>
+                        </Tabs>
+                }
+            </>
+
         </DashboardShell>
     );
 }
