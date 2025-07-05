@@ -78,6 +78,8 @@ model DiveCenter {
   name     String
   location String?
   ownerId  String
+  email    String?
+  contact  String?
 
   owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   DiveTrip      DiveTrip[]

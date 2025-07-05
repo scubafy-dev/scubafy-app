@@ -81,7 +81,7 @@ export function DiveCenterSelector() {
             onClick={() => handleSelectCenter("all")}
             disabled
           >
-            All Dive Centers
+            All Dive Centers24
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {centers.map((center) => (
