@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +46,7 @@ import { EquipmentDetails } from "../components/equipment-details";
 import {
     Equipment,
     EquipmentFormType,
+    getAllEquipments,
     makeEquipmentAvailable,
 } from "@/lib/equipment";
 import {
@@ -73,6 +74,7 @@ import { deleteEquipment } from "@/lib/equipment";
 import { RentEquipmentDialog } from "@/components/rent-equipment-dialog";
 import { Fragment } from "react";
 import { EquipmentStatus } from "../generated/prisma";
+import { getAllCourses } from "@/lib/course";
 
 const equipmentSchema = z.object({
     id: z.string(),
@@ -100,11 +102,7 @@ const equipmentSchema = z.object({
 
 type EquipmentFormValues = z.infer<typeof equipmentSchema>;
 
-export default function EquipmentPage(
-    { equipments }: {
-        equipments: Equipment[];
-    },
-) {
+export default function EquipmentPage() {
     const [isAddEquipmentOpen, setIsAddEquipmentOpen] = useState(false);
     const [isDeleteEquipmentAlertOpen, setIsDeleteEquipmentAlertOpen] =
         useState(false);
@@ -119,9 +117,43 @@ export default function EquipmentPage(
         useDiveCenter();
     const { toast } = useToast();
     const router = useRouter();
-
     // Get equipment data based on the selected center
     const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
+    const [equipmentList, setEquipmentList] = useState([])
+    const [equipmentListLoading, setEquipmentListLoading] = useState(false)
+
+    const fetchEquipmentList = useCallback(async () => {
+        try {
+            setEquipmentListLoading(true);
+            const courseData = await getAllEquipments(currentCenter?.id);
+            console.log("Fetched courseData:", courseData);
+            setEquipmentList(courseData as any);
+        } catch (error) {
+            console.error("Failed to load customersData:", error);
+            setEquipmentList([]);
+        } finally {
+            setEquipmentListLoading(false);
+        }
+    }, [currentCenter?.id]);
+
+    useEffect(() => {
+        // Always set loading to true when currentCenter changes
+        setEquipmentListLoading(true);
+
+        if (currentCenter?.id) {
+            fetchEquipmentList();
+        } else {
+            // If no center, just set empty state and stop loading
+            setEquipmentList([]);
+            setEquipmentListLoading(false);
+        }
+    }, [currentCenter]);
+
+    const handleEquipmentCreated = useCallback(async () => {
+        // Refresh the customer list after successful creation
+        await fetchEquipmentList();
+        // setIsAddCustomerOpen(false);
+    }, [fetchEquipmentList]);
 
     // Update equipment when center changes
     useEffect(() => {
@@ -210,7 +242,7 @@ export default function EquipmentPage(
                     </Button>
                 </div>
 
-                <EquipmentStats equipment={equipments} />
+                <EquipmentStats equipment={equipmentList} />
 
                 <div className="flex items-center max-w-sm">
                     <div className="relative w-full">
@@ -245,8 +277,17 @@ export default function EquipmentPage(
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {equipments.length > 0
-                                    ? equipments.map((item) => (
+                                {equipmentListLoading ? (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={isAllCenters ? 10 : 9}
+                                            className="text-center"
+                                        >
+                                            Loading...
+                                        </TableCell>
+                                    </TableRow>
+                                ) : equipmentList.length > 0 ? (
+                                    equipmentList.map((item: any) => (
                                         <Fragment key={item.id}>
                                             <TableRow
                                                 key={item.id}
@@ -257,8 +298,8 @@ export default function EquipmentPage(
                                                 <TableCell className="font-medium">
                                                     <div className="flex items-center gap-2">
                                                         {expandedItems.has(
-                                                                item.id,
-                                                            )
+                                                            item.id,
+                                                        )
                                                             ? (
                                                                 <ChevronUp className="h-4 w-4" />
                                                             )
@@ -291,16 +332,16 @@ export default function EquipmentPage(
                                                         //         <div className="flex flex-col gap-1">
                                                         //             <div className="flex items-center justify-between text-xs">
                                                         //                 <span
-                                                        //                     className={cn(
-                                                        //                         "font-medium",
-                                                        //                         item.usageCount &&
-                                                        //                             item.usageLimit &&
-                                                        //                             item.usageCount >=
-                                                        //                                 item.usageLimit *
+                                                        //                         className={cn(
+                                                        //                             "font-medium",
+                                                        //                             item.usageCount &&
+                                                        //                                 item.usageLimit &&
+                                                        //                                 item.usageCount >=
+                                                        //                                     item.usageLimit *
                                                         //                                     0.8
                                                         //                             ? "text-amber-500"
                                                         //                             : "",
-                                                        //                     )}
+                                                        //                         )}
                                                         //                 >
                                                         //                     {item
                                                         //                         .usageCount}/{item
@@ -339,7 +380,7 @@ export default function EquipmentPage(
                                                         //                                 item.usageLimit &&
                                                         //                                 item.usageCount >=
                                                         //                                     item.usageLimit *
-                                                        //                                         0.8
+                                                        //                                     0.8
                                                         //                         ? "text-orange-400"
                                                         //                         : "text-blue-500",
                                                         //                 )}
@@ -349,9 +390,9 @@ export default function EquipmentPage(
                                                         //     :
 
 
-                                                            <span className="text-xs text-muted-foreground">
-                                                                Not tracked
-                                                            </span>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Not tracked
+                                                        </span>
 
                                                     }
                                                 </TableCell>
@@ -365,16 +406,16 @@ export default function EquipmentPage(
                                                     <Badge
                                                         variant="outline"
                                                         className={item
-                                                                .status ===
-                                                                "available"
+                                                            .status ===
+                                                            "available"
                                                             ? "bg-green-500 text-white"
                                                             : item.status ===
-                                                                    "in_use"
-                                                            ? "bg-blue-500 text-white"
-                                                            : item.status ===
+                                                                "in_use"
+                                                                ? "bg-blue-500 text-white"
+                                                                : item.status ===
                                                                     "maintenance"
-                                                            ? "bg-amber-500 text-white"
-                                                            : "bg-red-500 text-white"}
+                                                                    ? "bg-amber-500 text-white"
+                                                                    : "bg-red-500 text-white"}
                                                     >
                                                         {item.status}
                                                         {
@@ -393,16 +434,16 @@ export default function EquipmentPage(
                                                     <Badge
                                                         variant="outline"
                                                         className={item
-                                                                .condition ===
-                                                                "excellent"
+                                                            .condition ===
+                                                            "excellent"
                                                             ? "border-green-500 text-green-500"
                                                             : item.condition ===
-                                                                    "good"
-                                                            ? "border-blue-500 text-blue-500"
-                                                            : item.condition ===
+                                                                "good"
+                                                                ? "border-blue-500 text-blue-500"
+                                                                : item.condition ===
                                                                     "fair"
-                                                            ? "border-amber-500 text-amber-500"
-                                                            : "border-red-500 text-red-500"}
+                                                                    ? "border-amber-500 text-amber-500"
+                                                                    : "border-red-500 text-red-500"}
                                                     >
                                                         {item.condition}
                                                     </Badge>
@@ -510,21 +551,22 @@ export default function EquipmentPage(
                                             )}
                                         </Fragment>
                                     ))
-                                    : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={isAllCenters ? 10 : 9}
-                                                className="text-center"
-                                            >
-                                                No equipment found
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={isAllCenters ? 10 : 9}
+                                            className="text-center"
+                                        >
+                                            No Data Found
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
                 </Card>
 
+                {/* For Adding Equipment */}
                 <Dialog
                     open={isAddEquipmentOpen}
                     onOpenChange={setIsAddEquipmentOpen}
@@ -540,6 +582,7 @@ export default function EquipmentPage(
                             onOpenChange={setIsAddEquipmentOpen}
                             mode={ActionMode.create}
                             equipment={null}
+                            handleEquipmentCreated={handleEquipmentCreated}
                         />
                     </DialogContent>
                 </Dialog>
@@ -559,6 +602,7 @@ export default function EquipmentPage(
                             onOpenChange={setIsEditEquipmentOpen}
                             mode={ActionMode.update}
                             equipment={selectedEquipment}
+                            handleEquipmentCreated={handleEquipmentCreated}
                         />
                     </DialogContent>
                 </Dialog>
@@ -602,11 +646,11 @@ export default function EquipmentPage(
                                         await deleteEquipment(selectedEquipment.id);
                                         toast({
                                             title: "Equipment deleted successfully.",
-                                            description: `Id: ${
-                                                selectedEquipment.id ?? "N/A"
-                                            }`,
+                                            description: `Id: ${selectedEquipment.id ?? "N/A"
+                                                }`,
                                         });
                                         router.refresh();
+                                        handleEquipmentCreated()
                                     }
                                 }}
                             >

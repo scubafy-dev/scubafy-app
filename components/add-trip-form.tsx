@@ -9,6 +9,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
+import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -55,44 +56,7 @@ import { useDiveCenter } from "@/lib/dive-center-context";
 import { getAllStaff } from "@/lib/staffs";
 import { getAllCustomers } from "@/lib/customers";
 import { Customer, Staff } from "@/app/generated/prisma";
-
-// Sample vehicle data for demo purposes
-// In a real app, this would be fetched from an API
-interface Vehicle {
-  id: string;
-  name: string;
-  type: "boat" | "car" | "liveaboard";
-  size: string;
-  capacity: number;
-  imageUrl?: string;
-}
-
-const SAMPLE_VEHICLES: Vehicle[] = [
-  {
-    id: "v1",
-    name: "Sea Explorer",
-    type: "boat",
-    size: "42 ft",
-    capacity: 12,
-    imageUrl: "/vehicles/boat1.jpg",
-  },
-  {
-    id: "v2",
-    name: "Reef Ranger",
-    type: "liveaboard",
-    size: "85 ft",
-    capacity: 24,
-    imageUrl: "/vehicles/liveaboard1.jpg",
-  },
-  {
-    id: "v3",
-    name: "Dive Transport",
-    type: "car",
-    size: "SUV",
-    capacity: 7,
-    imageUrl: "/vehicles/car1.jpg",
-  },
-];
+import { getAllFleetVehicles } from "@/lib/vehicles";
 
 // Add these interfaces after the existing Vehicle interface
 // interface Staff {
@@ -160,7 +124,7 @@ const formSchema = z.object({
   price: z.string().optional(),
   description: z.string().optional(),
   diveType: z.string().optional(),
-  vehicleId: z.string().optional(),
+  fleetVehicleId: z.string().optional(),
   // Expense tracking
   expenses: z.object({
     boatInsurance: z.string().optional(),
@@ -170,8 +134,10 @@ const formSchema = z.object({
     fees: z.string().optional(),
     other: z.string().optional(),
   }),
-  instructor: z.string().optional(),
-  diveMaster: z.string().optional(),
+  instructor: z.string().optional(), // Keep for backward compatibility
+  selectedInstructorIds: z.array(z.string()).default([]), // New field for multiple instructors
+  diveMaster: z.string().optional(), // Keep for backward compatibility
+  selectedDiveMasterIds: z.array(z.string()).default([]), // New field for multiple dive masters
   useCustomerDatabase: z.boolean().default(true),
   participants: z.array(
     z.object({
@@ -187,18 +153,20 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export function AddTripForm(
-  { onSuccess, mode, trip, actionCreate, actionUpdate }: {
+  { onSuccess, mode, trip, actionCreate, actionUpdate, setIsAddTripOpen, setIsEditTripOpen }: {
     onSuccess: () => void;
     mode: ActionMode;
     trip: FullDiveTrip | null;
     actionCreate: (formData: FormData, diveCenterId: string) => Promise<void>;
     actionUpdate: (id: string | null, formData: FormData) => Promise<void>;
+    setIsAddTripOpen?: any;
+    setIsEditTripOpen?: any;
   },
 ) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(SAMPLE_VEHICLES);
+  const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>("all");
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -207,12 +175,9 @@ export function AddTripForm(
   >([]);
   const { currentCenter, isAllCenters, getCenterSpecificData, centers } =
     useDiveCenter();
-  console.log('currentCenter', currentCenter);
-  console.log('isAllCenters', isAllCenters);
 
   // Add a fallback for when currentCenter is undefined
   const effectiveCenter = currentCenter || (centers.length > 0 ? centers[0] : null);
-  console.log('effectiveCenter', effectiveCenter);
 
   // Filter vehicles based on the selected type
   const filteredVehicles = selectedVehicleType === "all"
@@ -226,11 +191,11 @@ export function AddTripForm(
       location: trip?.location ?? "",
       time: "",
       date: trip?.date ? new Date(trip.date) : undefined,
-      capacity: trip?.capacity ?? undefined,
+      capacity: trip?.capacity ?? 0,
       price: trip?.price ? trip.price.toString() : "",
       description: trip?.description ?? "",
       diveType: "",
-      vehicleId: "",
+      fleetVehicleId: trip?.fleetVehicleId ?? "",
       expenses: {
         boatInsurance: "",
         fuel: "",
@@ -240,7 +205,9 @@ export function AddTripForm(
         other: "",
       },
       instructor: trip?.instructor ?? "",
+      selectedInstructorIds: [], // New field for multiple instructors
       diveMaster: trip?.diveMaster ?? "",
+      selectedDiveMasterIds: [], // New field for multiple dive masters
       useCustomerDatabase: true,
       participants: [],
       selectedCustomerIds: [],
@@ -248,7 +215,7 @@ export function AddTripForm(
   });
 
   // Update capacity when vehicle is selected
-  const watchVehicleId = form.watch("vehicleId");
+  const watchVehicleId = form.watch("fleetVehicleId");
 
   useEffect(() => {
     if (watchVehicleId) {
@@ -275,6 +242,7 @@ export function AddTripForm(
     const fetchCustomers = async () => {
       try {
         const customersData = await getAllCustomers(currentCenter?.id);
+        console.log('customers', customersData)
         setCustomers(customersData);
       } catch (error) {
         console.error("Error fetching customers:", error);
@@ -282,6 +250,56 @@ export function AddTripForm(
     };
     fetchCustomers();
   }, []);
+
+  // Prefill participants when editing a trip
+  useEffect(() => {
+    if (mode === ActionMode.update && trip && Array.isArray(trip.participants)) {
+      const selectedCustomerIds: string[] = [];
+      const manualParts: Array<{ name: string; certification: string }> = [];
+      trip.participants.forEach((p: any) => {
+        if (p.customerId) {
+          selectedCustomerIds.push(p.customerId);
+        } else {
+          manualParts.push({
+            name: p.name || '',
+            certification: p.certification || '',
+          });
+        }
+      });
+      setManualParticipants(manualParts);
+      form.reset({ ...form.getValues(), selectedCustomerIds: selectedCustomerIds as any });
+    }
+  }, [mode, trip, customers, form]);
+
+  // Prefill instructors when editing a trip
+  useEffect(() => {
+    if (mode === ActionMode.update && trip) {
+      // Handle new assignment structure
+      if (trip.instructorAssignments && Array.isArray(trip.instructorAssignments)) {
+        const instructorIds = trip.instructorAssignments.map((assignment: any) => assignment.staffId);
+        form.setValue('selectedInstructorIds', instructorIds as any);
+      } else if (trip.instructor) {
+        // Fallback for old comma-separated string format
+        const instructorIds = trip.instructor.split(',').filter(id => id.trim() !== '');
+        form.setValue('selectedInstructorIds', instructorIds as any);
+      }
+    }
+  }, [mode, trip, form]);
+
+  // Prefill dive masters when editing a trip
+  useEffect(() => {
+    if (mode === ActionMode.update && trip) {
+      // Handle new assignment structure
+      if (trip.diveMasterAssignments && Array.isArray(trip.diveMasterAssignments)) {
+        const diveMasterIds = trip.diveMasterAssignments.map((assignment: any) => assignment.staffId);
+        form.setValue('selectedDiveMasterIds', diveMasterIds as any);
+      } else if (trip.diveMaster) {
+        // Fallback for old comma-separated string format
+        const diveMasterIds = trip.diveMaster.split(',').filter(id => id.trim() !== '');
+        form.setValue('selectedDiveMasterIds', diveMasterIds as any);
+      }
+    }
+  }, [mode, trip, form]);
 
   // Add these helper functions before onSubmit
   const addManualParticipant = () => {
@@ -307,7 +325,25 @@ export function AddTripForm(
     setManualParticipants(updated);
   };
 
+  console.log('tripData for Update', trip)
+
+  useEffect(() => {
+    async function fetchVehicles() {
+      if (effectiveCenter?.id) {
+        try {
+          const realVehicles = await getAllFleetVehicles(effectiveCenter.id);
+          setVehicles(realVehicles);
+        } catch (error) {
+          console.error("Error fetching vehicles:", error);
+          setVehicles([]);
+        }
+      }
+    }
+    fetchVehicles();
+  }, [effectiveCenter]);
+
   async function onSubmit(values: any) {
+    console.log('form value', values)
     setIsSubmitting(true);
 
     try {
@@ -317,6 +353,7 @@ export function AddTripForm(
       // Add manual participants
       participants = [
         ...manualParticipants.map((p) => ({
+          id: uuidv4(),
           name: p.name,
           certification: p.certification,
           level: 'Unknown', // Add level field as required by schema
@@ -331,26 +368,37 @@ export function AddTripForm(
         participants = [
           ...participants,
           ...selectedCustomers.map((c) => ({
-            id: c.id,
+            id: uuidv4(), // Generate new UUID for participant
             name: c.fullName,
-            certification: c.certificationLevel,
+            certification: c.certificationLevel || 'Unknown',
             level: 'Unknown', // Add level field as required by schema
+            customerId: c.id, // Link to the customer in the database
           })),
         ];
       }
-      
+      console.log('after adding participents from DB', participants)
       // Set the participants field in the values object
       values.participants = participants;
-      console.log('formValues',values)
+      console.log('formValues', values)
       // Call the appropriate server action
       if (mode === ActionMode.create && effectiveCenter?.id) {
-        await actionCreate(values, effectiveCenter.id);
-        toast({
-          title: "Trip created successfully",
-          description: `${values.title} has been added to your dive trips.`,
-        });
+        try {
+          await actionCreate(values, effectiveCenter.id);
+          onSuccess();
+          toast({
+            title: "Trip created successfully",
+            description: `${values.title} has been added to your dive trips.`,
+          });
+        } catch (e) {
+          toast({
+            title: "Trip creation failed",
+            description: `Please add vehicle to procceed further.`,
+            variant: "destructive",
+          });
+        }
       } else if (mode === ActionMode.update && trip?.id) {
         await actionUpdate(trip.id, values);
+        onSuccess();
         toast({
           title: "Trip updated successfully",
           description: `${values.title} has been updated.`,
@@ -361,7 +409,6 @@ export function AddTripForm(
       }
 
       form.reset();
-      onSuccess();
       router.refresh();
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -394,7 +441,7 @@ export function AddTripForm(
         <Tabs defaultValue="details" className="space-y-4">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="details">Trip Details</TabsTrigger>
-            {/* <TabsTrigger value="vehicle">Vehicle</TabsTrigger> */}
+            <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="participants">Participants</TabsTrigger>
             {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
@@ -523,21 +570,21 @@ export function AddTripForm(
                   )}
                 />
 
-                {
-                  <FormField
-                    control={form.control}
-                    name="time"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Time</FormLabel>
-                        <FormControl>
-                          <Input placeholder="9:00 AM - 1:00 PM" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                }
+
+                {/* <FormField
+                  control={form.control}
+                  name="time"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Time</FormLabel>
+                      <FormControl>
+                        <Input placeholder="9:00 AM - 1:00 PM" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                /> */}
+
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -548,7 +595,12 @@ export function AddTripForm(
                     <FormItem>
                       <FormLabel>Capacity</FormLabel>
                       <FormControl>
-                        <Input type="number" min={1} {...field} />
+                        <Input
+                          type="number"
+                          min={1}
+                          value={field.value || 0}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <FormDescription>
                         Maximum number of divers
@@ -673,7 +725,7 @@ export function AddTripForm(
 
               <FormField
                 control={form.control}
-                name="vehicleId"
+                name="fleetVehicleId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Select Vehicle</FormLabel>
@@ -684,7 +736,7 @@ export function AddTripForm(
                           className={cn(
                             "cursor-pointer hover:border-primary transition-colors",
                             field.value === vehicle.id &&
-                              "border-2 border-primary",
+                            "border-2 border-primary",
                           )}
                           onClick={() => field.onChange(vehicle.id)}
                         >
@@ -746,39 +798,112 @@ export function AddTripForm(
             <div className="grid gap-4">
               <FormField
                 control={form.control}
-                name="instructor"
-                render={({ field }) => (
+                name="selectedInstructorIds"
+                render={() => (
                   <FormItem>
-                    <FormLabel>Instructor</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select an instructor" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {staff
-                          // .filter((s) => s.roleTitle === "instructor")
-                          .map((instructor) => (
-                            <SelectItem
-                              key={instructor.id}
-                              value={instructor.id}
-                            >
-                              <div className="flex flex-col">
-                                <span>{instructor.fullName}</span>
-                                {
-                                  /* <span className="text-xs text-muted-foreground">
-                                  {instructor.certifications.join(", ")}
-                                </span> */
-                                }
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Instructors</FormLabel>
+                      <FormDescription>
+                        Select one or more instructors for this trip
+                        {form.watch('selectedInstructorIds')?.length > 0 && (
+                          <span className="ml-2 text-blue-600">
+                            ({form.watch('selectedInstructorIds').length} selected)
+                          </span>
+                        )}
+                      </FormDescription>
+                    </div>
+                    {staff
+                      .filter((s) => s.roleTitle?.toLowerCase().includes('instructor'))
+                      .length > 0 ? (
+                      staff
+                        .filter((s) => s.roleTitle?.toLowerCase().includes('instructor'))
+                        .map((instructor) => (
+                          <FormField
+                            key={instructor.id}
+                            control={form.control}
+                            name="selectedInstructorIds"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  key={instructor.id}
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={((field.value || []) as string[]).includes(
+                                        instructor?.id,
+                                      )}
+                                      onCheckedChange={(checked) => {
+                                        const currentValue =
+                                          (field.value as string[] | undefined) || [];
+                                        return checked
+                                          ? field.onChange([...currentValue, instructor.id])
+                                          : field.onChange(currentValue.filter(
+                                            (value: string) => value !== instructor.id,
+                                          ));
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel className="text-sm font-medium">
+                                      {instructor.fullName}
+                                    </FormLabel>
+                                    <FormDescription className="text-xs">
+                                      {instructor.roleTitle}
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        No instructors found. All staff members are shown below.
+                      </div>
+                    )}
+                    {staff
+                      .filter((s) => !s.roleTitle?.toLowerCase().includes('instructor'))
+                      .map((staffMember) => (
+                        <FormField
+                          key={staffMember.id}
+                          control={form.control}
+                          name="selectedInstructorIds"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                key={staffMember.id}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={((field.value || []) as string[]).includes(
+                                      staffMember?.id,
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue =
+                                        (field.value as string[] | undefined) || [];
+                                      return checked
+                                        ? field.onChange([...currentValue, staffMember.id])
+                                        : field.onChange(currentValue.filter(
+                                          (value: string) => value !== staffMember.id,
+                                        ));
+                                    }}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel className="text-sm font-medium">
+                                    {staffMember.fullName}
+                                  </FormLabel>
+                                  <FormDescription className="text-xs">
+                                    {staffMember.roleTitle}
+                                  </FormDescription>
+                                </div>
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      ))}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -786,39 +911,110 @@ export function AddTripForm(
 
               <FormField
                 control={form.control}
-                name="diveMaster"
-                render={({ field }) => (
+                name="selectedDiveMasterIds"
+                render={() => (
                   <FormItem>
-                    <FormLabel>Dive Master</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a dive master" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {staff
-                          // .filter((s) => s.role === "divemaster")
-                          .map((divemaster) => (
-                            <SelectItem
-                              key={divemaster.id}
-                              value={divemaster.id}
-                            >
-                              <div className="flex flex-col">
-                                <span>{divemaster.fullName}</span>
-                                {
-                                  /* <span className="text-xs text-muted-foreground">
-                                  {divemaster.certifications.join(", ")}
-                                </span> */
-                                }
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="mb-4">
+                      <FormLabel className="text-base">Dive Masters</FormLabel>
+                      <FormDescription>
+                        Select one or more dive masters for this trip
+                        {form.watch('selectedDiveMasterIds')?.length > 0 && (
+                          <span className="ml-2 text-blue-600">
+                            ({form.watch('selectedDiveMasterIds').length} selected)
+                          </span>
+                        )}
+                      </FormDescription>
+                    </div>
+                    {staff
+                      .filter((s) => s.roleTitle?.toLowerCase().includes('divemaster') || s.roleTitle?.toLowerCase().includes('dive master'))
+                      .length > 0 ? (
+                      staff
+                        .filter((s) => s.roleTitle?.toLowerCase().includes('divemaster') || s.roleTitle?.toLowerCase().includes('dive master'))
+                        .map((divemaster) => (
+                          <FormField
+                            key={divemaster.id}
+                            control={form.control}
+                            name="selectedDiveMasterIds"
+                            render={({ field }) => {
+                              return (
+                                <FormItem
+                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                >
+                                  <FormControl>
+                                    <Checkbox
+                                      checked={((field.value || []) as string[]).includes(
+                                        divemaster?.id,
+                                      )}
+                                      onCheckedChange={(checked) => {
+                                        const currentValue =
+                                          (field.value as string[] | undefined) || [];
+                                        return checked
+                                          ? field.onChange([...currentValue, divemaster.id])
+                                          : field.onChange(currentValue.filter(
+                                            (value: string) => value !== divemaster.id,
+                                          ));
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel className="text-sm font-medium">
+                                      {divemaster.fullName}
+                                    </FormLabel>
+                                    <FormDescription className="text-xs">
+                                      {divemaster.roleTitle}
+                                    </FormDescription>
+                                  </div>
+                                </FormItem>
+                              );
+                            }}
+                          />
+                        ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        No dive masters found. All staff members are shown below.
+                      </div>
+                    )}
+                    {staff
+                      .filter((s) => !s.roleTitle?.toLowerCase().includes('divemaster') && !s.roleTitle?.toLowerCase().includes('dive master'))
+                      .map((staffMember) => (
+                        <FormField
+                          key={staffMember.id}
+                          control={form.control}
+                          name="selectedDiveMasterIds"
+                          render={({ field }) => {
+                            return (
+                              <FormItem
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
+                                <FormControl>
+                                  <Checkbox
+                                    checked={((field.value || []) as string[]).includes(
+                                      staffMember?.id,
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      const currentValue =
+                                        (field.value as string[] | undefined) || [];
+                                      return checked
+                                        ? field.onChange([...currentValue, staffMember.id])
+                                        : field.onChange(currentValue.filter(
+                                          (value: string) => value !== staffMember.id,
+                                        ));
+                                    }}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel className="text-sm font-medium">
+                                    {staffMember.fullName}
+                                  </FormLabel>
+                                  <FormDescription className="text-xs">
+                                    {staffMember.roleTitle}
+                                  </FormDescription>
+                                </div>
+                              </FormItem>
+                            );
+                          }}
+                        />
+                      ))}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -950,8 +1146,8 @@ export function AddTripForm(
                                         return checked
                                           ? field.onChange([...currentValue, customer.id])
                                           : field.onChange(currentValue.filter(
-                                              (value: string) => value !== customer.id,
-                                            ));
+                                            (value: string) => value !== customer.id,
+                                          ));
                                       }}
                                     />
                                   </FormControl>
@@ -1131,7 +1327,10 @@ export function AddTripForm(
         </Tabs>
 
         <div className="flex justify-end space-x-2 pt-4 border-t">
-          <Button variant="outline" type="button" onClick={onSuccess}>
+          <Button variant="outline" type="button" onClick={() => {
+            setIsAddTripOpen && setIsAddTripOpen(false)
+            setIsEditTripOpen && setIsEditTripOpen(false)
+          }}>
             Cancel
           </Button>
           <Button
@@ -1141,8 +1340,8 @@ export function AddTripForm(
             {isSubmitting
               ? mode === ActionMode.create ? "Creating..." : "Updating..."
               : mode === ActionMode.create
-              ? "Create Trip"
-              : "Update Trip"}
+                ? "Create Trip"
+                : "Update Trip"}
           </Button>
         </div>
       </form>

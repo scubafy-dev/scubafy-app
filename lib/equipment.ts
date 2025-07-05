@@ -62,9 +62,13 @@ function mapEquipmentType(typeString: string): EquipmentType {
   return typeMap[typeString] || EquipmentType.BCD; // Default to BCD if not found
 }
 
-export async function createEquipment(formData: EquipmentFormType) {
+export async function createEquipment(formData: EquipmentFormType, diveCenterId: string) {
   // 1) Ensure all required fields have *something*
   console.log('Equipments========>',formData)
+
+  if (!diveCenterId) {
+    throw new Error("Missing dive center ID");
+  }
   
   // 2) Pull everything out, casting to the right types
   const type         = mapEquipmentType(formData.type as string);
@@ -99,6 +103,7 @@ export async function createEquipment(formData: EquipmentFormType) {
         status,
         condition,
         notes,
+        diveCenterId
       },
     });
     return { success: true, data: created };
@@ -108,8 +113,13 @@ export async function createEquipment(formData: EquipmentFormType) {
   }
 }
 
-export const  getAllEquipments = async () => {
-  return prisma.equipment.findMany();
+export const  getAllEquipments = async (diveCenterId?: string) => {
+  const whereClause = diveCenterId ? { diveCenterId } : {};
+  return prisma.equipment.findMany(
+    {
+      where: whereClause,
+    }
+  );
 }
 
 export async function updateEquipment(id: string | null, formData: EquipmentFormType) {
