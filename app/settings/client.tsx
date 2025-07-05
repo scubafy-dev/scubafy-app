@@ -30,7 +30,7 @@ export default function SettingsClient() {
     const [isSaving, setIsSaving] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [diveCenterData, setDiveCenterData] = useState<any>(null);
-    const { currentCenter, isAllCenters, getCenterSpecificData, setDiveCenters, setCurrentCenter } = useDiveCenter();
+    const { currentCenter, isAllCenters, getCenterSpecificData, setDiveCenters, setCurrentCenter, updateCenter } = useDiveCenter();
 
     // Fetch dive center data when component mounts
     useEffect(() => {
@@ -82,13 +82,8 @@ export default function SettingsClient() {
 
             // Update the dive center context with new data
             if (updatedCenter) {
-                // Update the current center in context
-                setCurrentCenter(updatedCenter);
-
-                // Refresh the dive centers list
-                const { getAllDiveCenters } = await import("@/lib/dive-center");
-                const updatedCenters = await getAllDiveCenters();
-                setDiveCenters(updatedCenters);
+                // Update the center in context using the new updateCenter function
+                updateCenter(updatedCenter);
 
                 toast({
                     title: "Success",
