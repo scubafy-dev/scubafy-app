@@ -248,7 +248,7 @@ export default function CourseTrackerClient() {
         return [...customerStudents, ...manual];
     }
 
-    console.log('equipments',equipmentOptions)
+    console.log('equipments',courseList)
 
     // Add/remove material fields
     const handleMaterialChange = (idx: number, value: string) => {

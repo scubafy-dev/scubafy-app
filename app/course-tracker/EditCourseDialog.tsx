@@ -67,6 +67,7 @@ export function EditCourseDialog(
     const [selectedCustomerIds, setSelectedCustomerIds] = React.useState<string[]>([]);
     const [manualStudents, setManualStudents] = React.useState<StudentEntry[]>([{ name: "", email: "" }]);
     const [existingStudents, setExistingStudents] = React.useState<StudentEntry[]>([]);
+    const [isUpdating, setIsUpdating] = React.useState(false);
 
     React.useEffect(() => {
         async function fetchEquipment() {
@@ -105,6 +106,18 @@ export function EditCourseDialog(
         setSelectedCustomerIds(dbStudents.filter((s: StudentEntry) => s.customerId).map((s: StudentEntry) => s.customerId!));
         setManualStudents(dbStudents.filter((s: StudentEntry) => !s.customerId).map((s: StudentEntry) => ({ name: s.name, email: s.email })) || [{ name: "", email: "" }]);
     }, [selectedCourse]);
+
+    // Reset all fields to selectedCourse values when modal opens or selectedCourse changes
+    React.useEffect(() => {
+        setLevel(selectedCourse.certificationLevel || "openWater");
+        setStatus(selectedCourse.status || "upcoming");
+        setEditMaterials(materials && materials.length > 0 ? materials : [""]);
+        setEditSelectedEquipment(selectedEquipment || []);
+        const dbStudents = (selectedCourse as any).students || [];
+        setExistingStudents(dbStudents.filter((s: StudentEntry) => s.customerId));
+        setSelectedCustomerIds(dbStudents.filter((s: StudentEntry) => s.customerId).map((s: StudentEntry) => s.customerId!));
+        setManualStudents(dbStudents.filter((s: StudentEntry) => !s.customerId).map((s: StudentEntry) => ({ name: s.name, email: s.email })) || [{ name: "", email: "" }]);
+    }, [selectedCourse, materials, selectedEquipment]);
 
     // Handlers for materials
     const handleMaterialChange = (idx: number, value: string) => {
@@ -149,6 +162,7 @@ export function EditCourseDialog(
     }
 
     async function handleUpdateCourse(formData: FormData) {
+        setIsUpdating(true);
         formData.append("materials", JSON.stringify(editMaterials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(editSelectedEquipment));
         formData.append("students", JSON.stringify(buildStudentsArray()));
@@ -158,6 +172,7 @@ export function EditCourseDialog(
         });
         onSuccess();
         router.refresh();
+        setIsUpdating(false);
         setIsEditCourseOpen(false);
     }
 
@@ -405,30 +420,49 @@ export function EditCourseDialog(
                     )}
                 </ul>
                 <div className="mt-2 mb-1">Added students:</div>
-                {manualStudents.map((s, idx) => (
-                    <div key={idx} className="flex gap-2 mb-1">
+                {manualStudents.length === 0 ? (
+                    <div className="flex gap-2 mb-1">
                         <Input
-                            value={s.name}
-                            onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
+                            value=""
+                            onChange={() => {}}
                             placeholder="Name"
+                            disabled
                         />
                         <Input
-                            value={s.email}
-                            onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
+                            value=""
+                            onChange={() => {}}
                             placeholder="Email"
+                            disabled
                         />
-                        <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>-</Button>
-                        {idx === manualStudents.length - 1 && (
-                            <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>+</Button>
-                        )}
+                        <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>+</Button>
                     </div>
-                ))}
+                ) : (
+                    manualStudents.map((s, idx) => (
+                        <div key={idx} className="flex gap-2 mb-1">
+                            <Input
+                                value={s.name}
+                                onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
+                                placeholder="Name"
+                            />
+                            <Input
+                                value={s.email}
+                                onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
+                                placeholder="Email"
+                            />
+                            <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>-</Button>
+                            {idx === manualStudents.length - 1 && (
+                                <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>+</Button>
+                            )}
+                        </div>
+                    ))
+                )}
             </div>
 
             <DialogFooter>
                 <Button
                     variant="outline"
                     onClick={() => setIsEditCourseOpen(false)}
+                    disabled={isUpdating}
                 >
                     Cancel
                 </Button>
@@ -493,8 +527,9 @@ export function EditCourseDialog(
                         );
                         handleUpdateCourse(formData);
                     }}
+                    disabled={isUpdating}
                 >
-                    Update Course
+                    {isUpdating ? "Updating..." : "Update Course"}
                 </Button>
             </DialogFooter>
         </DialogContent>

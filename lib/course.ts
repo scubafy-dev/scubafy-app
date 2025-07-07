@@ -160,15 +160,27 @@ export async function deleteCourse(id: string) {
 }
 
 export async function getCourseById(id: string) {
-  return prisma.course.findUnique({
+  const course = await prisma.course.findUnique({
     where: { id },
+    include: { students: true },
   });
+  if (!course) return null;
+  // Always set studentsCount to the number of students
+  return {
+    ...course,
+    studentsCount: course.students ? course.students.length : 0,
+  };
 }
 
 export async function getAllCourses(diveCenterId?: string) {
-  return prisma.course.findMany({
+  const courses = await prisma.course.findMany({
     where: diveCenterId ? { diveCenterId } : {},
     orderBy: { startDate: "desc" },
     include: { students: true, diveCenter: true },
   });
+  // Always set studentsCount to the number of students
+  return courses.map((course) => ({
+    ...course,
+    studentsCount: course.students ? course.students.length : 0,
+  }));
 }
