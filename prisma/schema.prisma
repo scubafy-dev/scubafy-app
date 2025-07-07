@@ -350,6 +350,9 @@ model Course {
   specialNeeds       String?
   studentsCount      Int                       @default(0)
 
+  materials          String[]                   // Array of course materials
+  equipmentIds       String[]                   // Array of Equipment IDs (from Equipment table)
+
   diveCenterId String
   diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 

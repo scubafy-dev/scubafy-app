@@ -51,6 +51,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { addCourse, getAllCourses, deleteCourse } from "@/lib/course"; // import server action
+import { getAllEquipments } from "@/lib/equipment";
 import {
     CertificationLevel,
     Course,
@@ -116,6 +117,14 @@ export default function CourseTrackerClient() {
     const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Add state for materials and equipment
+    const [materials, setMaterials] = useState<string[]>([""]);
+    const [equipmentOptions, setEquipmentOptions] = useState<any[]>([]);
+    const [selectedEquipment, setSelectedEquipment] = useState<string[]>([]);
+
+    // Add state for equipment details in course details dialog
+    const [courseEquipmentDetails, setCourseEquipmentDetails] = useState<any[]>([]);
+
     const fetchCourses = useCallback(async () => {
         try {
             setIsCourseListLoading(true);
@@ -167,137 +176,48 @@ export default function CourseTrackerClient() {
         }
     }, [courseToDelete, fetchCourses, toast]);
 
-    // Example courses data
-    //   const [courses, setCourses] = useState<Course[]>([
-    //     {
-    //       id: "1",
-    //       title: "Open Water Certification",
-    //       level: "Open Water",
-    //       startDate: "2023-09-15",
-    //       endDate: "2023-09-18",
-    //       instructor: "Michael Reef",
-    //       instructorContact: "michael@scubafy.com",
-    //       location: "Coral Bay Dive Center",
-    //       cost: "495",
-    //       students: [
-    //         {
-    //           id: "s1",
-    //           name: "John Smith",
-    //           email: "john@example.com",
-    //           phone: "555-123-4567",
-    //           emergencyContactName: "Jane Smith",
-    //           emergencyContactPhone: "555-765-4321",
-    //           medicalInfo: "No medical issues"
-    //         },
-    //         {
-    //           id: "s2",
-    //           name: "Emma Johnson",
-    //           email: "emma@example.com",
-    //           phone: "555-987-6543",
-    //           emergencyContactName: "David Johnson",
-    //           emergencyContactPhone: "555-456-7890",
-    //           medicalInfo: "Mild asthma, carries inhaler"
-    //         }
-    //       ],
-    //       materials: ["Open Water Manual", "Dive Tables", "Dive Log Book"],
-    //       equipment: ["BCD", "Regulator", "Wetsuit", "Tank"],
-    //       dives: [
-    //         {
-    //           id: "d1",
-    //           date: "2023-09-16",
-    //           time: "10:00 AM",
-    //           site: "Blue Lagoon",
-    //           maxDepth: "12",
-    //           timeAtDepth: "25",
-    //           conditions: "Excellent visibility, calm waters"
-    //         },
-    //         {
-    //           id: "d2",
-    //           date: "2023-09-17",
-    //           time: "9:30 AM",
-    //           site: "Coral Gardens",
-    //           maxDepth: "18",
-    //           timeAtDepth: "30",
-    //           conditions: "Good visibility, mild current"
-    //         }
-    //       ],
-    //       specialNeeds: "",
-    //       status: "completed"
-    //     },
-    //     {
-    //       id: "2",
-    //       title: "Advanced Open Water Course",
-    //       level: "Advanced Open Water",
-    //       startDate: "2023-10-05",
-    //       endDate: "2023-10-08",
-    //       instructor: "Sarah Divers",
-    //       instructorContact: "sarah@scubafy.com",
-    //       location: "Deep Blue Dive Shop",
-    //       cost: "595",
-    //       students: [
-    //         {
-    //           id: "s3",
-    //           name: "Robert Chen",
-    //           email: "robert@example.com",
-    //           phone: "555-222-3333",
-    //           emergencyContactName: "Lisa Chen",
-    //           emergencyContactPhone: "555-444-5555",
-    //           medicalInfo: "No medical issues"
-    //         }
-    //       ],
-    //       materials: ["Advanced Open Water Manual", "Underwater Navigation Slate", "Advanced Dive Log"],
-    //       equipment: ["BCD", "Regulator", "Drysuit", "Tank", "Dive Computer"],
-    //       dives: [
-    //         {
-    //           id: "d3",
-    //           date: "2023-10-06",
-    //           time: "8:00 AM",
-    //           site: "Wreck Point",
-    //           maxDepth: "30",
-    //           timeAtDepth: "35",
-    //           conditions: "Moderate visibility, some current"
-    //         }
-    //       ],
-    //       specialNeeds: "Robert has requested special focus on underwater photography",
-    //       status: "active"
-    //     },
-    //     {
-    //       id: "3",
-    //       title: "Rescue Diver Training",
-    //       level: "Rescue Diver",
-    //       startDate: "2023-11-12",
-    //       endDate: "2023-11-20",
-    //       instructor: "James Waters",
-    //       instructorContact: "james@scubafy.com",
-    //       location: "Safety First Dive Center",
-    //       cost: "750",
-    //       students: [
-    //         {
-    //           id: "s4",
-    //           name: "Maria Garcia",
-    //           email: "maria@example.com",
-    //           phone: "555-777-8888",
-    //           emergencyContactName: "Carlos Garcia",
-    //           emergencyContactPhone: "555-999-0000",
-    //           medicalInfo: "No medical issues, CPR certified"
-    //         },
-    //         {
-    //           id: "s5",
-    //           name: "Tom Wilson",
-    //           email: "tom@example.com",
-    //           phone: "555-111-2222",
-    //           emergencyContactName: "Sarah Wilson",
-    //           emergencyContactPhone: "555-333-4444",
-    //           medicalInfo: "Wears contact lenses"
-    //         }
-    //       ],
-    //       materials: ["Rescue Diver Manual", "First Aid Kit", "Emergency Action Plan Templates"],
-    //       equipment: ["BCD", "Regulator", "Wetsuit", "Tank", "Rescue Equipment"],
-    //       dives: [],
-    //       specialNeeds: "",
-    //       status: "upcoming"
-    //     }
-    //   ])
+    // Fetch equipment list on mount
+    useEffect(() => {
+        async function fetchEquipment() {
+            if (currentCenter?.id) {
+                const eq = await getAllEquipments(currentCenter.id);
+                setEquipmentOptions(eq);
+            }
+        }
+        fetchEquipment();
+    }, [currentCenter]);
+
+    // Fetch equipment details when selectedCourse or dialog open changes
+    useEffect(() => {
+        async function fetchEquipmentDetails() {
+            if (selectedCourse?.equipmentIds?.length) {
+                const allEquipment = await getAllEquipments(currentCenter?.id);
+                const filtered = allEquipment.filter((eq: any) => selectedCourse.equipmentIds.includes(eq.id));
+                setCourseEquipmentDetails(filtered);
+            } else {
+                setCourseEquipmentDetails([]);
+            }
+        }
+        if (selectedCourse && courseDetailsOpen) {
+            fetchEquipmentDetails();
+        }
+    }, [selectedCourse, courseDetailsOpen, currentCenter]);
+
+    console.log('equipments',equipmentOptions)
+
+    // Add/remove material fields
+    const handleMaterialChange = (idx: number, value: string) => {
+        setMaterials((prev) => prev.map((m, i) => (i === idx ? value : m)));
+    };
+    const addMaterialField = () => setMaterials((prev) => [...prev, ""]);
+    const removeMaterialField = (idx: number) => setMaterials((prev) => prev.filter((_, i) => i !== idx));
+
+    // Equipment select handler
+    const handleEquipmentSelect = (id: string) => {
+        setSelectedEquipment((prev) =>
+            prev.includes(id) ? prev.filter((eid) => eid !== id) : [...prev, id]
+        );
+    };
 
     const toggleCourseExpansion = (courseId: string) => {
         setExpandedCourseId(expandedCourseId === courseId ? null : courseId);
@@ -346,6 +266,8 @@ export default function CourseTrackerClient() {
         if (!currentCenter?.id) {
             throw new Error("No center selected");
         }
+        formData.append("materials", JSON.stringify(materials.filter((m) => m.trim() !== "")));
+        formData.append("equipmentIds", JSON.stringify(selectedEquipment));
         const res = await addCourse(formData, currentCenter.id);
         if (res?.success) {
             toast({
@@ -366,7 +288,28 @@ export default function CourseTrackerClient() {
                 heading="Course Tracker"
                 text="Track and manage all scuba diving courses and student progress."
             >
-                <Button onClick={() => setIsAddCourseOpen(true)}>
+                <Button onClick={() => {
+                    setIsAddCourseOpen(true);
+                    // Reset all Add Course form fields and selections
+                    setLevel("openWater");
+                    setStatus("upcoming");
+                    setMaterials([""]);
+                    setSelectedEquipment([]);
+                    // Optionally reset other fields if you add state for them
+                    setTimeout(() => {
+                        const ids = [
+                            "title", "startDate", "endDate", "instructor", "instructorContact", "location", "cost", "specialNeeds"
+                        ];
+                        ids.forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
+                                    el.value = "";
+                                }
+                            }
+                        });
+                    }, 0);
+                }}>
                     <Plus className="mr-2 h-4 w-4" /> Add Course
                 </Button>
             </DashboardHeader>
@@ -919,8 +862,7 @@ export default function CourseTrackerClient() {
                                                                 }}
                                                             >
                                                                 <FileText className="mr-2 h-4 w-4" />
-                                                                View Full
-                                                                Details
+                                                                View Full Details
                                                             </Button>
                                                             <Button
                                                                 size="sm"
@@ -1592,65 +1534,22 @@ export default function CourseTrackerClient() {
 
                                     {/* Temporarily invisible course materials */}
                                     <div className="md:col-span-2">
-                                        <h3 className="text-sm font-medium mb-2">
-                                            Materials & Equipment
-                                        </h3>
+                                        <h3 className="text-sm font-medium mb-2">Materials & Equipment</h3>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                                                    Course Materials
-                                                </h4>
+                                                <h4 className="text-xs font-medium text-muted-foreground mb-1">Course Materials</h4>
                                                 <ul className="text-sm space-y-1">
-                                                    {
-                                                        /* {selectedCourse?.materials
-                                                        .map((
-                                                            material,
-                                                            index,
-                                                        ) => (
-                                                            <li
-                                                                key={index}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <div className="flex-shrink-0">
-                                                                    <Checkbox
-                                                                        id={`material-${index}`}
-                                                                    />
-                                                                </div>
-                                                                <label
-                                                                    htmlFor={`material-${index}`}
-                                                                >
-                                                                    {material}
-                                                                </label>
-                                                            </li>
-                                                        ))} */
-                                                    }
+                                                    {selectedCourse?.materials?.map((mat: string, idx: number) => (
+                                                        <li key={idx}>{mat}</li>
+                                                    ))}
                                                 </ul>
                                             </div>
                                             <div>
-                                                <h4 className="text-xs font-medium text-muted-foreground mb-1">
-                                                    Required Equipment
-                                                </h4>
+                                                <h4 className="text-xs font-medium text-muted-foreground mb-1">Required Equipment</h4>
                                                 <ul className="text-sm space-y-1">
-                                                    {
-                                                        /* {selectedCourse?.equipment
-                                                        .map((item, index) => (
-                                                            <li
-                                                                key={index}
-                                                                className="flex items-center gap-2"
-                                                            >
-                                                                <div className="flex-shrink-0">
-                                                                    <Checkbox
-                                                                        id={`equipment-${index}`}
-                                                                    />
-                                                                </div>
-                                                                <label
-                                                                    htmlFor={`equipment-${index}`}
-                                                                >
-                                                                    {item}
-                                                                </label>
-                                                            </li>
-                                                        ))} */
-                                                    }
+                                                    {courseEquipmentDetails.map((eq) => (
+                                                        <li key={eq.id}>{eq.type} {eq.model}</li>
+                                                    ))}
                                                 </ul>
                                             </div>
                                         </div>
@@ -1801,7 +1700,7 @@ export default function CourseTrackerClient() {
 
             {/* Add Course Dialog */}
             <Dialog open={isAddCourseOpen} onOpenChange={setIsAddCourseOpen}>
-                <DialogContent className="sm:max-w-[600px]">
+                <DialogContent className="sm:max-w-[600px] max-h-[500px] overflow-y-scroll">
                     <DialogHeader>
                         <DialogTitle>Add New Course</DialogTitle>
                         <DialogDescription>
@@ -1943,6 +1842,50 @@ export default function CourseTrackerClient() {
                                     placeholder="Note any special needs or concerns"
                                 />
                             </div>
+
+                            <div className="space-y-2">
+                                <Label>Course Materials</Label>
+                                {materials.map((mat, idx) => (
+                                    <div key={idx} className="flex gap-2 mb-1">
+                                        <Input
+                                            value={mat}
+                                            onChange={(e) => handleMaterialChange(idx, e.target.value)}
+                                            placeholder="Material name"
+                                        />
+                                        <Button type="button" variant="outline" size="icon" onClick={() => removeMaterialField(idx)} disabled={materials.length === 1}>
+                                            -
+                                        </Button>
+                                        {idx === materials.length - 1 && (
+                                            <Button type="button" variant="outline" size="icon" onClick={addMaterialField}>
+                                                +
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Required Equipment</Label>
+                                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                                    {equipmentOptions.map((eq) => (
+                                        <div key={eq.id} className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={`equipment-${eq.id}`}
+                                                checked={selectedEquipment.includes(eq.id)}
+                                                onCheckedChange={(checked) => {
+                                                    setSelectedEquipment((prev) =>
+                                                        checked
+                                                            ? [...prev, eq.id]
+                                                            : prev.filter((eid) => eid !== eq.id)
+                                                    );
+                                                }}
+                                            />
+                                            <label htmlFor={`equipment-${eq.id}`} className="text-sm">
+                                                {eq.type} {eq.model}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -2011,6 +1954,14 @@ export default function CourseTrackerClient() {
                                     (document.getElementById(
                                         "specialNeeds",
                                     ) as HTMLTextAreaElement)?.value || "",
+                                );
+                                formData.append(
+                                    "materials",
+                                    JSON.stringify(materials.filter((m) => m.trim() !== "")),
+                                );
+                                formData.append(
+                                    "equipmentIds",
+                                    JSON.stringify(selectedEquipment),
                                 );
                                 handleAddCourse(formData);
                             }}

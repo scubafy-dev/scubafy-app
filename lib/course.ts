@@ -33,6 +33,16 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
   const studentsCountStr = formData.get("studentsCount") as string | null;
   const studentsCount = studentsCountStr ? parseInt(studentsCountStr, 10) : 0;
 
+  // New: get materials and equipmentIds arrays from formData
+  let materials: string[] = [];
+  let equipmentIds: string[] = [];
+  try {
+    materials = JSON.parse(formData.get("materials") as string || "[]");
+  } catch {}
+  try {
+    equipmentIds = JSON.parse(formData.get("equipmentIds") as string || "[]");
+  } catch {}
+
   const created= await prisma.course.create({
     data: {
       title,
@@ -47,6 +57,8 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
       specialNeeds,
       studentsCount,
       diveCenterId,
+      materials,
+      equipmentIds,
     },
   });
 
