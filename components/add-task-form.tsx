@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { createTask } from "@/lib/task";
 import { getAllStaff } from "@/lib/staffs";
@@ -44,11 +45,9 @@ const formSchema = z.object({
   title: z.string().min(2, {
     message: "Task title must be at least 2 characters.",
   }),
-  description: z.string().min(10, {
-    message: "Task description must be at least 10 characters.",
-  }),
-  assignedTo: z.string({
-    required_error: "Please select a staff member.",
+  description: z.string(),
+  assignedTo: z.array(z.string()).min(1, {
+    message: "Please select at least one staff member.",
   }),
   dueDate: z.date({
     required_error: "Please select a due date.",
@@ -86,7 +85,11 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
       try {
         const formData = new FormData();
         Object.entries(values).forEach(([key, value]) => {
-          formData.append(key, value.toString());
+          if (Array.isArray(value)) {
+            value.forEach((v) => formData.append(key, v));
+          } else {
+            formData.append(key, value.toString());
+          }
         });
         if (!currentCenter?.id) {
           toast({
@@ -187,20 +190,61 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Assign To</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select staff member" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {staffMembers.map((staff) => (
-                    <SelectItem key={staff.id} value={staff.id}>
-                      {staff.fullName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      className={cn(
+                        "w-full justify-between",
+                        !field.value?.length && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value?.length
+                        ? staffMembers
+                            .filter((staff) => field.value.includes(staff.id))
+                            .map((staff) => staff.fullName)
+                            .join(", ")
+                        : "Select staff members"}
+                      <span className="ml-2">▼</span>
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                  <div className="max-h-60 overflow-y-auto">
+                    {staffMembers.map((staff) => (
+                      <div
+                        key={staff.id}
+                        className="flex items-center w-full px-3 py-2 hover:bg-accent cursor-pointer"
+                        onClick={() => {
+                          const selected = field.value || [];
+                          if (selected.includes(staff.id)) {
+                            field.onChange(selected.filter((id) => id !== staff.id));
+                          } else {
+                            field.onChange([...selected, staff.id]);
+                          }
+                        }}
+                      >
+                        <Checkbox
+                          checked={field.value?.includes(staff.id) || false}
+                          tabIndex={-1}
+                          className="mr-2"
+                          onCheckedChange={() => {
+                            const selected = field.value || [];
+                            if (selected.includes(staff.id)) {
+                              field.onChange(selected.filter((id) => id !== staff.id));
+                            } else {
+                              field.onChange([...selected, staff.id]);
+                            }
+                          }}
+                        />
+                        <span>{staff.fullName}</span>
+                      </div>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}

@@ -3,22 +3,23 @@
 import prisma from "@/prisma/prisma";
 import { Priority, TaskStatus, TaskCategory } from "@app/generated/prisma";
 
-export interface TaskWithAssignee {
+export interface TaskWithAssignments {
   id: string;
   title: string;
   description: string | null;
-  assignedToId: string;
   dueDate: Date;
   priority: Priority;
   status: TaskStatus;
   category: TaskCategory;
   createdAt: Date;
   updatedAt: Date;
-  assignedTo: {
-    id: string;
-    fullName: string;
-    email: string;
-  };
+  assignments: {
+    staff: {
+      id: string;
+      fullName: string;
+      email: string;
+    };
+  }[];
 }
 
 
@@ -57,9 +58,16 @@ export async function createTask(formData: FormData, diveCenterId: string) {
   const title = (formData.get("title") as string).trim();
   const description = (formData.get("description") as string) || null;
 
-  const assignedToId = formData.get("assignedTo") as string;
-  if (!assignedToId) {
-    throw new Error("AssignedToId is required");
+  // assignedToIds is a comma-separated string or array
+  let assignedToIds: string[] = [];
+  const assignedToRaw = formData.getAll("assignedTo");
+  if (assignedToRaw && assignedToRaw.length > 0) {
+    assignedToIds = assignedToRaw.flatMap((v) =>
+      typeof v === "string" ? v.split(",") : []
+    ).map((id) => id.trim()).filter(Boolean);
+  }
+  if (!assignedToIds.length) {
+    throw new Error("At least one assignee is required");
   }
 
   const dueDateStr = formData.get("dueDate") as string;
@@ -85,19 +93,21 @@ export async function createTask(formData: FormData, diveCenterId: string) {
     data: {
       title,
       description,
-      assignedToId,
       dueDate,
       priority,
       status,
       category,
       diveCenterId,
+      assignments: {
+        create: assignedToIds.map((staffId) => ({ staff: { connect: { id: staffId } } })),
+      },
     },
     include: {
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+      assignments: {
+        include: {
+          staff: {
+            select: { id: true, fullName: true, email: true },
+          },
         },
       },
     },
@@ -119,9 +129,6 @@ export async function updateTask(id: string, formData: FormData) {
   }
   if (formData.get("description") !== null) {
     data.description = (formData.get("description") as string) || null;
-  }
-  if (formData.get("assignedTo")) {
-    data.assignedToId = formData.get("assignedTo") as string;
   }
   if (formData.get("dueDate")) {
     const dueDateStr = formData.get("dueDate") as string;
@@ -146,16 +153,33 @@ export async function updateTask(id: string, formData: FormData) {
     }
   }
 
+  // Handle assignments update (replace all)
+  let assignedToIds: string[] = [];
+  const assignedToRaw = formData.getAll("assignedTo");
+  if (assignedToRaw && assignedToRaw.length > 0) {
+    assignedToIds = assignedToRaw.flatMap((v) =>
+      typeof v === "string" ? v.split(",") : []
+    ).map((id) => id.trim()).filter(Boolean);
+  }
+
   // 2) Perform update
   const updated = await prisma.task.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      assignments: assignedToIds.length
+        ? {
+            deleteMany: {},
+            create: assignedToIds.map((staffId) => ({ staff: { connect: { id: staffId } } })),
+          }
+        : undefined,
+    },
     include: {
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+      assignments: {
+        include: {
+          staff: {
+            select: { id: true, fullName: true, email: true },
+          },
         },
       },
     },
@@ -182,11 +206,11 @@ export async function getTaskById(id: string) {
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+      assignments: {
+        include: {
+          staff: {
+            select: { id: true, fullName: true, email: true },
+          },
         },
       },
     },
@@ -201,15 +225,15 @@ export async function getAllTasks(diveCenterId?: string) {
     where: whereClause,
     orderBy: { dueDate: "asc" },
     include: {
-      assignedTo: {
-        select: {
-          id: true,
-          fullName: true,
-          email: true,
+      assignments: {
+        include: {
+          staff: {
+            select: { id: true, fullName: true, email: true },
+          },
         },
       },
     },
   });
 
-  return tasks as TaskWithAssignee[];
+  return tasks as TaskWithAssignments[];
 }

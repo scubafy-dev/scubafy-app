@@ -306,10 +306,10 @@ model Staff {
 
   permissions            StaffPermission[]
   vehicleCrewAssignments VehicleCrewAssignment[]
+  assignments            TaskAssignment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  Task      Task[]
 
   diveCenterId String?
   diveCenter   DiveCenter? @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
@@ -404,9 +404,6 @@ model Task {
   title       String
   description String?
 
-  assignedTo   Staff  @relation(fields: [assignedToId], references: [id], onDelete: Cascade)
-  assignedToId String
-
   dueDate  DateTime
   priority Priority     @default(medium)
   status   TaskStatus   @default(pending)
@@ -415,10 +412,27 @@ model Task {
   diveCenterId String?
   diveCenter   DiveCenter? @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
+  // New many-to-many relation
+  assignments TaskAssignment[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("tasks")
+}
+
+// New join table for many-to-many Task-Staff
+model TaskAssignment {
+  id        String @id @default(uuid())
+  task      Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId    String
+  staff     Staff  @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  staffId   String
+
+  createdAt DateTime @default(now())
+
+  @@unique([taskId, staffId])
+  @@map("task_assignments")
 }
 
 // New model for fleet vehicle management

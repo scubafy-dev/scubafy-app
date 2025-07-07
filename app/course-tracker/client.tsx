@@ -137,6 +137,8 @@ export default function CourseTrackerClient() {
     const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
     const [manualStudents, setManualStudents] = useState<StudentEntry[]>([{ name: "", email: "" }]);
 
+    const [isAddCourseLoading, setIsAddCourseLoading] = useState(false);
+
     const fetchCourses = useCallback(async () => {
         try {
             setIsCourseListLoading(true);
@@ -311,6 +313,7 @@ export default function CourseTrackerClient() {
         if (!currentCenter?.id) {
             throw new Error("No center selected");
         }
+        setIsAddCourseLoading(true);
         formData.append("materials", JSON.stringify(materials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(selectedEquipment));
         formData.append("students", JSON.stringify(buildStudentsArray()));
@@ -326,6 +329,7 @@ export default function CourseTrackerClient() {
             router.refresh();
             setIsAddCourseOpen(false);
         }
+        setIsAddCourseLoading(false);
     }
 
     return (
@@ -1863,6 +1867,7 @@ export default function CourseTrackerClient() {
                         <Button
                             variant="outline"
                             onClick={() => setIsAddCourseOpen(false)}
+                            disabled={isAddCourseLoading}
                         >
                             Cancel
                         </Button>
@@ -1939,8 +1944,9 @@ export default function CourseTrackerClient() {
                                 );
                                 handleAddCourse(formData);
                             }}
+                            disabled={isAddCourseLoading}
                         >
-                            Create Course
+                            {isAddCourseLoading ? "Creating..." : "Create Course"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

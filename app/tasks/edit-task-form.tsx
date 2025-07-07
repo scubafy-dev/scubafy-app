@@ -32,14 +32,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
-import { createTask, TaskWithAssignee, updateTask } from "@/lib/task";
+import { updateTask, TaskWithAssignments } from "@/lib/task";
 import { getAllStaff } from "@/lib/staffs";
 import { Staff } from "@/app/generated/prisma";
 import { useRouter } from "next/navigation";
 
 interface EditTaskFormProps {
-    task: TaskWithAssignee;
+    task: TaskWithAssignments;
     onSuccess: () => void;
 }
 
@@ -50,8 +51,8 @@ const formSchema = z.object({
     description: z.string().min(10, {
         message: "Task description must be at least 10 characters.",
     }),
-    assignedTo: z.string({
-        required_error: "Please select a staff member.",
+    assignedTo: z.array(z.string()).min(1, {
+        message: "Please select at least one staff member.",
     }),
     dueDate: z.date({
         required_error: "Please select a due date.",
@@ -64,37 +65,39 @@ const formSchema = z.object({
 export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
+    const [isStaffLoading, setIsStaffLoading] = useState(true);
 
     const router = useRouter();
 
-    const form = useForm({
+    const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             title: task.title,
             description: task.description || "",
-            assignedTo: task.assignedTo.id,
-            dueDate: task.dueDate,
+            assignedTo: Array.isArray(task.assignments) ? task.assignments.map(a => a.staff.id) : [],
+            dueDate: task.dueDate instanceof Date ? task.dueDate : new Date(task.dueDate),
             priority: task.priority,
         },
     });
 
     function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
-
-        // Simulate API call
         setTimeout(async () => {
             try {
                 const formData = new FormData();
                 Object.entries(values).forEach(([key, value]) => {
-                    formData.append(key, value.toString());
+                    if (Array.isArray(value)) {
+                        value.forEach((v) => formData.append(key, v));
+                    } else {
+                        formData.append(key, value.toString());
+                    }
                 });
                 await updateTask(task.id, formData);
             } catch (error) {
-                console.error("Error creating task:", error);
+                console.error("Error updating task:", error);
                 setIsSubmitting(false);
                 return;
             }
-            console.log(values);
             setIsSubmitting(false);
             form.reset();
             router.refresh();
@@ -105,11 +108,14 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
     useEffect(() => {
         // Fetch staff members from the server or context
         const fetchStaffMembers = async () => {
+            setIsStaffLoading(true);
             try {
                 const staff = await getAllStaff();
                 setStaffMembers(staff as Staff[]);
             } catch (error) {
                 console.error("Error fetching staff members:", error);
+            } finally {
+                setIsStaffLoading(false);
             }
         };
         fetchStaffMembers();
@@ -161,28 +167,63 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Assign To</FormLabel>
-                            <Select
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                            >
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select staff member" />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent
-                                    defaultValue={task.assignedTo.id}
-                                >
-                                    {staffMembers.map((staff) => (
-                                        <SelectItem
-                                            key={staff.id}
-                                            value={staff.id}
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn(
+                                                "w-full justify-between",
+                                                !field.value?.length && "text-muted-foreground"
+                                            )}
+                                            disabled={isStaffLoading}
                                         >
-                                            {staff.fullName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                            {isStaffLoading ? (
+                                                <span className="flex items-center">
+                                                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                                                    Loading staff...
+                                                </span>
+                                            ) : field.value?.length ? (
+                                                staffMembers
+                                                    .filter((staff) => field.value.includes(staff.id))
+                                                    .map((staff) => staff.fullName)
+                                                    .join(", ")
+                                            ) : (
+                                                "Select staff members"
+                                            )}
+                                            <span className="ml-2">▼</span>
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                    <div className="max-h-60 overflow-y-auto">
+                                        {staffMembers.map((staff) => (
+                                            <div
+                                                key={staff.id}
+                                                className="flex items-center w-full px-3 py-2 hover:bg-accent cursor-pointer"
+                                                onClick={() => {
+                                                    const selected = field.value || [];
+                                                    if (selected.includes(staff.id)) {
+                                                        field.onChange(selected.filter((id) => id !== staff.id));
+                                                    } else {
+                                                        field.onChange([...selected, staff.id]);
+                                                    }
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={field.value?.includes(staff.id) || false}
+                                                    tabIndex={-1}
+                                                    className="mr-2"
+                                                    readOnly
+                                                />
+                                                <span>{staff.fullName}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                             <FormMessage />
                         </FormItem>
                     )}
