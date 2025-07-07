@@ -29,6 +29,11 @@ import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getAllEquipments } from "@/lib/equipment";
+import { getAllCustomers } from "@/lib/customers";
+
+// Add types for students and customers
+interface StudentEntry { customerId?: string; name: string; email: string; }
+interface CustomerEntry { id: string; fullName: string; email: string; }
 
 export function EditCourseDialog(
     { selectedCourse, setIsEditCourseOpen, onSuccess, selectedEquipment, materials }: {
@@ -58,6 +63,11 @@ export function EditCourseDialog(
     const [editMaterials, setEditMaterials] = React.useState<string[]>(materials && materials.length > 0 ? materials : [""]);
     const [editSelectedEquipment, setEditSelectedEquipment] = React.useState<string[]>(selectedEquipment || []);
 
+    const [customerOptions, setCustomerOptions] = React.useState<CustomerEntry[]>([]);
+    const [selectedCustomerIds, setSelectedCustomerIds] = React.useState<string[]>([]);
+    const [manualStudents, setManualStudents] = React.useState<StudentEntry[]>([{ name: "", email: "" }]);
+    const [existingStudents, setExistingStudents] = React.useState<StudentEntry[]>([]);
+
     React.useEffect(() => {
         async function fetchEquipment() {
             const eq = await getAllEquipments(selectedCourse.diveCenterId);
@@ -77,6 +87,25 @@ export function EditCourseDialog(
         setStatus(selectedCourse.status || "upcoming");
     }, [selectedCourse]);
 
+    // Fetch customers on mount
+    React.useEffect(() => {
+        async function fetchCustomers() {
+            if (selectedCourse.diveCenterId) {
+                const customers = await getAllCustomers(selectedCourse.diveCenterId);
+                setCustomerOptions(customers);
+            }
+        }
+        fetchCustomers();
+    }, [selectedCourse.diveCenterId]);
+
+    // Pre-fill students on open
+    React.useEffect(() => {
+        const dbStudents = (selectedCourse as any).students || [];
+        setExistingStudents(dbStudents.filter((s: StudentEntry) => s.customerId));
+        setSelectedCustomerIds(dbStudents.filter((s: StudentEntry) => s.customerId).map((s: StudentEntry) => s.customerId!));
+        setManualStudents(dbStudents.filter((s: StudentEntry) => !s.customerId).map((s: StudentEntry) => ({ name: s.name, email: s.email })) || [{ name: "", email: "" }]);
+    }, [selectedCourse]);
+
     // Handlers for materials
     const handleMaterialChange = (idx: number, value: string) => {
         setEditMaterials((prev) => prev.map((m, i) => (i === idx ? value : m)));
@@ -91,9 +120,38 @@ export function EditCourseDialog(
         );
     };
 
+    // Handlers for manual students
+    const handleManualStudentChange = (idx: number, field: "name" | "email", value: string) => {
+        setManualStudents((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
+    };
+    const addManualStudent = () => setManualStudents((prev) => [...prev, { name: "", email: "" }]);
+    const removeManualStudent = (idx: number) => setManualStudents((prev) => prev.filter((_, i) => i !== idx));
+
+    // Handler for customer selection
+    const handleCustomerSelect = (id: string, checked: boolean) => {
+        setSelectedCustomerIds((prev) =>
+            checked ? [...prev, id] : prev.filter((cid) => cid !== id)
+        );
+    };
+
+    // Handler to remove existing student
+    const removeExistingStudent = (customerId: string) => {
+        setExistingStudents((prev) => prev.filter((s) => s.customerId !== customerId));
+        setSelectedCustomerIds((prev) => prev.filter((cid) => cid !== customerId));
+    };
+
+    // On update, build students array
+    function buildStudentsArray() {
+        const selectedCustomers = customerOptions.filter((c) => selectedCustomerIds.includes(c.id));
+        const customerStudents = selectedCustomers.map((c) => ({ customerId: c.id, name: c.fullName, email: c.email }));
+        const manual = manualStudents.filter((s) => s.name.trim() && s.email.trim());
+        return [...customerStudents, ...manual];
+    }
+
     async function handleUpdateCourse(formData: FormData) {
         formData.append("materials", JSON.stringify(editMaterials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(editSelectedEquipment));
+        formData.append("students", JSON.stringify(buildStudentsArray()));
         await updateCourse(selectedCourse.id, formData);
         toast({
             title: "Course updated successfully",
@@ -313,6 +371,58 @@ export function EditCourseDialog(
                         </div>
                     ))}
                 </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label>Students</Label>
+                <div className="mb-2">Select from customers:</div>
+                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto border rounded p-2">
+                    {customerOptions.map((c) => (
+                        <div key={c.id} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id={`edit-student-customer-${c.id}`}
+                                checked={selectedCustomerIds.includes(c.id)}
+                                onChange={(e) => handleCustomerSelect(c.id, e.target.checked)}
+                            />
+                            <label htmlFor={`edit-student-customer-${c.id}`} className="text-sm">
+                                {c.fullName} ({c.email})
+                            </label>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-2 mb-1">Existing students from DB:</div>
+                <ul className="text-sm space-y-1">
+                    {existingStudents.length > 0 ? (
+                        existingStudents.map((s, idx) => (
+                            <li key={idx} className="flex items-center gap-2">
+                                {s.name} ({s.email})
+                                {/* <Button type="button" variant="outline" size="icon" onClick={() => removeExistingStudent(s.customerId!)}>-</Button> */}
+                            </li>
+                        ))
+                    ) : (
+                        <li>No existing students</li>
+                    )}
+                </ul>
+                <div className="mt-2 mb-1">Added students:</div>
+                {manualStudents.map((s, idx) => (
+                    <div key={idx} className="flex gap-2 mb-1">
+                        <Input
+                            value={s.name}
+                            onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
+                            placeholder="Name"
+                        />
+                        <Input
+                            value={s.email}
+                            onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
+                            placeholder="Email"
+                        />
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>-</Button>
+                        {idx === manualStudents.length - 1 && (
+                            <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>+</Button>
+                        )}
+                    </div>
+                ))}
             </div>
 
             <DialogFooter>
