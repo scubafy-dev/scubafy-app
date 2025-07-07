@@ -136,6 +136,7 @@ model DiveTrip {
   difficulty  Difficulty?
   center      String?
   instructor  String?
+  diveType    String?
 
   // relations
   fleetVehicleId String

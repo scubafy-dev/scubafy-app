@@ -194,7 +194,7 @@ export function AddTripForm(
       capacity: trip?.capacity ?? 0,
       price: trip?.price ? trip.price.toString() : "",
       description: trip?.description ?? "",
-      diveType: "",
+      diveType: trip?.diveType ?? "",
       fleetVehicleId: trip?.fleetVehicleId ?? "",
       expenses: {
         boatInsurance: "",
@@ -290,6 +290,13 @@ export function AddTripForm(
         const diveMasterIds = trip.diveMaster.split(',').filter(id => id.trim() !== '');
         form.setValue('selectedDiveMasterIds', diveMasterIds as any);
       }
+    }
+  }, [mode, trip, form]);
+
+  // Prefill diveType when editing a trip
+  useEffect(() => {
+    if (mode === ActionMode.update && trip && trip.diveType) {
+      form.setValue('diveType', trip.diveType);
     }
   }, [mode, trip, form]);
 
