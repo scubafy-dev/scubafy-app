@@ -50,7 +50,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
-import { addCourse, getAllCourses } from "@/lib/course"; // import server action
+import { addCourse, getAllCourses, deleteCourse } from "@/lib/course"; // import server action
 import {
     CertificationLevel,
     Course,
@@ -111,6 +111,11 @@ export default function CourseTrackerClient() {
     const [isCourseListLoading, setIsCourseListLoading] = useState(false)
     const [courseList, setCourseList] = useState<CourseWithRelations[]>([])
 
+    // Add state for delete dialog and loading
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const fetchCourses = useCallback(async () => {
         try {
             setIsCourseListLoading(true);
@@ -144,6 +149,23 @@ export default function CourseTrackerClient() {
         await fetchCourses();
         setIsCourseListLoading(false);
     }, [fetchCourses]);
+
+    // Delete handler
+    const handleDeleteCourse = useCallback(async () => {
+        if (!courseToDelete) return;
+        setIsDeleting(true);
+        try {
+            await deleteCourse(courseToDelete.id);
+            toast({ title: "Course deleted successfully" });
+            setIsDeleteDialogOpen(false);
+            setCourseToDelete(null);
+            await fetchCourses();
+        } catch (error) {
+            toast({ title: "Failed to delete course", description: String(error), variant: "destructive" });
+        } finally {
+            setIsDeleting(false);
+        }
+    }, [courseToDelete, fetchCourses, toast]);
 
     // Example courses data
     //   const [courses, setCourses] = useState<Course[]>([
@@ -636,6 +658,24 @@ export default function CourseTrackerClient() {
                                                                             <Edit className="mr-2 h-4 w-4" />
                                                                             Edit Course
                                                                         </Button>
+                                                                        <Button
+                                                                            variant="destructive"
+                                                                            size="sm"
+                                                                            onClick={(
+                                                                                e,
+                                                                            ) => {
+                                                                                e.stopPropagation();
+                                                                                setCourseToDelete(
+                                                                                    course,
+                                                                                );
+                                                                                setIsDeleteDialogOpen(
+                                                                                    true,
+                                                                                );
+                                                                            }}
+                                                                            className="ml-2"
+                                                                        >
+                                                                            Remove
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
                                                             </TableCell>
@@ -890,6 +930,24 @@ export default function CourseTrackerClient() {
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
                                                             </Button>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setCourseToDelete(
+                                                                        course,
+                                                                    );
+                                                                    setIsDeleteDialogOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="ml-2"
+                                                            >
+                                                                Remove
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -1139,6 +1197,24 @@ export default function CourseTrackerClient() {
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
                                                             </Button>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setCourseToDelete(
+                                                                        course,
+                                                                    );
+                                                                    setIsDeleteDialogOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="ml-2"
+                                                            >
+                                                                Remove
+                                                            </Button>
                                                         </div>
                                                     </div>
                                                 </TableCell>
@@ -1387,6 +1463,24 @@ export default function CourseTrackerClient() {
                                                             >
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
+                                                            </Button>
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={(
+                                                                    e,
+                                                                ) => {
+                                                                    e.stopPropagation();
+                                                                    setCourseToDelete(
+                                                                        course,
+                                                                    );
+                                                                    setIsDeleteDialogOpen(
+                                                                        true,
+                                                                    );
+                                                                }}
+                                                                className="ml-2"
+                                                            >
+                                                                Remove
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -1941,6 +2035,26 @@ export default function CourseTrackerClient() {
                         />
                     </Dialog>
                 )}
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to remove the course "{courseToDelete?.title}"? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteCourse} disabled={isDeleting}>
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardShell>
     );
 }
