@@ -79,6 +79,8 @@ export async function updateCourse(id: string, formData: FormData) {
     cost: number | null;
     specialNeeds: string | null;
     studentsCount: number;
+    materials: string[];
+    equipmentIds: string[];
   }> = {};
 
   if (formData.get("title")) data.title = formData.get("title") as string;
@@ -102,6 +104,18 @@ export async function updateCourse(id: string, formData: FormData) {
 
   const studentsCountStr = formData.get("studentsCount") as string | null;
   if (studentsCountStr) data.studentsCount = parseInt(studentsCountStr, 10);
+
+  // Handle materials and equipmentIds
+  try {
+    if (formData.get("materials")) {
+      data.materials = JSON.parse(formData.get("materials") as string || "[]");
+    }
+  } catch {}
+  try {
+    if (formData.get("equipmentIds")) {
+      data.equipmentIds = JSON.parse(formData.get("equipmentIds") as string || "[]");
+    }
+  } catch {}
 
   await prisma.course.update({
     where: { id },

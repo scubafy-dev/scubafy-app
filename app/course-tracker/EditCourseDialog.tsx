@@ -28,14 +28,18 @@ import { updateCourse } from "@/lib/course";
 import { useRouter } from "next/navigation";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { getAllEquipments } from "@/lib/equipment";
 
 export function EditCourseDialog(
-    { selectedCourse, setIsEditCourseOpen,onSuccess }: {
+    { selectedCourse, setIsEditCourseOpen, onSuccess, selectedEquipment, materials }: {
         selectedCourse: Course;
         setIsEditCourseOpen: React.Dispatch<React.SetStateAction<boolean>>;
-        onSuccess:any;
+        onSuccess: any;
+        selectedEquipment: any;
+        materials: any;
     },
 ) {
+    console.log('edit course',selectedCourse,selectedEquipment,materials)
     const {toast}=useToast()
     const router = useRouter();
     const [level, setLevel] = React.useState<CourseCertificationLevel>(
@@ -50,18 +54,57 @@ export function EditCourseDialog(
         return date.toISOString().split("T")[0];
     };
 
+    const [equipmentOptions, setEquipmentOptions] = React.useState<any[]>([]);
+    const [editMaterials, setEditMaterials] = React.useState<string[]>(materials && materials.length > 0 ? materials : [""]);
+    const [editSelectedEquipment, setEditSelectedEquipment] = React.useState<string[]>(selectedEquipment || []);
+
+    React.useEffect(() => {
+        async function fetchEquipment() {
+            const eq = await getAllEquipments(selectedCourse.diveCenterId);
+            setEquipmentOptions(eq);
+        }
+        fetchEquipment();
+    }, [selectedCourse.diveCenterId]);
+
+    // Sync local edit state with props when course or modal changes
+    React.useEffect(() => {
+        setEditMaterials(materials && materials.length > 0 ? materials : [""]);
+        setEditSelectedEquipment(selectedEquipment || []);
+    }, [selectedCourse, materials, selectedEquipment]);
+
+    React.useEffect(() => {
+        setLevel(selectedCourse.certificationLevel || "openWater");
+        setStatus(selectedCourse.status || "upcoming");
+    }, [selectedCourse]);
+
+    // Handlers for materials
+    const handleMaterialChange = (idx: number, value: string) => {
+        setEditMaterials((prev) => prev.map((m, i) => (i === idx ? value : m)));
+    };
+    const addMaterialField = () => setEditMaterials((prev) => [...prev, ""]);
+    const removeMaterialField = (idx: number) => setEditMaterials((prev) => prev.filter((_, i) => i !== idx));
+
+    // Handler for equipment
+    const handleEquipmentSelect = (id: string, checked: boolean) => {
+        setEditSelectedEquipment((prev) =>
+            checked ? [...prev, id] : prev.filter((eid) => eid !== id)
+        );
+    };
+
     async function handleUpdateCourse(formData: FormData) {
+        formData.append("materials", JSON.stringify(editMaterials.filter((m) => m.trim() !== "")));
+        formData.append("equipmentIds", JSON.stringify(editSelectedEquipment));
         await updateCourse(selectedCourse.id, formData);
         toast({
             title: "Course updated successfully",
         });
-        onSuccess()
+        onSuccess();
         router.refresh();
         setIsEditCourseOpen(false);
     }
 
     return (
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[600px] max-h-[500px] overflow-y-scroll">
             <DialogHeader>
                 <DialogTitle>Edit Course Informations</DialogTitle>
                 <DialogDescription>
@@ -230,6 +273,45 @@ export function EditCourseDialog(
                             placeholder="Note any special needs or concerns"
                         />
                     </div>
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label>Course Materials</Label>
+                {editMaterials.map((mat, idx) => (
+                    <div key={idx} className="flex gap-2 mb-1">
+                        <Input
+                            value={mat}
+                            onChange={(e) => handleMaterialChange(idx, e.target.value)}
+                            placeholder="Material name"
+                        />
+                        <Button type="button" variant="outline" size="icon" onClick={() => removeMaterialField(idx)} disabled={editMaterials.length === 1}>
+                            -
+                        </Button>
+                        {idx === editMaterials.length - 1 && (
+                            <Button type="button" variant="outline" size="icon" onClick={addMaterialField}>
+                                +
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            </div>
+            <div className="space-y-2">
+                <Label>Required Equipment</Label>
+                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                    {equipmentOptions.map((eq) => (
+                        <div key={eq.id} className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id={`edit-equipment-${eq.id}`}
+                                checked={editSelectedEquipment.includes(eq.id)}
+                                onChange={(e) => handleEquipmentSelect(eq.id, e.target.checked)}
+                            />
+                            <label htmlFor={`edit-equipment-${eq.id}`} className="text-sm">
+                                {eq.type} {eq.model}
+                            </label>
+                        </div>
+                    ))}
                 </div>
             </div>
 

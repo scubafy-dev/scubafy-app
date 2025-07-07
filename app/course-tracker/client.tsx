@@ -596,6 +596,8 @@ export default function CourseTrackerClient() {
                                                                                 setSelectedCourse(
                                                                                     course,
                                                                                 );
+                                                                                setMaterials(course.materials && course.materials.length > 0 ? course.materials : [""]);
+                                                                                setSelectedEquipment(course.equipmentIds || []);
                                                                             }}
                                                                         >
                                                                             <Edit className="mr-2 h-4 w-4" />
@@ -864,14 +866,14 @@ export default function CourseTrackerClient() {
                                                                 <FileText className="mr-2 h-4 w-4" />
                                                                 View Full Details
                                                             </Button>
-                                                            <Button
+                                                            {/* <Button
                                                                 size="sm"
                                                                 onClick={(e) =>
                                                                     e.stopPropagation()}
                                                             >
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
-                                                            </Button>
+                                                            </Button> */}
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
@@ -1131,14 +1133,14 @@ export default function CourseTrackerClient() {
                                                                 View Full
                                                                 Details
                                                             </Button>
-                                                            <Button
+                                                            {/* <Button
                                                                 size="sm"
                                                                 onClick={(e) =>
                                                                     e.stopPropagation()}
                                                             >
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
-                                                            </Button>
+                                                            </Button> */}
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
@@ -1314,41 +1316,7 @@ export default function CourseTrackerClient() {
                                                             </ul>
                                                         </div>
 
-                                                        {
-                                                            /* {course.dives.length >
-                                                                0 && (
-                                                            <div>
-                                                                <h4 className="text-sm font-semibold mb-1">
-                                                                    Dives
-                                                                </h4>
-                                                                <ul className="text-sm space-y-1">
-                                                                    {course
-                                                                        .dives
-                                                                        .map(
-                                                                            (
-                                                                                dive,
-                                                                            ) => (
-                                                                                <li
-                                                                                    key={dive
-                                                                                        .id}
-                                                                                >
-                                                                                    {dive
-                                                                                        .date}
-                                                                                    {" "}
-                                                                                    -
-                                                                                    {" "}
-                                                                                    {dive
-                                                                                        .site}
-                                                                                    {" "}
-                                                                                    ({dive
-                                                                                        .maxDepth}m)
-                                                                                </li>
-                                                                            ),
-                                                                        )}
-                                                                </ul>
-                                                            </div>
-                                                        )} */
-                                                        }
+                                    
 
                                                         <div className="flex justify-end">
                                                             <div className="flex-1">
@@ -1398,14 +1366,14 @@ export default function CourseTrackerClient() {
                                                                 View Full
                                                                 Details
                                                             </Button>
-                                                            <Button
+                                                            {/* <Button
                                                                 size="sm"
                                                                 onClick={(e) =>
                                                                     e.stopPropagation()}
                                                             >
                                                                 <Edit className="mr-2 h-4 w-4" />
                                                                 Edit Course
-                                                            </Button>
+                                                            </Button> */}
                                                             <Button
                                                                 variant="destructive"
                                                                 size="sm"
@@ -1481,7 +1449,12 @@ export default function CourseTrackerClient() {
                                             </div>
                                         </DialogDescription>
                                     </div>
-                                    <Button size="sm">
+                                    <Button size="sm" onClick={() => {
+                                        setIsEditCourseOpen(true);
+                                        setSelectedCourse(selectedCourse);
+                                        setMaterials(selectedCourse?.materials && selectedCourse.materials.length > 0 ? selectedCourse.materials : [""]);
+                                        setSelectedEquipment(selectedCourse?.equipmentIds || []);
+                                    }}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
                                     </Button>
@@ -1616,71 +1589,6 @@ export default function CourseTrackerClient() {
                                         </Table>
                                     </div>
                                 </div>
-                                {
-                                    /*
-                                {selectedCourse?.dives.length > 0 && (
-                                    <div className="space-y-2">
-                                        <h3 className="text-sm font-medium">
-                                            Dive Log
-                                        </h3>
-                                        <div className="rounded-md border">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>
-                                                            Date/Time
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            Site
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            Max Depth
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            Time at Depth
-                                                        </TableHead>
-                                                        <TableHead className="hidden md:table-cell">
-                                                            Conditions
-                                                        </TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {selectedCourse?.dives.map((
-                                                        dive,
-                                                    ) => (
-                                                        <TableRow key={dive.id}>
-                                                            <TableCell>
-                                                                <div>
-                                                                    {dive.date}
-                                                                </div>
-                                                                <div className="text-muted-foreground">
-                                                                    {dive.time}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {dive.site}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {dive.maxDepth}m
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                {dive
-                                                                    .timeAtDepth}
-                                                                {" "}
-                                                                min
-                                                            </TableCell>
-                                                            <TableCell className="hidden md:table-cell">
-                                                                {dive
-                                                                    .conditions}
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
-                                    </div>
-                                )} */
-                                }
 
                                 {selectedCourse?.specialNeeds && (
                                     <div className="space-y-2">
@@ -1981,6 +1889,8 @@ export default function CourseTrackerClient() {
                     >
                         <EditCourseDialog
                             selectedCourse={selectedCourse}
+                            selectedEquipment={selectedEquipment}
+                            materials={materials}
                             setIsEditCourseOpen={setIsEditCourseOpen}
                             onSuccess={handleCourseCreated}
                         />
