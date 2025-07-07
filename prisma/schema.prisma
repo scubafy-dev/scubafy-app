@@ -246,7 +246,7 @@ model Customer {
   diveCenterId String
   diveCenter   DiveCenter  @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
   Equipment    Equipment[]
-  courses      Course[]    @relation("CourseStudents")
+  courseStudents CourseStudent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -336,6 +336,18 @@ enum CourseStatus {
   completed
 }
 
+model CourseStudent {
+  id         String   @id @default(uuid())
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId   String
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+  name       String
+  email      String
+
+  @@map("course_students")
+}
+
 model Course {
   id                 String                    @id @default(uuid())
   title              String
@@ -356,7 +368,7 @@ model Course {
   diveCenterId String
   diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
 
-  students Customer[] @relation("CourseStudents")
+  students      CourseStudent[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

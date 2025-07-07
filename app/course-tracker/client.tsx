@@ -52,6 +52,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 import { addCourse, getAllCourses, deleteCourse } from "@/lib/course"; // import server action
 import { getAllEquipments } from "@/lib/equipment";
+import { getAllCustomers } from "@/lib/customers";
 import {
     CertificationLevel,
     Course,
@@ -86,9 +87,15 @@ interface Dive {
     conditions: string;
 }
 
-// Add this type for courses with relations
-export type CourseWithRelations = Course & {
-    students: any[]; // Replace any with your actual student type if available
+// Add types for students and customers
+interface StudentEntry { customerId?: string; name: string; email: string; }
+interface CustomerEntry { id: string; fullName: string; email: string; }
+
+// Patch Course type to allow students
+// eslint-disable-next-line
+type PatchedCourse = Course & { students?: StudentEntry[] };
+
+export type CourseWithRelations = PatchedCourse & {
     diveCenter?: any;
 };
 
@@ -99,7 +106,7 @@ export default function CourseTrackerClient() {
     const [activeTab, setActiveTab] = useState("all");
     const [isAddCourseOpen, setIsAddCourseOpen] = useState(false);
     const [isEditCourseOpen, setIsEditCourseOpen] = useState(false);
-    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+    const [selectedCourse, setSelectedCourse] = useState<CourseWithRelations | null>(null);
     const [courseDetailsOpen, setCourseDetailsOpen] = useState(false);
     const [expandedCourseId, setExpandedCourseId] = useState<string | null>(
         null,
@@ -124,6 +131,11 @@ export default function CourseTrackerClient() {
 
     // Add state for equipment details in course details dialog
     const [courseEquipmentDetails, setCourseEquipmentDetails] = useState<any[]>([]);
+
+    // Add state for students
+    const [customerOptions, setCustomerOptions] = useState<CustomerEntry[]>([]);
+    const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+    const [manualStudents, setManualStudents] = useState<StudentEntry[]>([{ name: "", email: "" }]);
 
     const fetchCourses = useCallback(async () => {
         try {
@@ -203,6 +215,39 @@ export default function CourseTrackerClient() {
         }
     }, [selectedCourse, courseDetailsOpen, currentCenter]);
 
+    // Fetch customers on mount
+    useEffect(() => {
+        async function fetchCustomers() {
+            if (currentCenter?.id) {
+                const customers = await getAllCustomers(currentCenter.id);
+                setCustomerOptions(customers);
+            }
+        }
+        fetchCustomers();
+    }, [currentCenter]);
+
+    // Handlers for manual students
+    const handleManualStudentChange = (idx: number, field: "name" | "email", value: string) => {
+        setManualStudents((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
+    };
+    const addManualStudent = () => setManualStudents((prev) => [...prev, { name: "", email: "" }]);
+    const removeManualStudent = (idx: number) => setManualStudents((prev) => prev.filter((_, i) => i !== idx));
+
+    // Handler for customer selection
+    const handleCustomerSelect = (id: string, checked: boolean) => {
+        setSelectedCustomerIds((prev) =>
+            checked ? [...prev, id] : prev.filter((cid) => cid !== id)
+        );
+    };
+
+    // On Add/Edit submit, build students array
+    function buildStudentsArray() {
+        const selectedCustomers = customerOptions.filter((c) => selectedCustomerIds.includes(c.id));
+        const customerStudents = selectedCustomers.map((c) => ({ customerId: c.id, name: c.fullName, email: c.email }));
+        const manual = manualStudents.filter((s) => s.name.trim() && s.email.trim());
+        return [...customerStudents, ...manual];
+    }
+
     console.log('equipments',equipmentOptions)
 
     // Add/remove material fields
@@ -268,6 +313,7 @@ export default function CourseTrackerClient() {
         }
         formData.append("materials", JSON.stringify(materials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(selectedEquipment));
+        formData.append("students", JSON.stringify(buildStudentsArray()));
         const res = await addCourse(formData, currentCenter.id);
         if (res?.success) {
             toast({
@@ -295,6 +341,8 @@ export default function CourseTrackerClient() {
                     setStatus("upcoming");
                     setMaterials([""]);
                     setSelectedEquipment([]);
+                    setSelectedCustomerIds([]);
+                    setManualStudents([{ name: "", email: "" }]);
                     // Optionally reset other fields if you add state for them
                     setTimeout(() => {
                         const ids = [
@@ -473,30 +521,19 @@ export default function CourseTrackerClient() {
                                                                         </div>
                                                                     </div>
 
+                                                                    {/* In the expanded row, show students details */}
                                                                     <div>
-                                                                        <h4 className="text-sm font-semibold mb-1">
-                                                                            Students
-                                                                        </h4>
+                                                                        <h4 className="text-sm font-semibold mb-1">Students</h4>
                                                                         <ul className="text-sm space-y-1">
-                                                                            {
-                                                                                /* {course.students
-                                                                                .map(
-                                                                                    (
-                                                                                        student,
-                                                                                    ) => (
-                                                                                        <li
-                                                                                            key={student
-                                                                                                .id}
-                                                                                        >
-                                                                                            {student
-                                                                                                .name}
-                                                                                            {" "}
-                                                                                            ({student
-                                                                                                .email})
-                                                                                        </li>
-                                                                                    ),
-                                                                                )} */
-                                                                            }
+                                                                            {course.students && course.students.length > 0 ? (
+                                                                                course.students.map((student: StudentEntry, idx: number) => (
+                                                                                    <li key={idx}>
+                                                                                        {student.name} ({student.email})
+                                                                                    </li>
+                                                                                ))
+                                                                            ) : (
+                                                                                <li>No students</li>
+                                                                            )}
                                                                         </ul>
                                                                     </div>
 
@@ -598,6 +635,8 @@ export default function CourseTrackerClient() {
                                                                                 );
                                                                                 setMaterials(course.materials && course.materials.length > 0 ? course.materials : [""]);
                                                                                 setSelectedEquipment(course.equipmentIds || []);
+                                                                                setSelectedCustomerIds(course.students?.map((s: any) => s.customerId).filter(Boolean) || []);
+                                                                                setManualStudents(course.students?.filter((s: any) => !s.customerId).map((s: any) => ({ name: s.name, email: s.email })) || [{ name: "", email: "" }]);
                                                                             }}
                                                                         >
                                                                             <Edit className="mr-2 h-4 w-4" />
@@ -1454,6 +1493,8 @@ export default function CourseTrackerClient() {
                                         setSelectedCourse(selectedCourse);
                                         setMaterials(selectedCourse?.materials && selectedCourse.materials.length > 0 ? selectedCourse.materials : [""]);
                                         setSelectedEquipment(selectedCourse?.equipmentIds || []);
+                                        setSelectedCustomerIds(selectedCourse.students?.map((s: any) => s.customerId).filter(Boolean) || []);
+                                        setManualStudents(selectedCourse.students?.filter((s: any) => !s.customerId).map((s: any) => ({ name: s.name, email: s.email })) || [{ name: "", email: "" }]);
                                     }}>
                                         <Edit className="mr-2 h-4 w-4" />
                                         Edit
@@ -1551,40 +1592,20 @@ export default function CourseTrackerClient() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {
-                                                    /* {selectedCourse?.students.map((
-                                                    student,
-                                                ) => (
-                                                    <TableRow key={student.id}>
-                                                        <TableCell className="font-medium">
-                                                            {student.name}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <div>
-                                                                {student.email}
-                                                            </div>
-                                                            <div className="text-muted-foreground">
-                                                                {student.phone}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="hidden md:table-cell">
-                                                            <div>
-                                                                {student
-                                                                    .emergencyContactName}
-                                                            </div>
-                                                            <div className="text-muted-foreground">
-                                                                {student
-                                                                    .emergencyContactPhone}
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="hidden md:table-cell">
-                                                            {student
-                                                                .medicalInfo ||
-                                                                "None"}
-                                                        </TableCell>
+                                                {selectedCourse?.students && selectedCourse.students.length > 0 ? (
+                                                    selectedCourse.students.map((student: StudentEntry, idx: number) => (
+                                                        <TableRow key={idx}>
+                                                            <TableCell className="font-medium">{student.name}</TableCell>
+                                                            <TableCell>{student.email}</TableCell>
+                                                            <TableCell className="hidden md:table-cell">{student.email}</TableCell>
+                                                            <TableCell className="hidden md:table-cell">{student.email}</TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={4} className="text-center">No students</TableCell>
                                                     </TableRow>
-                                                ))} */
-                                                }
+                                                )}
                                             </TableBody>
                                         </Table>
                                     </div>
@@ -1794,6 +1815,47 @@ export default function CourseTrackerClient() {
                                     ))}
                                 </div>
                             </div>
+                            <div className="space-y-2">
+                                <Label>Students</Label>
+                                <div className="mb-2">Select from customers:</div>
+                                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto border rounded p-2">
+                                    {customerOptions.map((c) => (
+                                        <div key={c.id} className="flex items-center gap-2">
+                                            <Checkbox
+                                                id={`student-customer-${c.id}`}
+                                                checked={selectedCustomerIds.includes(c.id)}
+                                                onCheckedChange={(checked) => handleCustomerSelect(c.id, Boolean(checked))}
+                                            />
+                                            <label htmlFor={`student-customer-${c.id}`} className="text-sm">
+                                                {c.fullName} ({c.email})
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="mt-2 mb-1">Add manual students:</div>
+                                {manualStudents.map((s, idx) => (
+                                    <div key={idx} className="flex gap-2 mb-1">
+                                        <Input
+                                            value={s.name}
+                                            onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
+                                            placeholder="Name"
+                                        />
+                                        <Input
+                                            value={s.email}
+                                            onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
+                                            placeholder="Email"
+                                        />
+                                        <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>
+                                            -
+                                        </Button>
+                                        {idx === manualStudents.length - 1 && (
+                                            <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>
+                                                +
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
@@ -1870,6 +1932,10 @@ export default function CourseTrackerClient() {
                                 formData.append(
                                     "equipmentIds",
                                     JSON.stringify(selectedEquipment),
+                                );
+                                formData.append(
+                                    "students",
+                                    JSON.stringify(buildStudentsArray()),
                                 );
                                 handleAddCourse(formData);
                             }}
