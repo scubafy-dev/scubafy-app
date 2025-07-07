@@ -44,17 +44,48 @@ export function AddEquipmentDialog(
   const [activeTab, setActiveTab] = useState<"basic" | "details" | "rental">(
     "basic",
   );
+  // Define predefined equipment types
+  const predefinedTypes = ["BCD", "Regulator", "Wetsuit", "DiveComputer", "Fins"];
+  
+  // Determine initial type and customType for editing
+  const getInitialType = () => {
+    if (!equipment?.type) return "BCD";
+    
+    // If the equipment type is not in predefined list, it's a custom type
+    if (!predefinedTypes.includes(equipment.type)) {
+      return "Other";
+    }
+    return equipment.type;
+  };
+  
+  const getInitialCustomType = () => {
+    if (!equipment?.type) return "";
+    
+    // If the equipment type is not in predefined list, use it as custom type
+    if (!predefinedTypes.includes(equipment.type)) {
+      return equipment.type;
+    }
+    return "";
+  };
+  
+  // Helper function to format date for HTML date input (YYYY-MM-DD)
+  const formatDateForInput = (date: Date | null | undefined): string => {
+    if (!date) return new Date().toISOString().split('T')[0];
+    return date.toISOString().split('T')[0];
+  };
+  
   const [formData, setFormData] = useState({
-    type: equipment?.type as EquipmentFormType["type"] || "BCD",
-    sku: "",
-    make: "",
+    type: getInitialType(),
+    customType: getInitialCustomType(),
+    sku: equipment?.sku ?? "",
+    make: equipment?.make ?? "",
     brand: equipment?.brand ?? "",
     model: equipment?.model ?? "",
     purchaseDate: equipment?.purchaseDate?.toISOString() ??
       new Date().toISOString(),
     serialNumber: equipment?.serialNumber ?? "",
-    size: "",
-    location: "",
+    size: equipment?.size ?? "",
+    location: equipment?.location ?? "",
     status: equipment?.status ?? EquipmentStatus.available,
     condition: equipment?.condition ?? Condition.excellent,
     usageCount: equipment?.usageCount?.toString() ?? "",
@@ -63,10 +94,8 @@ export function AddEquipmentDialog(
     quantity: "1",
     trackMinQuantity: false,
     trackUsage: false,
-    lastInspection: equipment?.lastService?.toISOString() ??
-      new Date().toISOString(),
-    nextInspection: equipment?.nextService?.toISOString() ??
-      new Date().toISOString(),
+    lastInspection: formatDateForInput(equipment?.lastService),
+    nextInspection: formatDateForInput(equipment?.nextService),
     itemValue: "",
     rentalRate: "",
     rentalTimeframe: "Per Dive",
@@ -93,10 +122,14 @@ export function AddEquipmentDialog(
     if (mode === ActionMode.create) {
       // Map form data to match EquipmentFormType interface
       const equipmentData = {
-        type: formData.type as EquipmentFormType["type"],
+        type: formData.type === "Other" ? formData.customType : formData.type,
+        sku: formData.sku || null,
+        make: formData.make || null,
         brand: formData.brand || "Generic",
         model: formData.model,
         serialNumber: formData.serialNumber,
+        size: formData.size || null,
+        location: formData.location || null,
         purchaseDate: formData.purchaseDate,
         lastInspection: formData.lastInspection,
         nextInspection: formData.nextInspection,
@@ -120,10 +153,14 @@ export function AddEquipmentDialog(
       if (equipment) {
         // Map form data to match EquipmentFormType interface for update
         const equipmentData = {
-          type: formData.type as EquipmentFormType["type"],
+          type: formData.type === "Other" ? formData.customType : formData.type,
+          sku: formData.sku || null,
+          make: formData.make || null,
           brand: formData.brand || "Generic",
           model: formData.model,
           serialNumber: formData.serialNumber,
+          size: formData.size || null,
+          location: formData.location || null,
           purchaseDate: formData.purchaseDate,
           lastInspection: formData.lastInspection,
           nextInspection: formData.nextInspection,
@@ -206,8 +243,17 @@ export function AddEquipmentDialog(
                   <SelectItem value="Wetsuit">Wetsuit</SelectItem>
                   <SelectItem value="DiveComputer">Dive Computer</SelectItem>
                   <SelectItem value="Fins">Fins</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              {formData.type === "Other" && (
+                <Input
+                  placeholder="Enter custom equipment type"
+                  value={formData.customType}
+                  onChange={(e) => handleInputChange("customType", e.target.value)}
+                  className="h-9 mt-2"
+                />
+              )}
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="sku" className="text-sm font-medium">SKU</Label>

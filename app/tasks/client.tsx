@@ -24,7 +24,7 @@ import {
 import { AddTaskForm } from "@/components/add-task-form";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { TaskStatus } from "@app/generated/prisma";
-import { TaskWithAssignee } from "@/lib/task";
+import { TaskWithAssignments } from "@/lib/task";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,13 +56,13 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 
 export default function TasksClient() {
-    const [tasks, setTasks] = useState<TaskWithAssignee[]>([]);
+    const [tasks, setTasks] = useState<TaskWithAssignments[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
     const { currentCenter, isAllCenters, getCenterSpecificData } =
         useDiveCenter();
     // console.log('center info task',currentCenter,isAllCenters,getCenterSpecificData)    
-    const [selectedTask, setSelectedTask] = useState<TaskWithAssignee | null>(
+    const [selectedTask, setSelectedTask] = useState<TaskWithAssignments | null>(
         null,
     );
     const [isUpdateTaskOpen, setIsUpdateTaskOpen] = useState(false);
@@ -129,7 +129,7 @@ export default function TasksClient() {
     };
 
     // Function to get badge color based on priority
-    const getPriorityColor = (priority: TaskWithAssignee["priority"]) => {
+    const getPriorityColor = (priority: TaskWithAssignments["priority"]) => {
         switch (priority) {
             case "high":
                 return "bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-400";
@@ -189,7 +189,7 @@ export default function TasksClient() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    tasks.map((task: TaskWithAssignee) => (
+                                    tasks.map((task: TaskWithAssignments) => (
                                         <TableRow key={task.id}>
                                             <TableCell>
                                                 <div>
@@ -202,7 +202,9 @@ export default function TasksClient() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                {task.assignedTo.fullName}
+                                                {task.assignments && task.assignments.length > 0
+                                                    ? task.assignments.map(a => a.staff.fullName).join(", ")
+                                                    : <span className="text-muted-foreground">Unassigned</span>}
                                             </TableCell>
                                             <TableCell>
                                                 {task.dueDate.toDateString()}
@@ -295,7 +297,8 @@ export default function TasksClient() {
                     </div>
                 </CardContent>
             </Card>
-
+            
+            {/* Adding New Task */}
             <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
                 <DialogContent>
                     <DialogHeader>

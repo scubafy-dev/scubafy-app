@@ -506,7 +506,7 @@ export default function DiveTripsPage() {
 
       {/* For adding new trip modal */}
       <Dialog open={isAddTripOpen} onOpenChange={setIsAddTripOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto" hideCloseButton>
           <DialogHeader>
             <DialogTitle>Add New Dive Trip</DialogTitle>
           </DialogHeader>
@@ -532,7 +532,7 @@ export default function DiveTripsPage() {
           setSelectedTrip(null);
         }
       }}>
-        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto" hideCloseButton>
           <DialogHeader>
             <DialogTitle>Update Dive Trip</DialogTitle>
           </DialogHeader>

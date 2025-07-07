@@ -10,10 +10,14 @@ import {
 } from "@/app/generated/prisma";
 
 export type EquipmentFormType = {
-    type: EquipmentType;
+    type: string;
+    sku: string | null;
+    make: string | null;
     brand: string;
     model: string;
     serialNumber: string;
+    size: string | null;
+    location: string | null;
     purchaseDate: string;
     lastInspection: string,
     nextInspection: string,
@@ -26,10 +30,14 @@ export type EquipmentFormType = {
 
 export type Equipment = {
   id: string;
-  type: EquipmentType;
+  type: string;
+  sku: string | null;
+  make: string | null;
   brand: string;
   model: string;
   serialNumber: string;
+  size: string | null;
+  location: string | null;
   purchaseDate: Date | null;
   lastService: Date | null,
   nextService: Date | null,
@@ -38,28 +46,6 @@ export type Equipment = {
   usageCount: number | null;
   usageLimit: number | null;    
   notes: string | null;
-}
-
-// Helper function to map string equipment types to enum values
-function mapEquipmentType(typeString: string): EquipmentType {
-  const typeMap: Record<string, EquipmentType> = {
-    'Scuba Tank': EquipmentType.BCD, // Map to closest available type
-    'BCD': EquipmentType.BCD,
-    'Regulator': EquipmentType.Regulator,
-    'Wetsuit': EquipmentType.Wetsuit,
-    'Dive Computer': EquipmentType.DiveComputer,
-    'DiveComputer': EquipmentType.DiveComputer,
-    'Fins': EquipmentType.Fins,
-    'Tank': EquipmentType.BCD, // Map tank to BCD as closest
-    'Cylinder': EquipmentType.BCD, // Map cylinder to BCD as closest
-  };
-  
-  // If the string is already a valid enum value, use it directly
-  if (Object.values(EquipmentType).includes(typeString as EquipmentType)) {
-    return typeString as EquipmentType;
-  }
-  
-  return typeMap[typeString] || EquipmentType.BCD; // Default to BCD if not found
 }
 
 export async function createEquipment(formData: EquipmentFormType, diveCenterId: string) {
@@ -71,10 +57,14 @@ export async function createEquipment(formData: EquipmentFormType, diveCenterId:
   }
   
   // 2) Pull everything out, casting to the right types
-  const type         = mapEquipmentType(formData.type as string);
+  const type         = formData.type;
+  const sku          = formData.sku || null;
+  const make         = formData.make || null;
   const brand        = formData.brand        || "Generic";
   const modelName    = formData.model        || "Model X";
   const serialNumber = formData.serialNumber || "SN-0000-0000";
+  const size         = formData.size || null;
+  const location     = formData.location || null;
 
   const purchaseDate = formData.purchaseDate ? new Date(formData.purchaseDate) : new Date();
   const lastService  = formData.lastInspection ? new Date(formData.lastInspection) : new Date();
@@ -92,9 +82,13 @@ export async function createEquipment(formData: EquipmentFormType, diveCenterId:
     const created = await prisma.equipment.create({
       data: {
         type,
+        sku,
+        make,
         brand,
         model: modelName,
         serialNumber,
+        size,
+        location,
         purchaseDate,
         lastService,
         nextService,
@@ -127,10 +121,14 @@ export async function updateEquipment(id: string | null, formData: EquipmentForm
         return { success: false, error: "No ID provided" };
     }
 
-    const type         = mapEquipmentType(formData.type as string);
+    const type         = formData.type;
+    const sku          = formData.sku || null;
+    const make         = formData.make || null;
     const brand        = formData.brand        || "Generic";
     const modelName    = formData.model        || "Model X";
     const serialNumber = formData.serialNumber || "SN-0000-0000";
+    const size         = formData.size || null;
+    const location     = formData.location || null;
   
     const purchaseDate = formData.purchaseDate ? new Date(formData.purchaseDate) : new Date();
     const lastService  = formData.lastInspection ? new Date(formData.lastInspection) : new Date();
@@ -148,9 +146,13 @@ export async function updateEquipment(id: string | null, formData: EquipmentForm
             where: { id },
             data: {
                 type,
+                sku,
+                make,
                 brand,
                 model: modelName,
                 serialNumber,
+                size,
+                location,
                 purchaseDate,
                 lastService,
                 nextService,
