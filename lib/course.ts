@@ -33,6 +33,22 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
   const studentsCountStr = formData.get("studentsCount") as string | null;
   const studentsCount = studentsCountStr ? parseInt(studentsCountStr, 10) : 0;
 
+  // New: get materials and equipmentIds arrays from formData
+  let materials: string[] = [];
+  let equipmentIds: string[] = [];
+  try {
+    materials = JSON.parse(formData.get("materials") as string || "[]");
+  } catch {}
+  try {
+    equipmentIds = JSON.parse(formData.get("equipmentIds") as string || "[]");
+  } catch {}
+
+  // Handle students
+  let students: Array<{ customerId?: string; name: string; email: string }> = [];
+  try {
+    students = JSON.parse(formData.get("students") as string || "[]");
+  } catch {}
+
   const created= await prisma.course.create({
     data: {
       title,
@@ -47,7 +63,17 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
       specialNeeds,
       studentsCount,
       diveCenterId,
+      materials,
+      equipmentIds,
+      students: {
+        create: students.map((s) => ({
+          customerId: s.customerId || undefined,
+          name: s.name,
+          email: s.email,
+        })),
+      },
     },
+    include: { students: true },
   });
 
   return { success: true, data: created }; 
@@ -67,6 +93,8 @@ export async function updateCourse(id: string, formData: FormData) {
     cost: number | null;
     specialNeeds: string | null;
     studentsCount: number;
+    materials: string[];
+    equipmentIds: string[];
   }> = {};
 
   if (formData.get("title")) data.title = formData.get("title") as string;
@@ -91,9 +119,37 @@ export async function updateCourse(id: string, formData: FormData) {
   const studentsCountStr = formData.get("studentsCount") as string | null;
   if (studentsCountStr) data.studentsCount = parseInt(studentsCountStr, 10);
 
+  // Handle materials and equipmentIds
+  try {
+    if (formData.get("materials")) {
+      data.materials = JSON.parse(formData.get("materials") as string || "[]");
+    }
+  } catch {}
+  try {
+    if (formData.get("equipmentIds")) {
+      data.equipmentIds = JSON.parse(formData.get("equipmentIds") as string || "[]");
+    }
+  } catch {}
+
+  // Handle students
+  let students: Array<{ customerId?: string; name: string; email: string }> = [];
+  try {
+    students = JSON.parse(formData.get("students") as string || "[]");
+  } catch {}
+
   await prisma.course.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      students: {
+        deleteMany: {}, // Remove all previous students
+        create: students.map((s) => ({
+          customerId: s.customerId || undefined,
+          name: s.name,
+          email: s.email,
+        })),
+      },
+    },
   });
 }
 
@@ -104,15 +160,27 @@ export async function deleteCourse(id: string) {
 }
 
 export async function getCourseById(id: string) {
-  return prisma.course.findUnique({
+  const course = await prisma.course.findUnique({
     where: { id },
+    include: { students: true },
   });
+  if (!course) return null;
+  // Always set studentsCount to the number of students
+  return {
+    ...course,
+    studentsCount: course.students ? course.students.length : 0,
+  };
 }
 
 export async function getAllCourses(diveCenterId?: string) {
-  return prisma.course.findMany({
+  const courses = await prisma.course.findMany({
     where: diveCenterId ? { diveCenterId } : {},
     orderBy: { startDate: "desc" },
     include: { students: true, diveCenter: true },
   });
+  // Always set studentsCount to the number of students
+  return courses.map((course) => ({
+    ...course,
+    studentsCount: course.students ? course.students.length : 0,
+  }));
 }

@@ -78,6 +78,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         | "cancelled";
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
+    const diveType = formData.diveType as string | undefined;
     
     // Handle multiple instructors
     let instructorIds: string[] = [];
@@ -156,6 +157,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 center,
                 instructor: instructorString,
                 fleetVehicleId,
+                diveType,
                 participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
                 diveCenterId,
                 userId: session.user.id,
@@ -309,7 +311,8 @@ export async function updateDiveTrip(id: string | null, formData: any) {
         | "cancelled";
     const center = (formData.center as string) || null;
     const instructor = formData.instructor as string;
-
+    const diveType = formData.diveType as string | undefined;
+    
     // Handle multiple instructors
     let instructorIds: string[] = [];
     if (formData.selectedInstructorIds && Array.isArray(formData.selectedInstructorIds)) {
@@ -387,6 +390,7 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                     center,
                     instructor: instructorString,
                     fleetVehicleId,
+                    diveType,
                 },
             },
         );
