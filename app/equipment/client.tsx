@@ -243,8 +243,8 @@ export default function EquipmentPage() {
                 </div>
 
                 <EquipmentStats equipment={equipmentList} />
-
-                <div className="flex items-center max-w-sm">
+                {/* Temporary Omitted search */}
+                {/* <div className="flex items-center max-w-sm">
                     <div className="relative w-full">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -255,7 +255,7 @@ export default function EquipmentPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                </div>
+                </div> */}
 
                 <Card>
                     <CardContent className="p-0">

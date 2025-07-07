@@ -193,10 +193,14 @@ enum Condition {
 model Equipment {
   /// e.g. "EQ-D001"
   id           String        @id @default(uuid())
-  type         EquipmentType
+  type         String
+  sku          String?       // Stock Keeping Unit
+  make         String?       // Manufacturer
   brand        String
   model        String
   serialNumber String
+  size         String?       // Equipment size
+  location     String?       // Storage location
 
   purchaseDate DateTime?
 
