@@ -16,9 +16,9 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const { currentCenter, isAllCenters } = useDiveCenter()
 
-  // Fetch dive trips from API
+  // Fetch dive trips and courses from API
   useEffect(() => {
-    const fetchDiveTrips = async () => {
+    const fetchEvents = async () => {
       try {
         setLoading(true)
         
@@ -28,16 +28,25 @@ export default function CalendarPage() {
         }
         params.append("isAllCenters", isAllCenters.toString())
 
-        const response = await fetch(`/api/dive-trips?${params.toString()}`)
+        // Fetch both dive trips and courses
+        const [tripsResponse, coursesResponse] = await Promise.all([
+          fetch(`/api/dive-trips?${params.toString()}`),
+          fetch(`/api/courses?${params.toString()}`)
+        ])
         
-        if (!response.ok) {
+        if (!tripsResponse.ok) {
           throw new Error("Failed to fetch dive trips")
         }
-
-        const data = await response.json()
         
-        // Transform the data to match DiveEvent format
-        const events: DiveEvent[] = data.map((trip: any) => ({
+        if (!coursesResponse.ok) {
+          throw new Error("Failed to fetch courses")
+        }
+
+        const tripsData = await tripsResponse.json()
+        const coursesData = await coursesResponse.json()
+        
+        // Transform dive trips data
+        const tripEvents: DiveEvent[] = tripsData.map((trip: any) => ({
           id: trip.id,
           title: trip.title,
           date: new Date(trip.date),
@@ -46,9 +55,22 @@ export default function CalendarPage() {
           status: trip.status,
         }))
 
-        setDiveTrips(events)
+        // Transform courses data
+        const courseEvents: DiveEvent[] = coursesData.map((course: any) => ({
+          id: course.id,
+          title: course.title,
+          startDate: new Date(course.startDate),
+          endDate: new Date(course.endDate),
+          type: "course",
+          location: course.location,
+          status: course.status,
+          certificationLevel: course.certificationLevel,
+        }))
+
+        // Combine both types of events
+        setDiveTrips([...tripEvents, ...courseEvents])
       } catch (error) {
-        console.error("Error fetching dive trips:", error)
+        console.error("Error fetching events:", error)
         // Fallback to empty array on error
         setDiveTrips([])
       } finally {
@@ -56,7 +78,7 @@ export default function CalendarPage() {
       }
     }
 
-    fetchDiveTrips()
+    fetchEvents()
   }, [currentCenter, isAllCenters])
 
   return (
