@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     const diveCenterId = searchParams.get("diveCenterId")
     const isAllCenters = searchParams.get("isAllCenters") === "true"
 
-    // Build the where clause for filtering
     let whereClause: any = {}
     
     if (!isAllCenters && diveCenterId) {
@@ -44,7 +43,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Transform the data to match the calendar event format
+    // Transform the data
     const calendarEvents = courses.map((course: any) => ({
       id: course.id,
       title: course.title,
