@@ -1,89 +1,26 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react"
-import { useDiveCenter } from "@/lib/dive-center-context"
+import { Badge } from "@/components/ui/badge"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
-// Mock data for each dive center
-const diveCenterEvents = {
-  dauin: [
-    {
-      id: 1,
-      title: "Coral Reef Exploration",
-      date: new Date(2025, 2, 5),
-      type: "dive-trip",
-    },
-    {
-      id: 2,
-      title: "Night Dive",
-      date: new Date(2025, 2, 12),
-      type: "dive-trip",
-    },
-    {
-      id: 3,
-      title: "Equipment Maintenance",
-      date: new Date(2025, 2, 15),
-      type: "maintenance",
-    },
-  ],
-  malapascua: [
-    {
-      id: 4,
-      title: "Thresher Shark Dive",
-      date: new Date(2025, 2, 8),
-      type: "dive-trip",
-    },
-    {
-      id: 5,
-      title: "Staff Meeting",
-      date: new Date(2025, 2, 20),
-      type: "meeting",
-    },
-  ],
-  siquijor: [
-    {
-      id: 6,
-      title: "Wall Dive Adventure",
-      date: new Date(2025, 2, 18),
-      type: "dive-trip",
-    },
-    {
-      id: 7,
-      title: "Deep Dive Certification",
-      date: new Date(2025, 2, 28),
-      type: "training",
-    },
-  ],
-  sipalay: [
-    {
-      id: 8,
-      title: "Shipwreck Dive",
-      date: new Date(2025, 2, 22),
-      type: "dive-trip",
-    },
-  ],
-};
+// Define the event type
+export type DiveEvent = {
+  id: number
+  title: string
+  date?: Date // For single-day events like dive trips
+  startDate?: Date // For multi-day events like courses
+  endDate?: Date // For multi-day events like courses
+  type: string
+  location?: string
+  status?: string
+  certificationLevel?: string
+}
 
-// All events for "All Centers" view
-const allEvents = [
-  ...diveCenterEvents.dauin.map(event => ({ ...event, center: "Sea Explorers Dauin" })),
-  ...diveCenterEvents.malapascua.map(event => ({ ...event, center: "Sea Explorers Malapascua" })),
-  ...diveCenterEvents.siquijor.map(event => ({ ...event, center: "Sea Explorers Siquijor" })),
-  ...diveCenterEvents.sipalay.map(event => ({ ...event, center: "Sea Explorers Sipalay" })),
-];
-
-export function DiveCalendar() {
+export function DiveCalendar({ events }: { events: DiveEvent[] }) {
   const [currentDate, setCurrentDate] = useState(new Date())
-  const { currentCenter, isAllCenters } = useDiveCenter();
-
-  // Select events based on current center or show all events
-  const diveEvents = isAllCenters
-    ? allEvents
-    : currentCenter
-    ? diveCenterEvents[currentCenter.id as keyof typeof diveCenterEvents]
-    : [];
 
   // Calendar navigation functions
   const nextMonth = () => {
@@ -139,14 +76,29 @@ export function DiveCalendar() {
   // Check if a day has events
   const getEventsForDay = (day: number | null) => {
     if (!day) return []
-
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
-    return diveEvents.filter(
-      (event) =>
-        event.date.getDate() === day &&
-        event.date.getMonth() === date.getMonth() &&
-        event.date.getFullYear() === date.getFullYear(),
-    )
+
+    return events.filter((event) => {
+      // For single-day events (dive trips)
+      if (event.date) {
+        return (
+          event.date.getDate() === day &&
+          event.date.getMonth() === date.getMonth() &&
+          event.date.getFullYear() === date.getFullYear()
+        )
+      }
+
+      // For multi-day events (courses)
+      if (event.startDate && event.endDate) {
+        const eventStart = new Date(event.startDate)
+        const eventEnd = new Date(event.endDate)
+        const currentDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+
+        return currentDay >= eventStart && currentDay <= eventEnd
+      }
+
+      return false
+    })
   }
 
   // Day of week labels
@@ -183,14 +135,13 @@ export function DiveCalendar() {
           {calendarDays.map((day, index) => (
             <div
               key={index}
-              className={`min-h-[100px] p-2 border rounded-md ${day ? "bg-card" : "bg-muted/20"} ${
-                day &&
-                new Date().getDate() === day &&
-                new Date().getMonth() === currentDate.getMonth() &&
-                new Date().getFullYear() === currentDate.getFullYear()
+              className={`min-h-[100px] p-2 border rounded-md ${day ? "bg-card" : "bg-muted/20"} ${day &&
+                  new Date().getDate() === day &&
+                  new Date().getMonth() === currentDate.getMonth() &&
+                  new Date().getFullYear() === currentDate.getFullYear()
                   ? "ring-2 ring-primary"
                   : ""
-              }`}
+                }`}
             >
               {day && (
                 <>
@@ -199,21 +150,51 @@ export function DiveCalendar() {
                     {getEventsForDay(day).map((event) => (
                       <div
                         key={event.id}
-                        className={`text-xs p-1 rounded truncate ${
-                          event.type === "dive-trip"
-                            ? "bg-primary/10 text-primary"
-                            : event.type === "maintenance"
-                              ? "bg-amber-500/10 text-amber-500"
-                              : event.type === "meeting"
-                                ? "bg-blue-500/10 text-blue-500"
-                                : "bg-secondary/10 text-secondary"
-                        }`}
+                        className={`text-xs p-1 rounded truncate ${event.type === "dive-trip"
+                            ? "bg-blue-700/20 text-blue-800 border border-blue-300"
+                            : event.type === "course"
+                              ? "bg-purple-500/10 text-purple-600 border border-purple-200"
+                              : event.type === "maintenance"
+                                ? "bg-amber-500/10 text-amber-500"
+                                : event.type === "meeting"
+                                  ? "bg-blue-500/10 text-blue-500"
+                                  : "bg-secondary/30 text-secondary"
+                          }`}
                       >
+                        <div className="flex items-center gap-1 mb-1">
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] px-1 py-0 h-3 ${event.type === "course"
+                                ? "border-purple-300 text-purple-600"
+                                : "border-black text-black"
+                              }`}
+                          >
+                            {event.type === "course" ? "COURSE" : "TRIP"}
+                          </Badge>
+                        </div>
                         {event.title}
-                        {isAllCenters && (
+                        {event.location && (
                           <span className="block text-[10px] opacity-75">
-                            {(event as any).center}
+                            {event.location}
                           </span>
+                        )}
+                        {event.certificationLevel && (
+                          <span className="block text-[10px] opacity-75">
+                            {event.certificationLevel}
+                          </span>
+                        )}
+                        {event.status && (
+                          <Badge
+                            variant="secondary"
+                            className={`text-[8px] px-1 py-0 h-4 mt-1 ${event.type === "dive-trip"
+                                ? "bg-blue-100 text-blue-700 border border-blue-200"
+                                : event.type === "course"
+                                  ? "bg-green-400 text-black border border-green-400"
+                                  : "bg-black text-white"
+                              }`}
+                          >
+                            {event.status}
+                          </Badge>
                         )}
                       </div>
                     ))}
