@@ -140,12 +140,12 @@ export function DashboardNav() {
       variant: pathname === "/course-tracker" ? "default" : "ghost",
       href: "/course-tracker",
     },
-    // {
-    //   title: "Calendar",
-    //   icon: Calendar,
-    //   variant: pathname === "/calendar" ? "default" : "ghost",
-    //   href: "/calendar",
-    // },
+    {
+      title: "Calendar",
+      icon: Calendar,
+      variant: pathname === "/calendar" ? "default" : "ghost",
+      href: "/calendar",
+    },
     
     ////Temporarily gets off
     // {

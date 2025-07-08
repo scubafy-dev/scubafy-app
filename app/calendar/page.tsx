@@ -91,7 +91,7 @@ export default function CalendarPage() {
       
       {loading ? (
         <div className="flex items-center justify-center p-8">
-          <div className="text-muted-foreground">Loading dive trips...</div>
+          <div className="text-muted-foreground">Loading Events...</div>
         </div>
       ) : (
         <DiveCalendar events={diveTrips} />
