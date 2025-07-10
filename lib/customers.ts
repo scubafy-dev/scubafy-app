@@ -39,6 +39,22 @@ export interface Customer {
       location: string | null;
     };
   }>;
+  courseStudents?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    course: {
+      id: string;
+      title: string;
+      cost: number | null;
+      startDate: Date | null;
+      endDate: Date | null;
+      status: string | null;
+      certificationLevel: string | null;
+      instructorName: string | null;
+      location: string | null;
+    };
+  }>;
 }
 
 
@@ -163,6 +179,11 @@ export async function getCustomerById(id: string) {
         include: {
           diveTrip: true
         }
+      },
+      courseStudents: {
+        include: {
+          course: true
+        }
       }
     }
   });
@@ -183,6 +204,11 @@ export async function getAllCustomers(diveCenterId?: string) {
       participants: {
         include: {
           diveTrip: true
+        }
+      },
+      courseStudents: {
+        include: {
+          course: true
         }
       }
     },

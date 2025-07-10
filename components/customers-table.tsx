@@ -103,6 +103,24 @@ export function CustomersTable(
 
   const router = useRouter();
 
+  // Copy customer ID to clipboard
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "ID copied to clipboard",
+        description: `Customer ID: ${text}`,
+      });
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      toast({
+        title: "Failed to copy ID",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Filter customers based on the selected dive center
   // const customers = React.useMemo(() => {
   //   if (isAllCenters) {
@@ -114,7 +132,10 @@ export function CustomersTable(
   // Get total payment for a customer
   const calculateTotal = (customer: Customer): number => {
     const accommodationTotal = customer.roomCost || 0;
-    const courseTotal = 0; // TODO: Add course relationship
+    const courseTotal = customer.courseStudents?.reduce(
+      (sum, courseStudent) => sum + (courseStudent.course.cost || 0),
+      0,
+    ) || 0;
     const divesTotal = customer.participants?.reduce(
       (sum, participant) => sum + (participant.diveTrip.price || 0),
       0,
@@ -179,21 +200,53 @@ export function CustomersTable(
       accessorKey: "currentCourse",
       header: "Current Course",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const course = row.getValue("currentCourse") as string;
-        return course
-          ? (
-            <div>
-              <Badge variant="outline">{course}</Badge>
+        const customer = row.original;
+        const activeCourses = customer.courseStudents?.filter(
+          courseStudent => courseStudent.course.status === "active" || courseStudent.course.status === "upcoming"
+        ) || [];
+        
+        if (activeCourses.length > 0) {
+          return (
+            <div className="space-y-1">
+              {activeCourses.map((courseStudent, index) => (
+                <Badge key={courseStudent.id} variant="outline" className="text-xs">
+                  {courseStudent.course.title}
+                </Badge>
+              ))}
             </div>
-          )
-          : <div className="text-muted-foreground">-</div>;
+          );
+        }
+        
+        return <div className="text-muted-foreground">-</div>;
       },
     },
     {
       accessorKey: "lastDive",
       header: "Last Dive",
       cell: ({ row }: { row: Row<Customer> }) => {
-        return <div>{row.getValue("lastDive")}</div>;
+        const customer = row.original;
+        const diveTrips = customer.participants || [];
+        
+        if (diveTrips.length > 0) {
+          // Sort by date to find the most recent dive
+          const sortedDives = diveTrips
+            .filter(participant => participant.diveTrip.date)
+            .sort((a, b) => new Date(b.diveTrip.date!).getTime() - new Date(a.diveTrip.date!).getTime());
+          
+          if (sortedDives.length > 0) {
+            const lastDive = sortedDives[0];
+            return (
+              <div className="text-sm">
+                <div className="font-medium">{lastDive.diveTrip.title}</div>
+                <div className="text-muted-foreground text-xs">
+                  {lastDive.diveTrip.date?.toLocaleDateString()}
+                </div>
+              </div>
+            );
+          }
+        }
+        
+        return <div className="text-muted-foreground">-</div>;
       },
     },
     {
@@ -246,7 +299,7 @@ export function CustomersTable(
                   Delete Customer
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Copy ID</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => copyToClipboard(customer.id)}>Copy ID</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </Dialog>
@@ -352,6 +405,17 @@ export function CustomersTable(
                         </p>
                       </div>
                     )}
+
+                    {selectedCustomer.courseStudents && selectedCustomer.courseStudents.length > 0 && (
+                      <div>
+                        <p className="text-sm font-medium">
+                          Current Courses
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedCustomer.courseStudents.length} course(s) enrolled
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -396,9 +460,47 @@ export function CustomersTable(
               <TabsContent value="courses">
                 <Card>
                   <CardContent className="pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      No courses booked
-                    </p>
+                    {selectedCustomer.courseStudents &&
+                        selectedCustomer.courseStudents.length > 0
+                      ? (
+                        <div className="space-y-4">
+                          {selectedCustomer.courseStudents.map(
+                            (courseStudent, index) => (
+                              <div
+                                key={courseStudent.id}
+                                className="border rounded-md p-3"
+                              >
+                                <div className="flex justify-between">
+                                  <p className="text-sm font-medium">
+                                    {courseStudent.course.title}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    ${courseStudent.course.cost?.toFixed(2) || "0.00"}
+                                  </p>
+                                </div>
+                                <div className="flex justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    {courseStudent.course.startDate?.toLocaleDateString() || "TBD"} - {courseStudent.course.endDate?.toLocaleDateString() || "TBD"}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {courseStudent.course.location || "Location TBD"}
+                                  </p>
+                                </div>
+                                <div className="mt-1">
+                                  <p className="text-xs text-muted-foreground">
+                                    Status: {courseStudent.course.status || "Unknown"} • Level: {courseStudent.course.certificationLevel || "Not specified"}
+                                  </p>
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )
+                      : (
+                        <p className="text-sm text-muted-foreground">
+                          No upcoming courses
+                        </p>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -511,6 +613,17 @@ export function CustomersTable(
                           <p className="text-sm">Accommodation</p>
                           <p className="text-sm font-medium">
                             ${selectedCustomer.roomCost?.toFixed(2)}
+                          </p>
+                        </div>
+                      )}
+                      {selectedCustomer.courseStudents && selectedCustomer.courseStudents.length > 0 && (
+                        <div className="flex justify-between">
+                          <p className="text-sm">Course Fees</p>
+                          <p className="text-sm font-medium">
+                            $
+                            {selectedCustomer.courseStudents
+                              .reduce((acc, courseStudent) => acc + (courseStudent.course.cost || 0), 0)
+                              .toFixed(2)}
                           </p>
                         </div>
                       )}
