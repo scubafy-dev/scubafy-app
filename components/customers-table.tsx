@@ -58,14 +58,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDiveCenter } from "@/lib/dive-center-context";
-import {
-  allCustomers,
-  customersByCenter,
-  Dive,
-  Equipment,
-} from "@/lib/mock-data/customers";
 import { Customer } from "@/lib/customers";
-import { mockCustomer } from "@/lib/mock-data/customers";
 import { AddCustomerForm } from "./add-customer-form";
 import {
   AlertDialog,
@@ -119,18 +112,17 @@ export function CustomersTable(
   // }, [currentCenter, isAllCenters]);
 
   // Get total payment for a customer
-  const calculateTotal = (): number => {
-    const customer = mockCustomer;
+  const calculateTotal = (customer: Customer): number => {
     const accommodationTotal = customer.roomCost || 0;
-    const courseTotal = customer.courseCost || 0;
-    const divesTotal = customer.upcomingDives.reduce(
-      (sum, dive) => sum + dive.cost,
+    const courseTotal = 0; // TODO: Add course relationship
+    const divesTotal = customer.participants?.reduce(
+      (sum, participant) => sum + (participant.diveTrip.price || 0),
       0,
-    );
-    const equipmentTotal = customer.rentedEquipment.reduce(
-      (sum, eq) => sum + eq.cost,
+    ) || 0;
+    const equipmentTotal = customer.Equipment?.reduce(
+      (sum, eq) => sum + (eq.rentPrice || 0),
       0,
-    );
+    ) || 0;
 
     return accommodationTotal + courseTotal + divesTotal + equipmentTotal;
   };
@@ -144,7 +136,6 @@ export function CustomersTable(
         return (
           <div className="flex items-center gap-3">
             <Avatar>
-              <AvatarImage src={mockCustomer.avatar} alt={customer.fullName} />
               <AvatarFallback>{customer.fullName.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
@@ -209,7 +200,7 @@ export function CustomersTable(
       id: "total",
       header: "Total Due",
       cell: ({ row }: { row: Row<Customer> }) => {
-        const total = calculateTotal();
+        const total = calculateTotal(row.original);
         return <div>${total.toFixed(2)}</div>;
       },
     },
@@ -291,12 +282,6 @@ export function CustomersTable(
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  {
-                    <AvatarImage
-                      src={mockCustomer.avatar}
-                      alt={selectedCustomer.fullName}
-                    />
-                  }
                   <AvatarFallback>
                     {selectedCustomer.fullName.charAt(0)}
                   </AvatarFallback>
@@ -305,12 +290,6 @@ export function CustomersTable(
               </DialogTitle>
               <DialogDescription>
                 Customer ID: {selectedCustomer.id}
-
-                {isAllCenters && mockCustomer.center && (
-                  <span className="ml-2">
-                    • Center: {mockCustomer.center}
-                  </span>
-                )}
               </DialogDescription>
             </DialogHeader>
 
@@ -342,7 +321,7 @@ export function CustomersTable(
                       <div>
                         <p className="text-sm font-medium">Phone</p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedCustomer.phoneNumber}
+                          {selectedCustomer.phoneNumber || "Not provided"}
                         </p>
                       </div>
                       <div>
@@ -350,26 +329,26 @@ export function CustomersTable(
                           Certification Level
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {selectedCustomer.certificationLevel}
+                          {selectedCustomer.certificationLevel || "Not specified"}
                         </p>
                       </div>
                       <div>
                         <p className="text-sm font-medium">Last Dive</p>
                         <p className="text-sm text-muted-foreground">
-                          {mockCustomer.lastDive}
+                          {selectedCustomer.participants && selectedCustomer.participants.length > 0 
+                            ? selectedCustomer.participants[0].diveTrip.date?.toLocaleDateString() 
+                            : "No dives recorded"}
                         </p>
                       </div>
                     </div>
 
-                    {mockCustomer.currentCourse && (
+                    {selectedCustomer.participants && selectedCustomer.participants.length > 0 && (
                       <div>
                         <p className="text-sm font-medium">
-                          Current Course
+                          Upcoming Dives
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {mockCustomer.currentCourse}
-                          {mockCustomer.courseStartDate &&
-                            ` (${mockCustomer.courseStartDate} to ${mockCustomer.courseEndDate})`}
+                          {selectedCustomer.participants.length} dive(s) booked
                         </p>
                       </div>
                     )}
@@ -380,13 +359,13 @@ export function CustomersTable(
               <TabsContent value="accommodation">
                 <Card>
                   <CardContent className="pt-4">
-                    {mockCustomer.room
+                    {selectedCustomer.roomNumber
                       ? (
                         <div className="space-y-4">
                           <div>
                             <p className="text-sm font-medium">Room</p>
                             <p className="text-sm text-muted-foreground">
-                              {mockCustomer.room}
+                              {selectedCustomer.roomNumber}
                             </p>
                           </div>
                           <div>
@@ -394,13 +373,13 @@ export function CustomersTable(
                               Number of Nights
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {mockCustomer.numberOfNights}
+                              {selectedCustomer.numberOfNights}
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-medium">Room Cost</p>
                             <p className="text-sm text-muted-foreground">
-                              ${mockCustomer.roomCost?.toFixed(2)}
+                              ${selectedCustomer.roomCost?.toFixed(2)}
                             </p>
                           </div>
                         </div>
@@ -417,52 +396,9 @@ export function CustomersTable(
               <TabsContent value="courses">
                 <Card>
                   <CardContent className="pt-4">
-                    {mockCustomer.currentCourse
-                      ? (
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-sm font-medium">Course</p>
-                            <p className="text-sm text-muted-foreground">
-                              {mockCustomer.currentCourse}
-                            </p>
-                          </div>
-                          {mockCustomer.courseStartDate && (
-                            <>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  Start Date
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {mockCustomer.courseStartDate}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-sm font-medium">
-                                  End Date
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {mockCustomer.courseEndDate}
-                                </p>
-                              </div>
-                            </>
-                          )}
-                          {mockCustomer.courseCost && (
-                            <div>
-                              <p className="text-sm font-medium">
-                                Course Cost
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                ${mockCustomer.courseCost?.toFixed(2)}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )
-                      : (
-                        <p className="text-sm text-muted-foreground">
-                          No courses booked
-                        </p>
-                      )}
+                    <p className="text-sm text-muted-foreground">
+                      No courses booked
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -470,30 +406,35 @@ export function CustomersTable(
               <TabsContent value="dives">
                 <Card>
                   <CardContent className="pt-4">
-                    {mockCustomer.upcomingDives &&
-                        mockCustomer.upcomingDives.length > 0
+                    {selectedCustomer.participants &&
+                        selectedCustomer.participants.length > 0
                       ? (
                         <div className="space-y-4">
-                          {mockCustomer.upcomingDives.map(
-                            (dive, index) => (
+                          {selectedCustomer.participants.map(
+                            (participant, index) => (
                               <div
-                                key={index}
+                                key={participant.id}
                                 className="border rounded-md p-3"
                               >
                                 <div className="flex justify-between">
                                   <p className="text-sm font-medium">
-                                    {dive.site}
+                                    {participant.diveTrip.title}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    ${dive.cost?.toFixed(2)}
+                                    ${participant.diveTrip.price?.toFixed(2) || "0.00"}
                                   </p>
                                 </div>
                                 <div className="flex justify-between mt-1">
                                   <p className="text-sm text-muted-foreground">
-                                    {dive.date}
+                                    {participant.diveTrip.date?.toLocaleDateString() || "TBD"}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    {dive.type}
+                                    {participant.diveTrip.location || "Location TBD"}
+                                  </p>
+                                </div>
+                                <div className="mt-1">
+                                  <p className="text-xs text-muted-foreground">
+                                    Participant: {participant.name} ({participant.certification})
                                   </p>
                                 </div>
                               </div>
@@ -513,32 +454,39 @@ export function CustomersTable(
               <TabsContent value="equipment">
                 <Card>
                   <CardContent className="pt-4">
-                    {mockCustomer.rentedEquipment &&
-                        mockCustomer.rentedEquipment.length > 0
+                    {selectedCustomer.Equipment &&
+                        selectedCustomer.Equipment.length > 0
                       ? (
                         <div className="space-y-4">
-                          {mockCustomer.rentedEquipment.map(
+                          {selectedCustomer.Equipment.map(
                             (equipment, index) => (
                               <div
-                                key={index}
+                                key={equipment.id}
                                 className="border rounded-md p-3"
                               >
                                 <div className="flex justify-between">
                                   <p className="text-sm font-medium">
-                                    {equipment.item}
+                                    {equipment.brand} {equipment.model}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    ${equipment.cost?.toFixed(2)}
+                                    ${equipment.rentPrice?.toFixed(2) || "0.00"}
                                   </p>
                                 </div>
                                 <div className="flex justify-between mt-1">
                                   <p className="text-sm text-muted-foreground">
-                                    Due: {equipment.dueDate}
+                                    Type: {equipment.type}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
                                     Condition: {equipment.condition}
                                   </p>
                                 </div>
+                                {equipment.rentFrom && equipment.rentTo && (
+                                  <div className="mt-1">
+                                    <p className="text-xs text-muted-foreground">
+                                      Rented: {equipment.rentFrom.toLocaleDateString()} - {equipment.rentTo.toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             ),
                           )}
@@ -566,33 +514,24 @@ export function CustomersTable(
                           </p>
                         </div>
                       )}
-                      {mockCustomer.courseCost &&
-                        mockCustomer.courseCost > 0 && (
-                        <div className="flex justify-between">
-                          <p className="text-sm">Course Fee</p>
-                          <p className="text-sm font-medium">
-                            ${mockCustomer.courseCost?.toFixed(2)}
-                          </p>
-                        </div>
-                      )}
-                      {mockCustomer.upcomingDives.length > 0 && (
+                      {selectedCustomer.participants && selectedCustomer.participants.length > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Dive Fees</p>
                           <p className="text-sm font-medium">
                             $
-                            {mockCustomer.upcomingDives
-                              .reduce((acc, dive) => acc + dive.cost, 0)
+                            {selectedCustomer.participants
+                              .reduce((acc, participant) => acc + (participant.diveTrip.price || 0), 0)
                               .toFixed(2)}
                           </p>
                         </div>
                       )}
-                      {mockCustomer.rentedEquipment.length > 0 && (
+                      {selectedCustomer.Equipment && selectedCustomer.Equipment.length > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Equipment Rental</p>
                           <p className="text-sm font-medium">
                             $
-                            {mockCustomer.rentedEquipment
-                              .reduce((acc, eq) => acc + eq.cost, 0)
+                            {selectedCustomer.Equipment
+                              .reduce((acc, eq) => acc + (eq.rentPrice || 0), 0)
                               .toFixed(2)}
                           </p>
                         </div>
@@ -600,7 +539,7 @@ export function CustomersTable(
                       <div className="pt-2 mt-2 border-t flex justify-between">
                         <p className="text-sm font-medium">Total</p>
                         <p className="text-sm font-medium">
-                          ${calculateTotal().toFixed(2)}
+                          ${calculateTotal(selectedCustomer).toFixed(2)}
                         </p>
                       </div>
                     </div>

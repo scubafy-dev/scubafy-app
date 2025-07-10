@@ -13,6 +13,32 @@ export interface Customer {
   roomCost: number | null;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Relationships
+  Equipment?: Array<{
+    id: string;
+    type: string;
+    brand: string;
+    model: string;
+    rentPrice: number | null;
+    rentFrom: Date | null;
+    rentTo: Date | null;
+    condition: string;
+  }>;
+  participants?: Array<{
+    id: string;
+    name: string;
+    certification: string;
+    level: string;
+    customerId?: string | null;
+    diveTrip: {
+      id: string;
+      title: string;
+      price: number | null;
+      date: Date | null;
+      location: string | null;
+    };
+  }>;
 }
 
 
@@ -127,6 +153,18 @@ export async function getCustomerById(id: string) {
   "use server";
   return await prisma.customer.findUnique({
     where: { id },
+    include: {
+      Equipment: {
+        where: {
+          status: "rented"
+        }
+      },
+      participants: {
+        include: {
+          diveTrip: true
+        }
+      }
+    }
   });
 }
 
@@ -136,6 +174,18 @@ export async function getAllCustomers(diveCenterId?: string) {
 
   return await prisma.customer.findMany({
     where: whereClause,
+    include: {
+      Equipment: {
+        where: {
+          status: "rented"
+        }
+      },
+      participants: {
+        include: {
+          diveTrip: true
+        }
+      }
+    },
     orderBy: { createdAt: "desc" },
   });
 }

@@ -102,7 +102,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
         name: string;
         certification: string;
         level: string;
-        customerId: string;
+        customerId?: string;
     }[] = [];
     
     try {
@@ -111,7 +111,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 name: participant.name,
                 certification: participant.certification,
                 level: participant.level,
-                customerId: participant?.customerId
+                customerId: participant?.customerId || undefined
             }));
         }
         console.log('Processed participants:', participants);
@@ -336,7 +336,7 @@ export async function updateDiveTrip(id: string | null, formData: any) {
         name: string;
         certification: string;
         level: string;
-        customerId: string;
+        customerId?: string;
     }[] = [];
     try {
         if (formData.participants && Array.isArray(formData.participants)) {
@@ -344,7 +344,7 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                 name: participant.name,
                 certification: participant.certification,
                 level: participant.level,
-                customerId: participant?.customerId
+                customerId: participant?.customerId || undefined
             }));
         }
         console.log('Processed participants (update):', participants);
