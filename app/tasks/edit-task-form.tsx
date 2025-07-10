@@ -38,6 +38,8 @@ import { updateTask, TaskWithAssignments } from "@/lib/task";
 import { getAllStaff } from "@/lib/staffs";
 import { Staff } from "@/app/generated/prisma";
 import { useRouter } from "next/navigation";
+import { useDiveCenter } from "@/lib/dive-center-context";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditTaskFormProps {
     task: TaskWithAssignments;
@@ -63,6 +65,9 @@ const formSchema = z.object({
 });
 
 export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
+    const {toast} =useToast()
+    const { currentCenter, isAllCenters, getCenterSpecificData } =
+    useDiveCenter();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
     const [isStaffLoading, setIsStaffLoading] = useState(true);
@@ -110,8 +115,16 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
         const fetchStaffMembers = async () => {
             setIsStaffLoading(true);
             try {
-                const staff = await getAllStaff();
-                setStaffMembers(staff as Staff[]);
+                if (currentCenter?.id) {
+                    const staff = await getAllStaff(currentCenter?.id);
+                    setStaffMembers(staff as Staff[]);
+                }else {
+                    toast({
+                      title: "Error",
+                      description: "Dive center Id required",
+                      variant: "destructive",
+                    });
+                  }
             } catch (error) {
                 console.error("Error fetching staff members:", error);
             } finally {
@@ -243,7 +256,7 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
                                             className={cn(
                                                 "w-full pl-3 text-left font-normal",
                                                 !field.value &&
-                                                    "text-muted-foreground",
+                                                "text-muted-foreground",
                                             )}
                                         >
                                             {field.value
@@ -265,14 +278,14 @@ export function EditTaskForm({ task, onSuccess }: EditTaskFormProps) {
                                         onSelect={field.onChange}
                                         disabled={(date) =>
                                             date <
-                                                new Date(
-                                                    new Date().setHours(
-                                                        0,
-                                                        0,
-                                                        0,
-                                                        0,
-                                                    ),
-                                                )}
+                                            new Date(
+                                                new Date().setHours(
+                                                    0,
+                                                    0,
+                                                    0,
+                                                    0,
+                                                ),
+                                            )}
                                     />
                                 </PopoverContent>
                             </Popover>

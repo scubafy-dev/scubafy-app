@@ -190,3 +190,37 @@ export const updateDiveCenter = async (centerId: string, formData: FormData) => 
         throw new Error("Failed to update dive center");
     }
 }
+
+export const deleteDiveCenter = async (centerId: string) => {
+    const session = await useAuth("/");
+    if (!session?.user?.id) {
+        throw new Error("User not authenticated");
+    }
+    if (!centerId) {
+        throw new Error("Dive center ID is required");
+    }
+    try {
+        // Check if the dive center exists and belongs to the user
+        const existingDiveCenter = await prisma.diveCenter.findFirst({
+            where: {
+                id: centerId,
+                ownerId: session.user.id,
+            },
+        });
+        if (!existingDiveCenter) {
+            throw new Error("Dive center not found or access denied");
+        }
+        // Delete the dive center
+        await prisma.diveCenter.delete({
+            where: { id: centerId },
+        });
+        // Return the updated list of dive centers
+        const diveCenters = await prisma.diveCenter.findMany({
+            where: { ownerId: session.user.id },
+        });
+        return diveCenters;
+    } catch (error) {
+        console.error("Error deleting dive center:", error);
+        throw new Error("Failed to delete dive center");
+    }
+};

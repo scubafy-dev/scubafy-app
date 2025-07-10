@@ -63,7 +63,7 @@ interface AddTaskFormProps {
 
 export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
   const { currentCenter, isAllCenters, getCenterSpecificData } =
-  useDiveCenter();
+    useDiveCenter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
@@ -98,7 +98,7 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
           });
           return;
         }
-        const res= await createTask(formData, currentCenter.id);
+        const res = await createTask(formData, currentCenter.id);
         if (res?.success) {
           toast({
             title: "Task added successfully"
@@ -140,8 +140,16 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
     // Fetch staff members from the server or context
     const fetchStaffMembers = async () => {
       try {
-        const staff = await getAllStaff();
-        setStaffMembers(staff as Staff[]);
+        if (currentCenter?.id) {
+          const staff = await getAllStaff(currentCenter.id);
+          setStaffMembers(staff as Staff[]);
+        } else {
+          toast({
+            title: "Error",
+            description: "Dive center Id required",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         console.error("Error fetching staff members:", error);
       }
@@ -203,9 +211,9 @@ export function AddTaskForm({ onSuccess }: AddTaskFormProps) {
                     >
                       {field.value?.length
                         ? staffMembers
-                            .filter((staff) => field.value.includes(staff.id))
-                            .map((staff) => staff.fullName)
-                            .join(", ")
+                          .filter((staff) => field.value.includes(staff.id))
+                          .map((staff) => staff.fullName)
+                          .join(", ")
                         : "Select staff members"}
                       <span className="ml-2">▼</span>
                     </Button>
