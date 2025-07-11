@@ -11,6 +11,7 @@ import {
     Plus,
     Search,
     Trash,
+    Package,
 } from "lucide-react";
 import {
     Dialog,
@@ -512,6 +513,7 @@ export default function EquipmentPage() {
                                                                     );
                                                                 }}
                                                             >
+                                                                <Package className="mr-2 h-4 w-4" />
                                                                 Rent or Return
                                                                 Equipment
                                                             </DropdownMenuItem>
@@ -571,7 +573,7 @@ export default function EquipmentPage() {
                     open={isAddEquipmentOpen}
                     onOpenChange={setIsAddEquipmentOpen}
                 >
-                    <DialogContent className="sm:max-w-[500px] p-0 gap-0">
+                    <DialogContent className="sm:max-w-[500px] max-h-[500px] overflow-y-scroll p-0 gap-0">
                         <DialogHeader className="p-4 pb-0">
                             <DialogTitle className="text-xl">
                                 Add New Equipment
@@ -614,7 +616,7 @@ export default function EquipmentPage() {
                     <DialogContent className="sm:max-w-[500px] p-0 gap-0">
                         <DialogHeader className="p-4 pb-0">
                             <DialogTitle className="text-xl">
-                                Rent this equipmet or make it available
+                                Rent equipment information
                             </DialogTitle>
                         </DialogHeader>
                         <RentEquipmentDialog

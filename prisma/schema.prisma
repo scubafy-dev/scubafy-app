@@ -205,6 +205,16 @@ model Equipment {
   size         String?       // Equipment size
   location     String?       // Storage location
 
+  // Quantity tracking
+  quantity     Int           @default(1)
+  minQuantity  Int           @default(0)  // Minimum quantity to maintain
+  availableQuantity Int      @default(1)  // Current available quantity
+
+  // Financial tracking
+  itemValue    Float?        // Purchase value of the item
+  rentalRate   Float?        // Rental rate per timeframe
+  rentalTimeframe String?    // "per day", "per dive", "per week", etc.
+
   purchaseDate DateTime?
 
   lastService DateTime?
@@ -214,11 +224,13 @@ model Equipment {
   usageCount Int?
   usageLimit Int?
 
+  // Rental tracking - for individual item rentals
   rentedToId String?
   rentedTo   Customer? @relation(fields: [rentedToId], references: [id], onDelete: SetNull)
   rentPrice  Float?    @default(0.0)
   rentFrom   DateTime?
   rentTo     DateTime?
+  rentedQuantity Int?  @default(1)  // How many items rented to this customer
 
   status    EquipmentStatus @default(available)
   condition Condition
@@ -227,8 +239,33 @@ model Equipment {
   // Relations
   diveCenterId String
   diveCenter   DiveCenter @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+  
+  // Equipment rentals
+  equipmentRentals EquipmentRental[]
 
   @@map("equipment")
+}
+
+// New model for tracking equipment rentals to customers
+model EquipmentRental {
+  id              String   @id @default(uuid())
+  equipmentId     String
+  customerId      String
+  quantity        Int      @default(1)
+  rentPrice       Float    @default(0.0)
+  rentFrom        DateTime
+  rentTo          DateTime?
+  returnedAt      DateTime?
+  status          String   @default("active") // "active", "returned", "overdue"
+  
+  // Relations
+  equipment Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("equipment_rentals")
 }
 
 enum CertificationLevel {
@@ -257,6 +294,9 @@ model Customer {
   
   // Add relationship to participants (dive trips)
   participants Participant[]
+
+  // Add relationship to equipment rentals
+  equipmentRentals EquipmentRental[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

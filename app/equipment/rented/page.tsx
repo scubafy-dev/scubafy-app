@@ -10,47 +10,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { useEffect, useState } from "react"
+import type { Equipment } from "@/types/equipment"
 
 export default function RentedEquipmentPage() {
   const router = useRouter()
+  const [rentedEquipment, setRentedEquipment] = useState<Equipment[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // This would normally be fetched from your database/API
-  const rentedEquipment = [
-    {
-      id: "EQ-1005",
-      type: "BCD",
-      sku: "BCD-LRG-001",
-      make: "Aqua Lung",
-      model: "Wave",
-      serialNumber: "BCD-5002",
-      size: "Large",
-      location: "Main Storage Room B2",
-      rentedTo: "John Smith",
-      rentedToEmail: "john@example.com",
-      rentedSince: "2025-03-15",
-      rentedUntil: "2025-03-28",
-      rentalRate: "$20.00",
-      rentalTimeframe: "per dive",
-      condition: "good"
-    },
-    {
-      id: "EQ-1008",
-      type: "Wetsuit",
-      sku: "WS-LRG-001",
-      make: "O'Neill",
-      model: "Reactor",
-      serialNumber: "WS-2002",
-      size: "Large",
-      location: "Gear Room A1",
-      rentedTo: "Sarah Johnson",
-      rentedToEmail: "sarah@example.com",
-      rentedSince: "2025-03-20",
-      rentedUntil: "2025-03-30",
-      rentalRate: "$18.00",
-      rentalTimeframe: "per dive",
-      condition: "fair"
-    }
-  ]
+  useEffect(() => {
+    fetch("/api/equipment/rented")
+      .then(res => res.json())
+      .then(data => {
+        setRentedEquipment(data)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <span className="text-muted-foreground text-sm">Loading rented equipment...</span>
+    </div>
+  )
 
   return (
     <DashboardShell>
@@ -82,7 +67,7 @@ export default function RentedEquipmentPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rentedEquipment.map((item) => (
+                {rentedEquipment?.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.id}</TableCell>
                     <TableCell>{item.type}</TableCell>
@@ -96,11 +81,15 @@ export default function RentedEquipmentPage() {
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                          <AvatarFallback>{item.rentedTo.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback>
+                            {item.rentedTo?.name
+                              ? item.rentedTo.name.split(' ').map((n: string) => n[0]).join('')
+                              : "?"}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{item.rentedTo}</div>
-                          <div className="text-xs text-muted-foreground">{item.rentedToEmail}</div>
+                          <div className="font-medium">{item.rentedTo?.name ?? "Unknown"}</div>
+                          <div className="text-xs text-muted-foreground">{item.rentedTo?.email ?? ""}</div>
                         </div>
                       </div>
                     </TableCell>

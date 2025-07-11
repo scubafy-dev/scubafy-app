@@ -9,56 +9,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { useEffect, useState } from "react"
+import type { Equipment } from "@/types/equipment"
 
 export default function AvailableEquipmentPage() {
   const router = useRouter()
+  const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // This would normally be fetched from your database/API
-  const availableEquipment = [
-    {
-      id: "EQ-1001",
-      type: "Scuba Tank",
-      sku: "TANK-80-001",
-      make: "ScubaPro",
-      model: "S80",
-      serialNumber: "ST-12345",
-      size: "80 cu ft",
-      location: "Main Storage Room A3",
-      lastInspection: "2025-01-15",
-      nextInspection: "2025-07-15",
-      trackUsage: true,
-      usageCount: 56,
-      usageLimit: 100,
-    },
-    {
-      id: "EQ-1004",
-      type: "BCD",
-      sku: "BCD-MED-001",
-      make: "Aqua Lung",
-      model: "Wave",
-      serialNumber: "BCD-5001",
-      size: "Medium",
-      location: "Main Storage Room B2",
-      lastInspection: "2025-02-10",
-      nextInspection: "2025-08-10",
-      trackUsage: false,
-    },
-    {
-      id: "EQ-1006",
-      type: "Regulator",
-      sku: "REG-PRO-001",
-      make: "Mares",
-      model: "Prestige",
-      serialNumber: "REG-3001",
-      size: "N/A",
-      location: "Main Storage Room C1",
-      lastInspection: "2025-03-01",
-      nextInspection: "2025-09-01",
-      trackUsage: true,
-      usageCount: 23,
-      usageLimit: 75,
-    },
-  ]
+  useEffect(() => {
+    fetch("/api/equipment/available")
+      .then(res => res.json())
+      .then(data => {
+        setAvailableEquipment(data)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <span className="text-muted-foreground text-sm">Loading available equipment...</span>
+    </div>
+  )
 
   return (
     <DashboardShell>
@@ -84,6 +60,7 @@ export default function AvailableEquipmentPage() {
                   <TableHead>Location</TableHead>
                   <TableHead>Last Inspection</TableHead>
                   <TableHead>Next Inspection</TableHead>
+                  <TableHead>Available</TableHead>
                   <TableHead>Usage</TableHead>
                 </TableRow>
               </TableHeader>
@@ -95,19 +72,18 @@ export default function AvailableEquipmentPage() {
                     <TableCell>{item.make} {item.model}</TableCell>
                     <TableCell>{item.size}</TableCell>
                     <TableCell>{item.location}</TableCell>
-                    <TableCell>{item.lastInspection}</TableCell>
-                    <TableCell>{item.nextInspection}</TableCell>
+                    <TableCell>{item.lastService ? new Date(item.lastService).toLocaleDateString() : "-"}</TableCell>
+                    <TableCell>{item.nextService ? new Date(item.nextService).toLocaleDateString() : "-"}</TableCell>
+                    <TableCell>{item.availableQuantity ?? "-"}</TableCell>
                     <TableCell>
-                      {item.trackUsage ? (
+                      {item.usageCount !== undefined && item.usageLimit !== undefined ? (
                         <div className="flex items-center gap-1">
-                          <span className={item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit * 0.8 ? "text-orange-500 font-medium" : ""}>
+                          <span className={item.usageCount >= item.usageLimit * 0.8 ? "text-orange-500 font-medium" : ""}>
                             {item.usageCount}/{item.usageLimit}
                           </span>
                           <Progress 
-                            value={(item.usageCount && item.usageLimit) ? (item.usageCount / item.usageLimit) * 100 : 0} 
-                            className={`h-1 w-16 ml-2 ${
-                              (item.usageCount && item.usageLimit && item.usageCount >= item.usageLimit * 0.8) ? "text-orange-400" : ""
-                            }`}
+                            value={(item.usageCount / item.usageLimit) * 100} 
+                            className={`h-1 w-16 ml-2 ${item.usageCount >= item.usageLimit * 0.8 ? "text-orange-400" : ""}`}
                           />
                         </div>
                       ) : (

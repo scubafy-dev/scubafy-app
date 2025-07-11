@@ -140,8 +140,8 @@ export function CustomersTable(
       (sum, participant) => sum + (participant.diveTrip.price || 0),
       0,
     ) || 0;
-    const equipmentTotal = customer.Equipment?.reduce(
-      (sum, eq) => sum + (eq.rentPrice || 0),
+    const equipmentTotal = customer.equipmentRentals?.reduce(
+      (sum, rental) => sum + (rental.rentPrice * rental.quantity),
       0,
     ) || 0;
 
@@ -556,36 +556,44 @@ export function CustomersTable(
               <TabsContent value="equipment">
                 <Card>
                   <CardContent className="pt-4">
-                    {selectedCustomer.Equipment &&
-                        selectedCustomer.Equipment.length > 0
+                    {selectedCustomer.equipmentRentals &&
+                        selectedCustomer.equipmentRentals.length > 0
                       ? (
                         <div className="space-y-4">
-                          {selectedCustomer.Equipment.map(
-                            (equipment, index) => (
+                          {selectedCustomer.equipmentRentals.map(
+                            (rental, index) => (
                               <div
-                                key={equipment.id}
+                                key={rental.id}
                                 className="border rounded-md p-3"
                               >
                                 <div className="flex justify-between">
                                   <p className="text-sm font-medium">
-                                    {equipment.brand} {equipment.model}
+                                    {rental.equipment.brand} {rental.equipment.model}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    ${equipment.rentPrice?.toFixed(2) || "0.00"}
+                                    ${rental.rentPrice?.toFixed(2) || "0.00"}
                                   </p>
                                 </div>
                                 <div className="flex justify-between mt-1">
                                   <p className="text-sm text-muted-foreground">
-                                    Type: {equipment.type}
+                                    Type: {rental.equipment.type}
                                   </p>
                                   <p className="text-sm text-muted-foreground">
-                                    Condition: {equipment.condition}
+                                    Qty: {rental.quantity}
                                   </p>
                                 </div>
-                                {equipment.rentFrom && equipment.rentTo && (
+                                <div className="flex justify-between mt-1">
+                                  <p className="text-sm text-muted-foreground">
+                                    Condition: {rental.equipment.condition}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    Status: {rental.status}
+                                  </p>
+                                </div>
+                                {rental.rentFrom && rental.rentTo && (
                                   <div className="mt-1">
                                     <p className="text-xs text-muted-foreground">
-                                      Rented: {equipment.rentFrom.toLocaleDateString()} - {equipment.rentTo.toLocaleDateString()}
+                                      Rented: {rental.rentFrom.toLocaleDateString()} - {rental.rentTo.toLocaleDateString()}
                                     </p>
                                   </div>
                                 )}
@@ -638,13 +646,13 @@ export function CustomersTable(
                           </p>
                         </div>
                       )}
-                      {selectedCustomer.Equipment && selectedCustomer.Equipment.length > 0 && (
+                      {selectedCustomer.equipmentRentals && selectedCustomer.equipmentRentals.length > 0 && (
                         <div className="flex justify-between">
                           <p className="text-sm">Equipment Rental</p>
                           <p className="text-sm font-medium">
                             $
-                            {selectedCustomer.Equipment
-                              .reduce((acc, eq) => acc + (eq.rentPrice || 0), 0)
+                            {selectedCustomer.equipmentRentals
+                              .reduce((acc, rental) => acc + (rental.rentPrice * rental.quantity), 0)
                               .toFixed(2)}
                           </p>
                         </div>

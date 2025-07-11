@@ -54,6 +54,16 @@ const equipmentSchema = z.object({
   condition: z.enum(["excellent", "good", "fair", "poor"]),
   notes: z.string().optional(),
   currentRental: z.string().optional(),
+  // New fields
+  quantity: z.string().min(1, {
+    message: "Quantity is required.",
+  }),
+  minQuantity: z.string().min(0, {
+    message: "Minimum quantity must be 0 or greater.",
+  }),
+  itemValue: z.string().optional(),
+  rentalRate: z.string().optional(),
+  rentalTimeframe: z.string().optional(),
 })
 
 type EquipmentFormValues = z.infer<typeof equipmentSchema>
@@ -83,6 +93,12 @@ export function EquipmentForm({ onSubmit, isLoading = false }: EquipmentFormProp
       status: "available",
       condition: "excellent",
       notes: "",
+      // New fields with defaults
+      quantity: "1",
+      minQuantity: "0",
+      itemValue: "",
+      rentalRate: "",
+      rentalTimeframe: "",
     },
   })
 
@@ -263,6 +279,88 @@ export function EquipmentForm({ onSubmit, isLoading = false }: EquipmentFormProp
                   <FormControl>
                     <Textarea placeholder="Add any additional notes here..." {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* New Quantity Fields */}
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Total Quantity</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="minQuantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum Quantity</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Financial Fields */}
+            <FormField
+              control={form.control}
+              name="itemValue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Item Value ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="rentalRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rental Rate ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="rentalTimeframe"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Rental Timeframe</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timeframe" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="per day">Per Day</SelectItem>
+                      <SelectItem value="per dive">Per Dive</SelectItem>
+                      <SelectItem value="per week">Per Week</SelectItem>
+                      <SelectItem value="per month">Per Month</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

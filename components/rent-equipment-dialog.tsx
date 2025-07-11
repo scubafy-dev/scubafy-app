@@ -29,6 +29,7 @@ import {
 import { ActionMode } from "@/types/all";
 import { useRouter } from "next/navigation";
 import { rentEquipment } from "@/lib/equipment";
+import { useToast } from "@/components/ui/use-toast";
 import { Condition, Customer, EquipmentStatus } from "@app/generated/prisma";
 import { getAllCustomers } from "@/lib/customers";
 import {
@@ -63,6 +64,7 @@ const formSchema = z.object({
     fullName: z.string().optional(),
     email: z.string().email().optional(),
     rentPrice: z.string().optional(),
+    quantity: z.string().optional(),
     rentFrom: z.date().optional(),
     rentTo: z.date().optional(),
 }).refine((data) => {
@@ -85,6 +87,7 @@ export function RentEquipmentDialog(
     const [customers, setCustomers] = useState<Customer[]>([]);
 
     const router = useRouter();
+    const { toast } = useToast();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -135,60 +138,92 @@ export function RentEquipmentDialog(
     function onSubmit(values: z.infer<typeof formSchema>) {
         setIsSubmitting(true);
 
-        // Simulate API call
-        setTimeout(async () => {
-            try {
-                const formData = new FormData();
-                Object.entries(values).forEach(([key, value]) => {
-                    formData.append(key, value?.toString());
-                });
-                
-                // Add dive center ID to form data for the server action
-                formData.append("diveCenterId", diveCenterId);
-                
-                const existingCustomer = formData.get("rentedTo") as string;
-                const rentPrice = formData.get("rentPrice")
-                    ? formData.get("rentPrice") as string
-                    : null;
-                const rentFrom = formData.get("rentFrom")
-                    ? formData.get("rentFrom") as string
-                    : null;
-                const rentTo = formData.get("rentTo")
-                    ? formData.get("rentTo") as string
-                    : null;
-                if (!equipment) {
-                    console.error("No equipment selected for rental.");
-                    setIsSubmitting(false);
-                    return;
-                }
-                if (existingCustomer) {
-                    await rentEquipment(
-                        equipment?.id,
-                        formData.get("rentedTo") as string,
-                        rentPrice,
-                        rentFrom,
-                        rentTo,
-                    );
-                } else {
-                    const newCustomer = await createCustomerAction(formData);
-                    await rentEquipment(
-                        equipment?.id,
-                        // @ts-ignore
-                        newCustomer.id,
-                        rentPrice,
-                        rentFrom,
-                        rentTo,
-                    );
-                }
-            } catch (error) {
-                console.error("Error renting:", error);
+        try {
+            if (!equipment) {
+                console.error("No equipment selected for rental.");
                 setIsSubmitting(false);
                 return;
             }
+
+            const existingCustomer = values.rentedTo;
+            const rentPrice = values.rentPrice ? parseFloat(values.rentPrice) : 0;
+            const rentFrom = values.rentFrom || new Date();
+            const rentTo = values.rentTo || null;
+            const quantity = values.quantity ? parseInt(values.quantity, 10) : 1;
+
+            if (existingCustomer) {
+                // Rent to existing customer
+                rentEquipment(
+                    equipment.id,
+                    existingCustomer,
+                    quantity,
+                    rentPrice,
+                    rentFrom,
+                    rentTo,
+                ).then(() => {
+                    setIsSubmitting(false);
+                    form.reset();
+                    router.refresh();
+                    onOpenChange(false);
+                    toast({
+                        title: "Equipment Rented",
+                        description: "Equipment has been successfully rented.",
+                    });
+                }).catch((error) => {
+                    console.error("Error renting equipment:", error);
+                    setIsSubmitting(false);
+                    toast({
+                        title: "Error",
+                        description: "Failed to rent equipment. Please try again.",
+                        variant: "destructive",
+                    });
+                });
+            } else if (values.fullName && values.email) {
+                // Create new customer and rent
+                const formData = new FormData();
+                formData.append("fullName", values.fullName);
+                formData.append("email", values.email);
+                formData.append("diveCenterId", diveCenterId);
+                
+                createCustomerAction(formData).then((result) => {
+                    if (result.success && result.data) {
+                        return rentEquipment(
+                            equipment.id,
+                            result.data.id,
+                            quantity,
+                            rentPrice,
+                            rentFrom,
+                            rentTo,
+                        );
+                    } else {
+                        throw new Error("Failed to create customer");
+                    }
+                }).then(() => {
+                    setIsSubmitting(false);
+                    form.reset();
+                    router.refresh();
+                    onOpenChange(false);
+                    toast({
+                        title: "Equipment Rented",
+                        description: "New customer created and equipment rented successfully.",
+                    });
+                }).catch((error) => {
+                    console.error("Error creating customer and renting equipment:", error);
+                    setIsSubmitting(false);
+                    toast({
+                        title: "Error",
+                        description: "Failed to create customer and rent equipment. Please try again.",
+                        variant: "destructive",
+                    });
+                });
+            } else {
+                console.error("No customer selected or new customer details provided");
+                setIsSubmitting(false);
+            }
+        } catch (error) {
+            console.error("Error in onSubmit:", error);
             setIsSubmitting(false);
-            form.reset();
-            router.refresh();
-        }, 1000);
+        }
     }
 
     return (
@@ -233,7 +268,8 @@ export function RentEquipmentDialog(
                                     </FormItem>
                                 )}
                             />
-                            <div className="mt-2">
+                            {/* Other Customer Name/Email Field */}
+                            {/* <div className="mt-2">
                                 Or enter name and email
                             </div>
                             <FormField
@@ -265,13 +301,14 @@ export function RentEquipmentDialog(
                                         <FormMessage />
                                     </FormItem>
                                 )}
-                            />
-                            <div>
+                            /> */}
+                            <div className="grid grid-cols-2 gap-4">
                                 <FormField
                                     control={form.control}
                                     name="rentPrice"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel>Price</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     placeholder="Price"
@@ -282,6 +319,25 @@ export function RentEquipmentDialog(
                                         </FormItem>
                                     )}
                                 />
+                                <FormField
+                                    control={form.control}
+                                    name="quantity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Quantity</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min="1"
+                                                    placeholder="1"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                                     <FormField
                                         control={form.control}
@@ -390,7 +446,6 @@ export function RentEquipmentDialog(
                                             </FormItem>
                                         )}
                                     />
-                                </div>
                             </div>
                             <div className="flex items-center justify-end gap-2 p-4 border-t bg-muted/50">
                                 <Button

@@ -25,6 +25,22 @@ export interface Customer {
     rentTo: Date | null;
     condition: string;
   }>;
+  equipmentRentals?: Array<{
+    id: string;
+    quantity: number;
+    rentPrice: number;
+    rentFrom: Date;
+    rentTo: Date | null;
+    returnedAt: Date | null;
+    status: string;
+    equipment: {
+      id: string;
+      type: string;
+      brand: string;
+      model: string;
+      condition: string;
+    };
+  }>;
   participants?: Array<{
     id: string;
     name: string;
@@ -175,6 +191,14 @@ export async function getCustomerById(id: string) {
           status: "rented"
         }
       },
+      equipmentRentals: {
+        where: {
+          status: "active"
+        },
+        include: {
+          equipment: true
+        }
+      },
       participants: {
         include: {
           diveTrip: true
@@ -199,6 +223,14 @@ export async function getAllCustomers(diveCenterId?: string) {
       Equipment: {
         where: {
           status: "rented"
+        }
+      },
+      equipmentRentals: {
+        where: {
+          status: "active"
+        },
+        include: {
+          equipment: true
         }
       },
       participants: {

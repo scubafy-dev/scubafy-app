@@ -8,49 +8,32 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useEffect, useState } from "react"
+import type { Equipment } from "@/types/equipment"
 
 export default function MaintenanceEquipmentPage() {
   const router = useRouter()
+  const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // This would normally be fetched from your database/API
-  const maintenanceEquipment = [
-    {
-      id: "EQ-1003",
-      type: "Scuba Tank",
-      sku: "TANK-63-001",
-      make: "Faber",
-      model: "F63",
-      serialNumber: "ST-12347",
-      size: "63 cu ft",
-      location: "Maintenance Room",
-      issue: "Visual inspection needed",
-      maintenanceSince: "2025-03-10",
-      expectedCompletion: "2025-03-28",
-      assignedTo: "Tech - David Lee",
-      condition: "fair",
-      trackUsage: true,
-      usageCount: 105,
-      usageLimit: 100,
-    },
-    {
-      id: "EQ-1007",
-      type: "Wetsuit",
-      sku: "WS-MED-001",
-      make: "O'Neill",
-      model: "Reactor",
-      serialNumber: "WS-2001",
-      size: "Medium",
-      location: "Maintenance Room",
-      issue: "Tear repair needed",
-      maintenanceSince: "2025-03-15",
-      expectedCompletion: "2025-03-26",
-      assignedTo: "Tech - Sarah Wang",
-      condition: "poor",
-      trackUsage: true,
-      usageCount: 98,
-      usageLimit: 90,
-    },
-  ]
+  useEffect(() => {
+    fetch("/api/equipment/maintenance")
+      .then(res => res.json())
+      .then(data => {
+        setMaintenanceEquipment(data)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <span className="text-muted-foreground text-sm">Loading maintenance equipment...</span>
+    </div>
+  )
 
   return (
     <DashboardShell>
