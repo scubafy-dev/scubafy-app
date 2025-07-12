@@ -1,3 +1,14 @@
+export interface EquipmentRentalCustomer {
+  id: string;
+  fullName: string;
+  email?: string;
+}
+
+export interface EquipmentRental {
+  customer?: EquipmentRentalCustomer;
+  // add other fields if needed
+}
+
 export interface Equipment {
   id: string;
   type: string;
@@ -47,6 +58,7 @@ export interface Equipment {
   lastInspection?: string;
   nextInspection?: string;
   trackUsage?: boolean;
+  equipmentRentals?: EquipmentRental[];
 }
 
 export interface EquipmentFormValues {

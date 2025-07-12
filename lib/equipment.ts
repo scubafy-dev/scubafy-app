@@ -354,6 +354,20 @@ export async function getInUseEquipment() {
 export async function getRentedEquipment() {
   return prisma.equipment.findMany({
     where: { status: "rented" },
+    include: {
+      equipmentRentals: {
+        where: { status: "active" },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+            }
+          }
+        }
+      }
+    }
   });
 }
 

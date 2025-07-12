@@ -82,14 +82,14 @@ export default function RentedEquipmentPage() {
                         <Avatar className="h-8 w-8">
                           <AvatarImage src="/placeholder.svg?height=32&width=32" />
                           <AvatarFallback>
-                            {item.rentedTo?.name
-                              ? item.rentedTo.name.split(' ').map((n: string) => n[0]).join('')
+                            {item.equipmentRentals?.[0]?.customer?.fullName
+                              ? item.equipmentRentals[0].customer.fullName.split(' ').map((n: string) => n[0]).join('')
                               : "?"}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{item.rentedTo?.name ?? "Unknown"}</div>
-                          <div className="text-xs text-muted-foreground">{item.rentedTo?.email ?? ""}</div>
+                          <div className="font-medium">{(item.equipmentRentals?.[0]?.customer?.fullName) ?? "Unknown"}</div>
+                          <div className="text-xs text-muted-foreground">{(item.equipmentRentals?.[0]?.customer?.email) ?? ""}</div>
                         </div>
                       </div>
                     </TableCell>
