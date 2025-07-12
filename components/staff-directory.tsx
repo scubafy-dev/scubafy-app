@@ -43,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useToast } from "./ui/use-toast";
 
 // Define the permissions available in the system
 const accessOptions = [
@@ -115,6 +116,7 @@ export function StaffDirectory(
   const [showAddStaffDialog, setShowAddStaffDialog] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<StaffWithPermissions | null>(null);
+  const { toast } = useToast();
 
   console.log('selectedStaff', selectedStaff)
   // const filteredStaff = staff.filter((member) => {
@@ -147,6 +149,7 @@ export function StaffDirectory(
                 <TableHead>Contact</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Age/Gender</TableHead>
+                <TableHead>Staff Code</TableHead>
                 <TableHead>Access Permissions</TableHead>
                 <TableHead>Salary</TableHead>
                 <TableHead>Status</TableHead>
@@ -207,6 +210,37 @@ export function StaffDirectory(
                             Not specified
                           </span>
                         )}
+                    </TableCell>
+                    <TableCell>
+                      {member.staffCode ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="font-mono text-xs">
+                            {member.staffCode}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => {
+                              navigator.clipboard.writeText(member.staffCode!).then(() => {
+                                toast({
+                                  title: "Staff code copied!",
+                                  description: "Staff code copied to clipboard.",
+                                });
+                              });
+                            }}
+                            title="Copy staff code"
+                          >
+                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">
+                          Not assigned
+                        </span>
+                      )}
                     </TableCell>
                     <TableCell className="max-w-[200px]">
                       <div className="flex flex-wrap gap-1">
