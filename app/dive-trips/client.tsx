@@ -44,7 +44,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AddTripForm } from "@/components/add-trip-form";
-import { VehicleManagement } from "@/components/vehicle-management";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -135,14 +134,6 @@ export default function DiveTripsPage() {
         <div className="flex justify-between items-center mb-4">
           <TabsList>
             <TabsTrigger value="trips">Trips</TabsTrigger>
-            <TabsTrigger value="vehicles" className="flex items-center gap-1">
-              <span>Vehicles</span>
-              <div className="flex -space-x-1">
-                <Anchor className="h-3 w-3" />
-                <Car className="h-3 w-3" />
-                <Ship className="h-3 w-3" />
-              </div>
-            </TabsTrigger>
           </TabsList>
 
           {activeTab === "trips" && (
@@ -497,10 +488,6 @@ export default function DiveTripsPage() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="vehicles">
-          <VehicleManagement />
         </TabsContent>
       </Tabs>
 

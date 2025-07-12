@@ -13,6 +13,64 @@ export interface Customer {
   roomCost: number | null;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Relationships
+  Equipment?: Array<{
+    id: string;
+    type: string;
+    brand: string;
+    model: string;
+    rentPrice: number | null;
+    rentFrom: Date | null;
+    rentTo: Date | null;
+    condition: string;
+  }>;
+  equipmentRentals?: Array<{
+    id: string;
+    quantity: number;
+    rentPrice: number;
+    rentFrom: Date;
+    rentTo: Date | null;
+    returnedAt: Date | null;
+    status: string;
+    equipment: {
+      id: string;
+      type: string;
+      brand: string;
+      model: string;
+      condition: string;
+    };
+  }>;
+  participants?: Array<{
+    id: string;
+    name: string;
+    certification: string;
+    level: string;
+    customerId?: string | null;
+    diveTrip: {
+      id: string;
+      title: string;
+      price: number | null;
+      date: Date | null;
+      location: string | null;
+    };
+  }>;
+  courseStudents?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    course: {
+      id: string;
+      title: string;
+      cost: number | null;
+      startDate: Date | null;
+      endDate: Date | null;
+      status: string | null;
+      certificationLevel: string | null;
+      instructorName: string | null;
+      location: string | null;
+    };
+  }>;
 }
 
 
@@ -127,6 +185,31 @@ export async function getCustomerById(id: string) {
   "use server";
   return await prisma.customer.findUnique({
     where: { id },
+    include: {
+      Equipment: {
+        where: {
+          status: "rented"
+        }
+      },
+      equipmentRentals: {
+        where: {
+          status: "active"
+        },
+        include: {
+          equipment: true
+        }
+      },
+      participants: {
+        include: {
+          diveTrip: true
+        }
+      },
+      courseStudents: {
+        include: {
+          course: true
+        }
+      }
+    }
   });
 }
 
@@ -136,6 +219,31 @@ export async function getAllCustomers(diveCenterId?: string) {
 
   return await prisma.customer.findMany({
     where: whereClause,
+    include: {
+      Equipment: {
+        where: {
+          status: "rented"
+        }
+      },
+      equipmentRentals: {
+        where: {
+          status: "active"
+        },
+        include: {
+          equipment: true
+        }
+      },
+      participants: {
+        include: {
+          diveTrip: true
+        }
+      },
+      courseStudents: {
+        include: {
+          course: true
+        }
+      }
+    },
     orderBy: { createdAt: "desc" },
   });
 }

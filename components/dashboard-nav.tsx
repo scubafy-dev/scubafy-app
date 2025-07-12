@@ -4,7 +4,7 @@ import type React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BarChart3, Calendar, LifeBuoy, Settings, Users, Wallet, Anchor, ClipboardList, FileText, GraduationCap } from "lucide-react"
+import { BarChart3, Calendar, LifeBuoy, Settings, Users, Wallet, Anchor, ClipboardList, FileText, GraduationCap, Car } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -114,6 +114,12 @@ export function DashboardNav() {
       variant: pathname === "/equipment" ? "default" : "ghost",
       href: "/equipment",
       //label: "2",
+    },
+    {
+      title: "Vehicle Management",
+      icon: Car,
+      variant: pathname === "/vehicles" ? "default" : "ghost",
+      href: "/vehicles",
     },
     {
       title: "Staff",

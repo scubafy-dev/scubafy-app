@@ -22,6 +22,18 @@ import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "@/components/theme-provider";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import { getIndividualDiveCenters, updateDiveCenter } from "@/lib/dive-center";
+import { useRouter } from "next/navigation";
+import {
+    AlertDialog,
+    AlertDialogTrigger,
+    AlertDialogContent,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogCancel,
+    AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export default function SettingsClient() {
     const { toast } = useToast();
@@ -31,6 +43,8 @@ export default function SettingsClient() {
     const [isLoading, setIsLoading] = useState(true);
     const [diveCenterData, setDiveCenterData] = useState<any>(null);
     const { currentCenter, isAllCenters, getCenterSpecificData, setDiveCenters, setCurrentCenter, updateCenter } = useDiveCenter();
+    const router = useRouter();
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // Fetch dive center data when component mounts
     useEffect(() => {
@@ -106,19 +120,51 @@ export default function SettingsClient() {
         }
     };
 
-    const handleSave = () => {
-        setIsSaving(true);
-
-        // Simulate API call
-        setTimeout(() => {
-            setIsSaving(false);
-
+    const handleDeleteDiveCenter = async () => {
+        if (!currentCenter?.id) {
             toast({
-                title: "Settings saved",
-                description: "Your settings have been updated successfully.",
+                title: "Error",
+                description: "No dive center selected.",
+                variant: "destructive",
             });
-        }, 1000);
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const res = await fetch(`/api/dive-center?centerId=${currentCenter.id}`, {
+                method: "DELETE",
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to delete dive center");
+            const updatedCenters = data.diveCenters;
+            setDiveCenters(updatedCenters);
+            if (updatedCenters.length > 0) {
+                setCurrentCenter(updatedCenters[0]);
+                toast({
+                    title: "Deleted",
+                    description: "Dive center deleted. Switched to another center.",
+                });
+            } else {
+                setCurrentCenter(null);
+                toast({
+                    title: "No Dive Centers",
+                    description: "All dive centers deleted. Please create a new one.",
+                    variant: "destructive",
+                });
+                // Optionally, redirect or open a modal to create a new center
+            }
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to delete dive center.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSaving(false);
+            setDeleteDialogOpen(false);
+        }
     };
+
 
 
     return (
@@ -127,10 +173,6 @@ export default function SettingsClient() {
                 heading="Settings"
                 text="Manage your dive center settings and preferences."
             >
-                <Button onClick={handleSave} disabled={isSaving}>
-                    <Save className="mr-2 h-4 w-4" />{" "}
-                    {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
             </DashboardHeader>
 
             <>
@@ -208,10 +250,31 @@ export default function SettingsClient() {
                                                 />
                                             </div>
                                         </CardContent>
-                                        <CardFooter className="flex justify-end">
+                                        <CardFooter className="flex justify-between">
                                             <Button type="submit" disabled={isSaving}>
                                                 {isSaving ? "Saving..." : "Save Changes"}
                                             </Button>
+                                            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button type="button" variant="destructive" disabled={isSaving}>
+                                                        Delete Dive Center
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Delete Dive Center?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Are you sure you want to delete this dive center? This action cannot be undone and will remove all associated data.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={handleDeleteDiveCenter} disabled={isSaving}>
+                                                            {isSaving ? "Deleting..." : "Delete"}
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </CardFooter>
                                     </form>
                                 </Card>

@@ -307,7 +307,7 @@ export function AddStaffDialog(
               name="salary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Salary (monthly in USD)</FormLabel>
+                  <FormLabel>Salary</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 2000" {...field} />
                   </FormControl>

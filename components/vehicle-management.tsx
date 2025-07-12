@@ -109,7 +109,7 @@ export function VehicleManagement() {
         if (currentCenter?.id) {
           const [vehiclesData, staffData] = await Promise.all([
             getAllFleetVehicles(currentCenter.id),
-            getAllStaff()
+            getAllStaff(currentCenter.id)
           ])
           console.log('vehiclesData', vehiclesData)
           setVehicles(vehiclesData)

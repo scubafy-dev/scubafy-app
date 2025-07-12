@@ -9,29 +9,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Progress } from "@/components/ui/progress"
+import { useEffect, useState } from "react"
+import type { Equipment } from "@/types/equipment"
 
 export default function InUseEquipmentPage() {
   const router = useRouter()
+  const [inUseEquipment, setInUseEquipment] = useState<Equipment[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // This would normally be fetched from your database/API
-  const inUseEquipment = [
-    {
-      id: "EQ-1002",
-      type: "Scuba Tank",
-      sku: "TANK-80-002",
-      make: "ScubaPro",
-      model: "S80",
-      serialNumber: "ST-12346",
-      size: "80 cu ft",
-      location: "Main Storage Room A3",
-      inUseBy: "Staff - Mark Wilson",
-      inUseSince: "2025-03-15",
-      expectedReturn: "2025-03-25",
-      trackUsage: true,
-      usageCount: 78,
-      usageLimit: 100,
-    },
-  ]
+  useEffect(() => {
+    fetch("/api/equipment/in-use")
+      .then(res => res.json())
+      .then(data => {
+        setInUseEquipment(data)
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[300px]">
+      <svg className="animate-spin h-8 w-8 text-blue-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      </svg>
+      <span className="text-muted-foreground text-sm">Loading in-use equipment...</span>
+    </div>
+  )
 
   return (
     <DashboardShell>

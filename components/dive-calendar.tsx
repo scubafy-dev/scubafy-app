@@ -108,7 +108,7 @@ export function DiveCalendar({ events }: { events: DiveEvent[] }) {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Dive Schedule</CardTitle>
+          <CardTitle>Schedule Events</CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={prevMonth}>
               <ChevronLeft className="h-4 w-4" />

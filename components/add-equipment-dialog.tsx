@@ -91,14 +91,14 @@ export function AddEquipmentDialog(
     usageCount: equipment?.usageCount?.toString() ?? "",
     usageLimit: equipment?.usageLimit?.toString() ?? "",
     notes: equipment?.notes ?? "",
-    quantity: "1",
-    trackMinQuantity: false,
+    quantity: equipment?.quantity?.toString() ?? "1",
+    trackMinQuantity: equipment?.minQuantity ? equipment.minQuantity > 0 : false,
     trackUsage: false,
     lastInspection: formatDateForInput(equipment?.lastService),
     nextInspection: formatDateForInput(equipment?.nextService),
-    itemValue: "",
-    rentalRate: "",
-    rentalTimeframe: "Per Dive",
+    itemValue: equipment?.itemValue?.toString() ?? "",
+    rentalRate: equipment?.rentalRate?.toString() ?? "",
+    rentalTimeframe: equipment?.rentalTimeframe ?? "Per Dive",
   });
   const router = useRouter();
 
@@ -138,6 +138,12 @@ export function AddEquipmentDialog(
         usageCount: formData.usageCount || null,
         usageLimit: formData.usageLimit || null,
         notes: formData.notes || "",
+        // New fields
+        quantity: formData.quantity || "1",
+        minQuantity: formData.trackMinQuantity ? "1" : "0",
+        itemValue: formData.itemValue || null,
+        rentalRate: formData.rentalRate || null,
+        rentalTimeframe: formData.rentalTimeframe || null,
       };
 
       const res = await createEquipment(equipmentData, currentCenter?.id);
@@ -169,6 +175,12 @@ export function AddEquipmentDialog(
           usageCount: formData.usageCount || null,
           usageLimit: formData.usageLimit || null,
           notes: formData.notes || "",
+          // New fields
+          quantity: formData.quantity || "1",
+          minQuantity: formData.trackMinQuantity ? "1" : "0",
+          itemValue: formData.itemValue || null,
+          rentalRate: formData.rentalRate || null,
+          rentalTimeframe: formData.rentalTimeframe || null,
         };
 
         const res = await updateEquipment(equipment.id, equipmentData);

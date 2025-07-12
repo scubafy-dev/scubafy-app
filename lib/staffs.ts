@@ -170,6 +170,9 @@ export async function getStaffById(id: string) {
 
 export async function getAllStaff(diveCenterId?: string) {
   "use server";
+  if(!diveCenterId){
+    throw new Error("Missing dive center ID");
+  }
   const whereClause = diveCenterId ? { diveCenterId } : {};
 
   const rows = await prisma.staff.findMany({
