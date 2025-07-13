@@ -222,19 +222,19 @@ export async function getAllStaff(diveCenterId?: string) {
 //   }))
 // }
 
-export async function verifyStaffCode(staffCode: string, diveCenterId: string) {
+export async function verifyStaffCode(staffCode: string, userEmail: string) {
   try {
-    console.log("verifyStaffCode called with:", { staffCode, diveCenterId });
+    console.log("verifyStaffCode called with:", { staffCode, userEmail });
 
     const staff = await prisma.staff.findFirst({
       where: {
         staffCode,
-        diveCenterId,
+        email: userEmail,
         status: StaffStatus.active,
       },
       include: {
         permissions: { select: { permission: true } },
-        diveCenter: { select: { name: true } },
+        diveCenter: { select: { id: true, name: true } },
       },
     });
 
@@ -245,11 +245,17 @@ export async function verifyStaffCode(staffCode: string, diveCenterId: string) {
       staffCode: staff.staffCode,
       status: staff.status,
       diveCenterId: staff.diveCenterId,
+      diveCenterName: staff.diveCenter?.name,
     } : null);
 
     if (!staff) {
       console.log("Staff not found or not active");
       return { success: false, message: "Invalid staff code or staff not found" };
+    }
+
+    if (!staff.diveCenter) {
+      console.log("Staff has no dive center assigned");
+      return { success: false, message: "Staff is not assigned to any dive center" };
     }
 
     return {
@@ -258,6 +264,7 @@ export async function verifyStaffCode(staffCode: string, diveCenterId: string) {
         ...staff,
         permissions: staff.permissions.map((p) => p.permission),
       },
+      diveCenter: staff.diveCenter,
     };
   } catch (error) {
     console.error("Error verifying staff code:", error);

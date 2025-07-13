@@ -3,19 +3,19 @@ import { verifyStaffCode } from "@/lib/staffs";
 
 export async function POST(request: NextRequest) {
   try {
-    const { staffCode, diveCenterId } = await request.json();
+    const { staffCode, userEmail } = await request.json();
 
-    console.log("Verifying staff code:", { staffCode, diveCenterId });
+    console.log("Verifying staff code:", { staffCode, userEmail });
 
-    if (!staffCode || !diveCenterId) {
+    if (!staffCode || !userEmail) {
       console.log("Missing required fields");
       return NextResponse.json(
-        { error: "Staff code and dive center ID are required" },
+        { error: "Staff code and user email are required" },
         { status: 400 }
       );
     }
 
-    const result = await verifyStaffCode(staffCode, diveCenterId);
+    const result = await verifyStaffCode(staffCode, userEmail);
     console.log("Verification result:", result);
 
     if (!result.success) {
@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       staff: result.staff,
+      diveCenter: result.diveCenter,
     });
   } catch (error) {
     console.error("Error in verify-staff-code API:", error);

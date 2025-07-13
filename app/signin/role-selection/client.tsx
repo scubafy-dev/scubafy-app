@@ -99,8 +99,8 @@ export default function RoleSelectionClient() {
             return;
         }
 
-        if (!currentCenter?.id) {
-            setError("No dive center selected");
+        if (!session?.user?.email) {
+            setError("User email not found");
             return;
         }
 
@@ -115,7 +115,7 @@ export default function RoleSelectionClient() {
                 },
                 body: JSON.stringify({
                     staffCode: staffCode.trim(),
-                    diveCenterId: currentCenter.id,
+                    userEmail: session.user.email,
                 }),
             });
 
@@ -128,6 +128,13 @@ export default function RoleSelectionClient() {
 
             if (data.success) {
                 console.log("Staff verified:", data.staff);
+                console.log("Dive center:", data.diveCenter);
+                
+                // Store dive center information
+                if (data.diveCenter) {
+                    localStorage.setItem("currentDiveCenter", JSON.stringify(data.diveCenter));
+                }
+                
                 await saveRoleToDatabase("staff", data.staff);
             } else {
                 setError(data.error || "Invalid staff code");
