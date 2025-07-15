@@ -66,7 +66,20 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
         
         setDiveCenters(centers);
         
-        // After fetching centers, check localStorage for saved selection
+        // --- Staff logic: use currentDiveCenter from localStorage if present ---
+        const staffData = typeof window !== "undefined" ? localStorage.getItem("staffData") : null;
+        const savedDiveCenter = typeof window !== "undefined" ? localStorage.getItem("currentDiveCenter") : null;
+        if (staffData && savedDiveCenter) {
+          try {
+            const parsed = JSON.parse(savedDiveCenter);
+            setCurrentCenter(parsed);
+            setIsAllCenters(false);
+            return;
+          } catch (e) {
+            // fallback to old logic if parsing fails
+          }
+        }
+        // --- Manager logic: fallback to existing selection logic ---
         const savedCenterId = localStorage.getItem("currentCenterId");
         const savedIsAllCenters = localStorage.getItem("isAllCenters") === "true";
 

@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/components/sidebar-provider"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { AnyRecord } from "node:dns"
+import { useEffect, useState } from "react";
 
 interface NavLink {
   title: string
@@ -17,6 +19,7 @@ interface NavLink {
   icon: React.ComponentType<{ className?: string }>
   variant: "default" | "ghost"
   href: string
+  id?:any
 }
 
 interface NavProps {
@@ -79,8 +82,8 @@ export function Nav({ links }: NavProps) {
 }
 
 export function DashboardNav() {
-  const pathname = usePathname()
-  const { collapsed, setCollapsed } = useSidebar()
+  const pathname = usePathname();
+  const { collapsed, setCollapsed } = useSidebar();
 
   const links: NavLink[] = [
     {
@@ -88,85 +91,97 @@ export function DashboardNav() {
       icon: BarChart3,
       variant: pathname === "/" ? "default" : "ghost",
       href: "/",
+      id: "overview"
     },
     {
       title: "Dive Trips",
       icon: Anchor,
       variant: pathname === "/dive-trips" ? "default" : "ghost",
       href: "/dive-trips",
-      //label: "5",
+      id: "diveTrips"
     },
-    // {
-    //   title: "Dive Trips",
-    //   icon: Anchor,
-    //   variant: pathname === "/" || pathname === "/dive-trips" ? "default" : "ghost",
-    //   href: "/dive-trips",
-    // },
     {
       title: "Customers",
       icon: Users,
       variant: pathname === "/customers" ? "default" : "ghost",
       href: "/customers",
+      id: "customers"
     },
     {
       title: "Equipment",
       icon: LifeBuoy,
       variant: pathname === "/equipment" ? "default" : "ghost",
       href: "/equipment",
-      //label: "2",
+      id: "equipment"
     },
     {
       title: "Vehicle Management",
       icon: Car,
       variant: pathname === "/vehicles" ? "default" : "ghost",
       href: "/vehicles",
+      id: "vehicles"
     },
     {
       title: "Staff",
       icon: Users,
       variant: pathname === "/staff" ? "default" : "ghost",
       href: "/staff",
+      id: "staff"
     },
     {
       title: "Tasks",
       icon: ClipboardList,
       variant: pathname === "/tasks" ? "default" : "ghost",
       href: "/tasks",
-      //label: "3",
+      id: "tasks"
     },
-    // {
-    //   title: "Reports",
-    //   icon: FileText,
-    //   variant: pathname === "/reports" ? "default" : "ghost",
-    //   href: "/reports",
-    // },
     {
       title: "Course Tracker",
       icon: GraduationCap,
       variant: pathname === "/course-tracker" ? "default" : "ghost",
       href: "/course-tracker",
+      id: "courseTracker"
     },
     {
       title: "Calendar",
       icon: Calendar,
       variant: pathname === "/calendar" ? "default" : "ghost",
       href: "/calendar",
+      id: "calendar"
     },
-    
-    ////Temporarily gets off
-    // {
-    //   title: "Finances",
-    //   icon: Wallet,
-    //   variant: pathname === "/finances" ? "default" : "ghost",
-    //   href: "/finances",
-    // },
     {
       title: "Settings",
       icon: Settings,
       variant: pathname === "/settings" ? "default" : "ghost",
       href: "/settings",
+      id: "settings"
     },
-  ]
+  ];
+
+  // State to hold filtered links
+  const [filteredLinks, setFilteredLinks] = useState<NavLink[] | null>(null);
+
+  useEffect(() => {
+    // This runs only on the client
+    const staffData = localStorage.getItem("staffData");
+    if (staffData) {
+      let staffPermissions: string[] = [];
+      try {
+        staffPermissions = JSON.parse(staffData).permissions || [];
+      } catch {}
+      console.log('staffPermissions',staffPermissions)
+      setFilteredLinks(links.filter(link => staffPermissions.includes(link.id)));
+    } else {
+      setFilteredLinks(links); // Manager: show all
+    }
+  }, [pathname]);
+
+  if (!filteredLinks) {
+    // Optionally show a spinner or nothing while loading
+    return null;
+  }
+
+  console.log('filteredLinks',filteredLinks)
 
   return (
     <div
@@ -175,9 +190,9 @@ export function DashboardNav() {
       onMouseLeave={() => setCollapsed(true)}
     >
       <div className="flex flex-col gap-1 py-4">
-        <Nav links={links} />
+        <Nav links={filteredLinks} />
       </div>
     </div>
-  )
+  );
 }
 

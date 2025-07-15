@@ -68,15 +68,17 @@ export default function RoleSelectionClient() {
         }
 
         try {
-            await updateUserRole(session.user.email, selectedRole as Role);
-            
-            // If staff, also store staff information in session
-            if (selectedRole === "staff" && staffData) {
-                // Store staff data in localStorage for session management
+            if (selectedRole === "manager") {
+                await updateUserRole(session.user.email, selectedRole as Role);
+                router.push(callbackUrl);
+            } else if (selectedRole === "staff" && staffData) {
+                // Store staff data and dive center in localStorage for session management
                 localStorage.setItem("staffData", JSON.stringify(staffData));
+                if (staffData.diveCenter) {
+                    localStorage.setItem("currentDiveCenter", JSON.stringify(staffData.diveCenter));
+                }
+                router.push(callbackUrl);
             }
-            
-            router.push(callbackUrl);
         } catch (error) {
             console.error("Error saving role:", error);
             setError("Failed to save role. Please try again.");
