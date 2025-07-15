@@ -214,7 +214,7 @@ model StaffPermission {
 model Staff {
   id                     String                     @id @default(uuid())
   fullName               String
-  email                  String                     @unique
+  email                  String
   phoneNumber            String?
   age                    Int?
   gender                 Gender?
@@ -235,6 +235,7 @@ model Staff {
   instructorAssignments  TripInstructorAssignment[]
   vehicleCrewAssignments VehicleCrewAssignment[]
 
+  @@unique([email, diveCenterId])
   @@map("staff")
 }
 
