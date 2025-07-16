@@ -16,6 +16,7 @@ export interface StaffWithPermissions {
   address: string | null;
   emergencyContact: string | null;
   bio: string | null;
+  staffCode: string | null;
   createdAt: Date;
   updatedAt: Date;
   permissions: Permission[];
@@ -76,6 +77,23 @@ export async function createStaff(formData: FormData, diveCenterId: string) {
     throw new Error("Missing dive center ID");
   }
 
+  // Generate unique staff code
+  const generateStaffCode = () => {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+  };
+
+  let staffCode;
+  let isUnique = false;
+  while (!isUnique) {
+    staffCode = generateStaffCode();
+    const existingStaff = await prisma.staff.findUnique({
+      where: { staffCode },
+    });
+    if (!existingStaff) {
+      isUnique = true;
+    }
+  }
+
   // 4) create in DB
   const created = await prisma.staff.create({
     data: {
@@ -91,13 +109,14 @@ export async function createStaff(formData: FormData, diveCenterId: string) {
       emergencyContact,
       bio,
       diveCenterId,
+      staffCode,
       permissions: {
         create: perms,
       },
     },
   });
 
-  return { success: true, data: created }; 
+  return { success: true, data: created, staffCode }; 
 }
 
 export async function updateStaff(id: string, formData: FormData) {
@@ -202,3 +221,111 @@ export async function getAllStaff(diveCenterId?: string) {
 //     permissions: permissions.map((p) => p.permission),
 //   }))
 // }
+
+export async function verifyStaffCode(staffCode: string, userEmail: string) {
+  try {
+    console.log("verifyStaffCode called with:", { staffCode, userEmail });
+
+    const staff = await prisma.staff.findFirst({
+      where: {
+        staffCode,
+        email: userEmail,
+        status: StaffStatus.active,
+      },
+      include: {
+        permissions: { select: { permission: true } },
+        diveCenter: { select: { id: true, name: true } },
+      },
+    });
+
+    console.log("Found staff:", staff ? {
+      id: staff.id,
+      fullName: staff.fullName,
+      email: staff.email,
+      staffCode: staff.staffCode,
+      status: staff.status,
+      diveCenterId: staff.diveCenterId,
+      diveCenterName: staff.diveCenter?.name,
+    } : null);
+
+    if (!staff) {
+      console.log("Staff not found or not active");
+      return { success: false, message: "Invalid staff code or staff not found" };
+    }
+
+    if (!staff.diveCenter) {
+      console.log("Staff has no dive center assigned");
+      return { success: false, message: "Staff is not assigned to any dive center" };
+    }
+
+    return {
+      success: true,
+      staff: {
+        ...staff,
+        permissions: staff.permissions.map((p) => p.permission),
+      },
+      diveCenter: staff.diveCenter,
+    };
+  } catch (error) {
+    console.error("Error verifying staff code:", error);
+    return { success: false, message: "Error verifying staff code" };
+  }
+}
+
+export async function getStaffByCode(staffCode: string) {
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { staffCode },
+      include: {
+        permissions: { select: { permission: true } },
+        diveCenter: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!staff) {
+      return null;
+    }
+
+    return {
+      ...staff,
+      permissions: staff.permissions.map((p) => p.permission),
+    };
+  } catch (error) {
+    console.error("Error getting staff by code:", error);
+    return null;
+  }
+}
+
+export async function getDiveCenterByStaffCode(staffCode: string) {
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { staffCode },
+      include: {
+        diveCenter: true, // Include full dive center details
+      },
+    });
+
+    if (!staff) {
+      return { success: false, message: "Staff not found" };
+    }
+
+    if (!staff.diveCenter) {
+      return { success: false, message: "Staff is not assigned to any dive center" };
+    }
+
+    return {
+      success: true,
+      diveCenter: staff.diveCenter,
+      staff: {
+        id: staff.id,
+        fullName: staff.fullName,
+        email: staff.email,
+        staffCode: staff.staffCode,
+        status: staff.status,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting dive center by staff code:", error);
+    return { success: false, message: "Error retrieving dive center details" };
+  }
+}

@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +34,22 @@ export function DiveCenterSelector() {
     setCurrentCenter,
     setIsAllCenters,
   } = useDiveCenter();
+  console.log('dive-center-selector',currentCenter)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
+
+  // Hydration-safe staff check
+  const [isStaff, setIsStaff] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  useEffect(() => {
+    const staffData = localStorage.getItem("staffData");
+    setIsStaff(!!staffData);
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return null;
+  }
 
   const handleSelectCenter = (centerId: string | null) => {
     if (centerId === "all") {
@@ -63,7 +77,14 @@ export function DiveCenterSelector() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-4 pl-0 h-10">
+          <Button
+            variant="ghost"
+            className="flex items-center gap-4 pl-0 h-10"
+            onClick={isStaff ? (e) => e.preventDefault() : undefined}
+            tabIndex={isStaff ? -1 : 0}
+            aria-disabled={isStaff}
+            style={isStaff ? { pointerEvents: "none" } : {}}
+          >
             <img
               src="/scubafy_logo.png"
               alt="Scubafy Logo"
@@ -91,6 +112,7 @@ export function DiveCenterSelector() {
                 ? "bg-muted"
                 : ""}
               onClick={() => handleSelectCenter(center.id)}
+              disabled={isStaff}
             >
               {center.name}
             </DropdownMenuItem>
@@ -98,7 +120,7 @@ export function DiveCenterSelector() {
           <DropdownMenuSeparator />
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isStaff}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Dive Center
               </DropdownMenuItem>

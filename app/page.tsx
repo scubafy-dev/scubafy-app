@@ -1,13 +1,17 @@
+"use client";
 import DashboardClient from "@/app/client";
-import { useAuth } from "@/lib/use-auth";
-import DiveTripsPage from "./dive-trips/client";
+import { RequirePermission } from "@/components/RequirePermission";
+import { StaffAutoRedirect } from "@/components/StaffAutoRedirect";
 
-
-export default async function DashboardPage() {
-  const session = await useAuth("/");
+export default function DashboardPage() {
   return (
-    <div>
-      <DashboardClient />
-    </div>
+    <>
+      <StaffAutoRedirect />
+      <RequirePermission permission="overview">
+        <div>
+          <DashboardClient />
+        </div>
+      </RequirePermission>
+    </>
   );
 }

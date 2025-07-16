@@ -140,8 +140,16 @@ export function AddStaffDialog(
     });
     try {
       if (createStaff && currentCenter?.id) {
-        await createStaff(formData, currentCenter.id);
-        toast({ title: "Staff added successfully" });
+        const result = await createStaff(formData, currentCenter.id) as any;
+        if (result?.staffCode) {
+          toast({ 
+            title: "Staff added successfully", 
+            description: `Staff code: ${result.staffCode}. Please share this code with the staff member for login.`,
+            duration: 10000
+          });
+        } else {
+          toast({ title: "Staff added successfully" });
+        }
       } else if (updateStaff && staff) {
         await updateStaff(staff.id, formData);
         toast({ title: "Staff updated successfully" });

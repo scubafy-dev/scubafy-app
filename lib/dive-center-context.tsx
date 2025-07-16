@@ -15,6 +15,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { DiveCenter } from "@/app/generated/prisma";
 import { getAllDiveCenters } from "./dive-center";
+import { getDiveCenterByStaffCode } from "./staffs";
 
 interface DiveCenterContextType {
   currentCenter: DiveCenter | null;
@@ -26,6 +27,8 @@ interface DiveCenterContextType {
   setIsAllCenters: (isAll: boolean) => void;
   updateCenter: (updatedCenter: DiveCenter) => void;
   getCenterSpecificData: <T>(dataMap: Record<string, T>, allData: T) => T;
+  getDiveCenterByStaffCode: (staffCode: string) => Promise<{ success: boolean; diveCenter?: DiveCenter; staff?: any; message?: string }>;
+  setStaffDiveCenter: (staffCode: string) => Promise<{ success: boolean; message?: string }>;
 }
 
 const DiveCenterContext = createContext<DiveCenterContextType | undefined>(
@@ -66,7 +69,42 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
         
         setDiveCenters(centers);
         
-        // After fetching centers, check localStorage for saved selection
+        // --- Staff logic: use currentDiveCenter from localStorage if present ---
+        const staffData = typeof window !== "undefined" ? localStorage.getItem("staffData") : null;
+        const savedDiveCenter = typeof window !== "undefined" ? localStorage.getItem("currentDiveCenter") : null;
+        if (staffData) {
+          try {
+            let center = null;
+            if (savedDiveCenter) {
+              center = JSON.parse(savedDiveCenter);
+            } else {
+              // If no saved dive center, try to get it from staff data
+              const staff = JSON.parse(staffData);
+              if (staff.staffCode) {
+                // Use the new function to get dive center by staff code
+                const diveCenterResult = await getDiveCenterByStaffCode(staff.staffCode);
+                if (diveCenterResult.success) {
+                  center = diveCenterResult.diveCenter;
+                  // Save it for future use
+                  localStorage.setItem("currentDiveCenter", JSON.stringify(center));
+                }
+              } else {
+                // Fallback to staff.diveCenter if available
+                center = staff.diveCenter || null;
+              }
+            }
+            if (center) {
+              console.log("Setting staff center:", center.name);
+              setCurrentCenter(center);
+              setIsAllCenters(false);
+              return;
+            }
+          } catch (e) {
+            console.error("Error parsing staff data:", e);
+            // fallback to old logic if parsing fails
+          }
+        }
+        // --- Manager logic: fallback to existing selection logic ---
         const savedCenterId = localStorage.getItem("currentCenterId");
         const savedIsAllCenters = localStorage.getItem("isAllCenters") === "true";
 
@@ -151,6 +189,43 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
       : dataMap[diveCenters[0].id];
   };
 
+  // Function to get dive center by staff code
+  const getDiveCenterByStaffCodeFromContext = async (staffCode: string) => {
+    try {
+      return await getDiveCenterByStaffCode(staffCode);
+    } catch (error) {
+      console.error("Error getting dive center by staff code:", error);
+      return { success: false, message: "Error retrieving dive center details" };
+    }
+  };
+
+  // Function to set staff dive center
+  const setStaffDiveCenter = async (staffCode: string) => {
+    try {
+      const result = await getDiveCenterByStaffCode(staffCode);
+      if (result.success && result.diveCenter) {
+        // Set the current center to the staff's dive center
+        setCurrentCenter(result.diveCenter);
+        setIsAllCenters(false);
+        
+        // Save to localStorage for staff
+        localStorage.setItem("currentDiveCenter", JSON.stringify(result.diveCenter));
+        
+        // Clean up any manager-specific localStorage items
+        localStorage.removeItem("currentCenterId");
+        localStorage.removeItem("isAllCenters");
+        
+        console.log("Staff dive center set successfully:", result.diveCenter.name);
+        return { success: true, message: "Staff dive center set successfully" };
+      } else {
+        return { success: false, message: result.message || "Failed to set staff dive center" };
+      }
+    } catch (error) {
+      console.error("Error setting staff dive center:", error);
+      return { success: false, message: "Error setting staff dive center" };
+    }
+  };
+
   return (
     <DiveCenterContext.Provider
       value={{
@@ -163,6 +238,8 @@ export function DiveCenterProvider({ children }: { children: ReactNode }) {
         setIsAllCenters: handleAllCentersChange,
         updateCenter,
         getCenterSpecificData,
+        getDiveCenterByStaffCode: getDiveCenterByStaffCodeFromContext,
+        setStaffDiveCenter,
       }}
     >
       {children}
