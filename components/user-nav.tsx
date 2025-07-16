@@ -75,7 +75,12 @@ export function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/signin" })}>
+        <DropdownMenuItem
+          onClick={() => {
+            localStorage.clear();
+            signOut({ callbackUrl: "/signin" });
+          }}
+        >
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
