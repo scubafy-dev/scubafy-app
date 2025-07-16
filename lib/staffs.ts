@@ -295,3 +295,37 @@ export async function getStaffByCode(staffCode: string) {
     return null;
   }
 }
+
+export async function getDiveCenterByStaffCode(staffCode: string) {
+  try {
+    const staff = await prisma.staff.findUnique({
+      where: { staffCode },
+      include: {
+        diveCenter: true, // Include full dive center details
+      },
+    });
+
+    if (!staff) {
+      return { success: false, message: "Staff not found" };
+    }
+
+    if (!staff.diveCenter) {
+      return { success: false, message: "Staff is not assigned to any dive center" };
+    }
+
+    return {
+      success: true,
+      diveCenter: staff.diveCenter,
+      staff: {
+        id: staff.id,
+        fullName: staff.fullName,
+        email: staff.email,
+        staffCode: staff.staffCode,
+        status: staff.status,
+      },
+    };
+  } catch (error) {
+    console.error("Error getting dive center by staff code:", error);
+    return { success: false, message: "Error retrieving dive center details" };
+  }
+}

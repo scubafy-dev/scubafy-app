@@ -34,6 +34,7 @@ export function DiveCenterSelector() {
     setCurrentCenter,
     setIsAllCenters,
   } = useDiveCenter();
+  console.log('dive-center-selector',currentCenter)
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
 

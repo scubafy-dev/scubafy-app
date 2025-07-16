@@ -34,7 +34,7 @@ export default function RoleSelectionClient() {
 
     const router = useRouter();
     const { data: session, status } = useSession();
-    const { currentCenter } = useDiveCenter();
+    const { currentCenter, setStaffDiveCenter } = useDiveCenter();
 
     useEffect(() => {
         const checkUserRole = async () => {
@@ -132,9 +132,15 @@ export default function RoleSelectionClient() {
                 console.log("Staff verified:", data.staff);
                 console.log("Dive center:", data.diveCenter);
                 
-                // Store dive center information
-                if (data.diveCenter) {
-                    localStorage.setItem("currentDiveCenter", JSON.stringify(data.diveCenter));
+                // Store staff data
+                localStorage.setItem("staffData", JSON.stringify(data.staff));
+                
+                // Set the staff dive center using the context function
+                const setCenterResult = await setStaffDiveCenter(data.staff.staffCode);
+                if (setCenterResult.success) {
+                    console.log("Staff dive center set successfully");
+                } else {
+                    console.error("Failed to set staff dive center:", setCenterResult.message);
                 }
                 
                 await saveRoleToDatabase("staff", data.staff);

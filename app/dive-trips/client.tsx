@@ -81,6 +81,7 @@ export default function DiveTripsPage() {
 
   const { currentCenter, isAllCenters, getCenterSpecificData } =
     useDiveCenter();
+  console.log('currentCenterDiveTrip', currentCenter)
   const router = useRouter();
 
   // const diveTrips = getAllDiveTrips(currentCenter?.id ?? null);
@@ -526,7 +527,8 @@ export default function DiveTripsPage() {
           <AddTripForm
             onSuccess={() => {
               handleTripCreated()
-              setIsEditTripOpen(false)}
+              setIsEditTripOpen(false)
+            }
             }
             mode={ActionMode.update}
             trip={selectedTrip}
