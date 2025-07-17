@@ -222,6 +222,7 @@ model Staff {
   roleTitle              String?
   status                 StaffStatus                @default(active)
   salary                 Float?
+  commissionBased        Float?
   staffCode              String?                    @unique
   address                String?
   emergencyContact       String?

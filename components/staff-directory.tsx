@@ -151,7 +151,8 @@ export function StaffDirectory(
                 <TableHead>Age/Gender</TableHead>
                 <TableHead>Staff Code</TableHead>
                 <TableHead>Access Permissions</TableHead>
-                <TableHead>Salary</TableHead>
+                <TableHead>Monthly Salary</TableHead>
+                <TableHead>Commission-Based</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -256,6 +257,7 @@ export function StaffDirectory(
                       </div>
                     </TableCell>
                     <TableCell>{member.salary}</TableCell>
+                    <TableCell>{member.commissionBased !== null && member.commissionBased !== undefined ? member.commissionBased : '-'}</TableCell>
                     <TableCell>
                       <Badge
                         variant={member.status === "active"
