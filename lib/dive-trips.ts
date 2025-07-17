@@ -138,7 +138,8 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
             instructor: instructorString,
             fleetVehicleId,
             participantsCount: participants.length,
-            participants: participants
+            participants: participants,
+            expenses: formData.expenses // log for debug
         });
 
         const result = await prisma.diveTrip.create({
@@ -158,6 +159,7 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
                 instructor: instructorString,
                 fleetVehicleId,
                 diveType,
+                expenses: formData.expenses ?? {},
                 participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
                 diveCenterId,
                 userId: session.user.id,
@@ -391,6 +393,7 @@ export async function updateDiveTrip(id: string | null, formData: any) {
                     instructor: instructorString,
                     fleetVehicleId,
                     diveType,
+                    expenses: formData.expenses ?? {},
                 },
             },
         );

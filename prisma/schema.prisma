@@ -100,6 +100,7 @@ model DiveTrip {
   fleetVehicleId        String
   diveCenterId          String
   userId                String
+  expenses              Json?
   diveCenter            DiveCenter                 @relation(fields: [diveCenterId], references: [id])
   fleetVehicle          FleetVehicle               @relation(fields: [fleetVehicleId], references: [id])
   User                  User                       @relation(fields: [userId], references: [id])
