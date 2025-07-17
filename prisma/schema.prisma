@@ -272,6 +272,7 @@ model Course {
   updatedAt          DateTime                  @updatedAt
   students           CourseStudent[]
   diveCenter         DiveCenter                @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+  expenses           Json?
 
   @@map("courses")
 }

@@ -49,6 +49,12 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
     students = JSON.parse(formData.get("students") as string || "[]");
   } catch {}
 
+  // Handle expenses
+  let expenses: any = {};
+  try {
+    expenses = JSON.parse(formData.get("expenses") as string || "{}");
+  } catch {}
+
   const created= await prisma.course.create({
     data: {
       title,
@@ -65,6 +71,7 @@ export async function addCourse(formData: FormData, diveCenterId: string) {
       diveCenterId,
       materials,
       equipmentIds,
+      expenses,
       students: {
         create: students.map((s) => ({
           customerId: s.customerId || undefined,
@@ -137,10 +144,17 @@ export async function updateCourse(id: string, formData: FormData) {
     students = JSON.parse(formData.get("students") as string || "[]");
   } catch {}
 
+  // Handle expenses
+  let expenses: any = {};
+  try {
+    expenses = JSON.parse(formData.get("expenses") as string || "{}");
+  } catch {}
+
   await prisma.course.update({
     where: { id },
     data: {
       ...data,
+      expenses,
       students: {
         deleteMany: {}, // Remove all previous students
         create: students.map((s) => ({
