@@ -12,6 +12,7 @@ export interface StaffWithPermissions {
   gender: Gender | null;
   roleTitle: string | null;
   salary: number | null;
+  commissionBased: number | null; // CHANGED TO NUMBER
   status: StaffStatus;
   address: string | null;
   emergencyContact: string | null;
@@ -59,6 +60,13 @@ export async function createStaff(formData: FormData, diveCenterId: string) {
   const salaryStr = formData.get("salary") as string | null;
   const salary = salaryStr ? Number(salaryStr) : null;
 
+  // NEW: commissionBased as number
+  let commissionBased: number | null = null;
+  if (formData.has("commissionBased")) {
+    const val = formData.get("commissionBased");
+    commissionBased = val !== null && val !== undefined && val !== '' ? Number(val) : null;
+  }
+
   const address = (formData.get("address") as string) || null;
   const emergencyContact = (formData.get("emergencyContact") as string) || null;
   const bio = (formData.get("bio") as string) || null;
@@ -105,6 +113,7 @@ export async function createStaff(formData: FormData, diveCenterId: string) {
       roleTitle,
       status,
       salary,
+      commissionBased, // NEW FIELD
       address,
       emergencyContact,
       bio,
@@ -137,6 +146,11 @@ export async function updateStaff(id: string, formData: FormData) {
   if (formData.get("salary") !== null) {
     const salaryStr = formData.get("salary") as string;
     data.salary = salaryStr ? Number(salaryStr) : null;
+  }
+  // NEW: commissionBased as number
+  if (formData.has("commissionBased")) {
+    const val = formData.get("commissionBased");
+    data.commissionBased = val !== null && val !== undefined && val !== '' ? Number(val) : null;
   }
 
   if (formData.get("gender")) {

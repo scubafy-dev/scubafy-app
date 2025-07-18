@@ -61,6 +61,7 @@ const staffSchema = z.object({
   phone: z.string().optional(),
   role: z.string().min(1, "Please enter a role."),
   salary: z.string().optional(),
+  commissionBased: z.string().optional(),
   age: z.string().optional(),
   gender: z.string().optional(),
   address: z.string().optional(),
@@ -100,6 +101,7 @@ export function AddStaffDialog(
       phone: staff?.phoneNumber || "",
       role: staff?.roleTitle || "",
       salary: staff?.salary ? String(staff.salary) : "",
+      commissionBased: staff?.commissionBased !== null && staff?.commissionBased !== undefined ? String(staff.commissionBased) : "",
       age: staff?.age ? String(staff.age) : "",
       gender: staff?.gender || "",
       address: staff?.address || "",
@@ -117,6 +119,7 @@ export function AddStaffDialog(
       phone: staff?.phoneNumber || "",
       role: staff?.roleTitle || "",
       salary: staff?.salary ? String(staff.salary) : "",
+      commissionBased: staff?.commissionBased !== null && staff?.commissionBased !== undefined ? String(staff.commissionBased) : "",
       age: staff?.age ? String(staff.age) : "",
       gender: staff?.gender || "",
       address: staff?.address || "",
@@ -315,9 +318,26 @@ export function AddStaffDialog(
               name="salary"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Salary</FormLabel>
+                  <FormLabel>Monthly Salary</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 2000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="commissionBased"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Commission-Based</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 10 (as percent or amount)"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -100,6 +100,7 @@ model DiveTrip {
   fleetVehicleId        String
   diveCenterId          String
   userId                String
+  expenses              Json?
   diveCenter            DiveCenter                 @relation(fields: [diveCenterId], references: [id])
   fleetVehicle          FleetVehicle               @relation(fields: [fleetVehicleId], references: [id])
   User                  User                       @relation(fields: [userId], references: [id])
@@ -221,6 +222,7 @@ model Staff {
   roleTitle              String?
   status                 StaffStatus                @default(active)
   salary                 Float?
+  commissionBased        Float?
   staffCode              String?                    @unique
   address                String?
   emergencyContact       String?
@@ -271,6 +273,7 @@ model Course {
   updatedAt          DateTime                  @updatedAt
   students           CourseStudent[]
   diveCenter         DiveCenter                @relation(fields: [diveCenterId], references: [id], onDelete: Cascade)
+  expenses           Json?
 
   @@map("courses")
 }

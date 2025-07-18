@@ -16,6 +16,7 @@ import {
   Ship,
   Trash,
   Users,
+  Eye,
 } from "lucide-react";
 import {
   Dialog,
@@ -78,6 +79,8 @@ export default function DiveTripsPage() {
   const [expandedRows, setExpandedRows] = useState<string[]>([]);
   const [diveTrips, setDiveTrips] = useState<FullDiveTrip[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExpensesModalOpen, setIsExpensesModalOpen] = useState(false);
+  const [expensesTrip, setExpensesTrip] = useState<FullDiveTrip | null>(null);
 
   const { currentCenter, isAllCenters, getCenterSpecificData } =
     useDiveCenter();
@@ -210,6 +213,7 @@ export default function DiveTripsPage() {
                         <TableHead>Price</TableHead>
                         <TableHead>Status</TableHead>
                         {isAllCenters && <TableHead>Center</TableHead>}
+                        <TableHead>Expenses</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -313,6 +317,23 @@ export default function DiveTripsPage() {
                                 </Badge>
                               </TableCell>
                               {isAllCenters && <TableCell>{trip.center}</TableCell>}
+                              <TableCell>
+                                {trip.expenses && typeof trip.expenses === 'object' && Object.values(trip.expenses).some(v => v && v !== '') ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setExpensesTrip(trip);
+                                      setIsExpensesModalOpen(true);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4 mr-1" /> Show
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">No Data</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -576,6 +597,27 @@ export default function DiveTripsPage() {
           </AlertDialogContent>
         </AlertDialogPortal>
       </AlertDialog>
+
+      {/* Expenses Modal */}
+      <Dialog open={isExpensesModalOpen} onOpenChange={setIsExpensesModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Trip Expenses</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {expensesTrip && expensesTrip.expenses && typeof expensesTrip.expenses === 'object' && !Array.isArray(expensesTrip.expenses) ? (
+              Object.entries(expensesTrip.expenses).map(([key, value]) => (
+                <div key={key} className="flex justify-between border-b py-1 text-sm">
+                  <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                  <span>{value !== '' && value !== undefined && value !== null ? `$${value}` : '-'}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-muted-foreground text-sm">No expenses data available.</div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardShell>
   );
 }

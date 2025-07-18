@@ -20,6 +20,7 @@ import {
     Filter,
     Plus,
     Search,
+    Eye,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,6 +137,20 @@ export default function CourseTrackerClient() {
     const [customerOptions, setCustomerOptions] = useState<CustomerEntry[]>([]);
     const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
     const [manualStudents, setManualStudents] = useState<StudentEntry[]>([{ name: "", email: "" }]);
+
+    // Add state for expenses
+    const [courseExpenses, setCourseExpenses] = useState({
+      instructorFee: '',
+      assistantFee: '',
+      denrFee: '',
+      tankFee: '',
+      courseMaterials: '',
+      courseCertificationFee: '',
+    });
+
+    // Add state for Show Expenses modal
+    const [showExpensesModal, setShowExpensesModal] = useState(false);
+    const [expensesToShow, setExpensesToShow] = useState<any>(null);
 
     const [isAddCourseLoading, setIsAddCourseLoading] = useState(false);
 
@@ -317,6 +332,7 @@ export default function CourseTrackerClient() {
         formData.append("materials", JSON.stringify(materials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(selectedEquipment));
         formData.append("students", JSON.stringify(buildStudentsArray()));
+        formData.append("expenses", JSON.stringify(courseExpenses));
         const res = await addCourse(formData, currentCenter.id);
         if (res?.success) {
             toast({
@@ -331,6 +347,30 @@ export default function CourseTrackerClient() {
         }
         setIsAddCourseLoading(false);
     }
+
+    // When opening Add or Edit dialog, prefill expenses if editing
+    useEffect(() => {
+      if (isAddCourseOpen) {
+        setCourseExpenses({
+          instructorFee: '',
+          assistantFee: '',
+          denrFee: '',
+          tankFee: '',
+          courseMaterials: '',
+          courseCertificationFee: '',
+        });
+      }
+      if (isEditCourseOpen && selectedCourse && selectedCourse.expenses && typeof selectedCourse.expenses === 'object' && !Array.isArray(selectedCourse.expenses)) {
+        setCourseExpenses({
+          instructorFee: selectedCourse.expenses.instructorFee != null ? String(selectedCourse.expenses.instructorFee) : '',
+          assistantFee: selectedCourse.expenses.assistantFee != null ? String(selectedCourse.expenses.assistantFee) : '',
+          denrFee: selectedCourse.expenses.denrFee != null ? String(selectedCourse.expenses.denrFee) : '',
+          tankFee: selectedCourse.expenses.tankFee != null ? String(selectedCourse.expenses.tankFee) : '',
+          courseMaterials: selectedCourse.expenses.courseMaterials != null ? String(selectedCourse.expenses.courseMaterials) : '',
+          courseCertificationFee: selectedCourse.expenses.courseCertificationFee != null ? String(selectedCourse.expenses.courseCertificationFee) : '',
+        });
+      }
+    }, [isAddCourseOpen, isEditCourseOpen, selectedCourse]);
 
     return (
         <DashboardShell>
@@ -412,6 +452,7 @@ export default function CourseTrackerClient() {
                                         Students
                                     </TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Expenses</TableHead>
                                     <TableHead className="w-[50px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -476,6 +517,19 @@ export default function CourseTrackerClient() {
                                                             >
                                                                 {course.status}
                                                             </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={e => {
+                                                                    e.stopPropagation();
+                                                                    setExpensesToShow(course.expenses || null);
+                                                                    setShowExpensesModal(true);
+                                                                }}
+                                                            >
+                                                                <Eye className="h-4 w-4 mr-1" /> Show
+                                                            </Button>
                                                         </TableCell>
                                                         <TableCell>
                                                             {expandedCourseId === course.id
@@ -663,6 +717,18 @@ export default function CourseTrackerClient() {
                                                                             className="ml-2"
                                                                         >
                                                                             Remove
+                                                                        </Button>
+                                                                        <Button
+                                                                            variant="secondary"
+                                                                            size="sm"
+                                                                            className="mr-2"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setExpensesToShow(course.expenses || null);
+                                                                                setShowExpensesModal(true);
+                                                                            }}
+                                                                        >
+                                                                            Show Expenses
                                                                         </Button>
                                                                     </div>
                                                                 </div>
@@ -1641,228 +1707,306 @@ export default function CourseTrackerClient() {
                             dives after creating the course.
                         </DialogDescription>
                     </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-1 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Course Title</Label>
-                                <Input
-                                    id="title"
-                                    placeholder="Enter course title"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="level">
-                                        Certification Level
-                                    </Label>
-                                    <Select
-                                        value={level}
-                                        onValueChange={(value) => setLevel(
-                                            value as CertificationLevel,
-                                        )}
-                                    >
-                                        <SelectTrigger id="level">
-                                            <SelectValue placeholder="Select level" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="openWater">
-                                                Open Water
-                                            </SelectItem>
-                                            <SelectItem value="advancedOpenWater">
-                                                Advanced Open Water
-                                            </SelectItem>
-                                            <SelectItem value="rescueDiver">
-                                                Rescue Diver
-                                            </SelectItem>
-                                            <SelectItem value="diveMaster">
-                                                Dive Master
-                                            </SelectItem>
-                                            <SelectItem value="instructor">
-                                                Instructor
-                                            </SelectItem>
-                                            <SelectItem value="specialtyCourse">
-                                                Specialty Course
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select
-                                        value={status}
-                                        onValueChange={(value) => setStatus(
-                                            value as CourseStatus,
-                                        )}
-                                    >
-                                        <SelectTrigger id="status">
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="upcoming">
-                                                Upcoming
-                                            </SelectItem>
-                                            <SelectItem value="active">
-                                                Active
-                                            </SelectItem>
-                                            <SelectItem value="completed">
-                                                Completed
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="startDate">
-                                        Start Date
-                                    </Label>
-                                    <Input id="startDate" type="date" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="endDate">End Date</Label>
-                                    <Input id="endDate" type="date" />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="instructor">
-                                        Instructor Name
-                                    </Label>
-                                    <Input
-                                        id="instructor"
-                                        placeholder="Enter instructor name"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="instructorContact">
-                                        Instructor Contact
-                                    </Label>
-                                    <Input
-                                        id="instructorContact"
-                                        placeholder="Email or phone"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="location">Location</Label>
-                                    <Input
-                                        id="location"
-                                        placeholder="Dive center or site"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cost">Price of course ($)</Label>
-                                    <Input
-                                        id="cost"
-                                        type="number"
-                                        placeholder="Total course cost"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="specialNeeds">
-                                    Special Needs/Concerns
-                                </Label>
-                                <Textarea
-                                    id="specialNeeds"
-                                    placeholder="Note any special needs or concerns"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Course Materials</Label>
-                                {materials.map((mat, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-1">
+                    <Tabs defaultValue="details" className="space-y-4">
+                        <TabsList className="grid w-full grid-cols-2 mb-4">
+                            <TabsTrigger value="details">Details</TabsTrigger>
+                            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="details">
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="title">Course Title</Label>
                                         <Input
-                                            value={mat}
-                                            onChange={(e) => handleMaterialChange(idx, e.target.value)}
-                                            placeholder="Material name"
+                                            id="title"
+                                            placeholder="Enter course title"
                                         />
-                                        <Button type="button" variant="outline" size="icon" onClick={() => removeMaterialField(idx)} disabled={materials.length === 1}>
-                                            -
-                                        </Button>
-                                        {idx === materials.length - 1 && (
-                                            <Button type="button" variant="outline" size="icon" onClick={addMaterialField}>
-                                                +
-                                            </Button>
-                                        )}
                                     </div>
-                                ))}
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Required Equipment</Label>
-                                <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border rounded p-2">
-                                    {equipmentOptions.map((eq) => (
-                                        <div key={eq.id} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`equipment-${eq.id}`}
-                                                checked={selectedEquipment.includes(eq.id)}
-                                                onCheckedChange={(checked) => {
-                                                    setSelectedEquipment((prev) =>
-                                                        checked
-                                                            ? [...prev, eq.id]
-                                                            : prev.filter((eid) => eid !== eq.id)
-                                                    );
-                                                }}
-                                            />
-                                            <label htmlFor={`equipment-${eq.id}`} className="text-sm">
-                                                {eq.type} {eq.model}
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Students</Label>
-                                <div className="mb-2">Select from customers:</div>
-                                <div className="flex flex-col gap-1 max-h-32 overflow-y-auto border rounded p-2">
-                                    {customerOptions.map((c) => (
-                                        <div key={c.id} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`student-customer-${c.id}`}
-                                                checked={selectedCustomerIds.includes(c.id)}
-                                                onCheckedChange={(checked) => handleCustomerSelect(c.id, Boolean(checked))}
-                                            />
-                                            <label htmlFor={`student-customer-${c.id}`} className="text-sm">
-                                                {c.fullName} ({c.email})
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="mt-2 mb-1">Add manual students:</div>
-                                {manualStudents.map((s, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-1">
-                                        <Input
-                                            value={s.name}
-                                            onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
-                                            placeholder="Name"
-                                        />
-                                        <Input
-                                            value={s.email}
-                                            onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
-                                            placeholder="Email"
-                                        />
-                                        <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>
-                                            -
-                                        </Button>
-                                        {idx === manualStudents.length - 1 && (
-                                            <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>
-                                                +
-                                            </Button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
 
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="level">
+                                                Certification Level
+                                            </Label>
+                                            <Select
+                                                value={level}
+                                                onValueChange={(value) => setLevel(
+                                                    value as CertificationLevel,
+                                                )}
+                                            >
+                                                <SelectTrigger id="level">
+                                                    <SelectValue placeholder="Select level" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="openWater">
+                                                        Open Water
+                                                    </SelectItem>
+                                                    <SelectItem value="advancedOpenWater">
+                                                        Advanced Open Water
+                                                    </SelectItem>
+                                                    <SelectItem value="rescueDiver">
+                                                        Rescue Diver
+                                                    </SelectItem>
+                                                    <SelectItem value="diveMaster">
+                                                        Dive Master
+                                                    </SelectItem>
+                                                    <SelectItem value="instructor">
+                                                        Instructor
+                                                    </SelectItem>
+                                                    <SelectItem value="specialtyCourse">
+                                                        Specialty Course
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="status">Status</Label>
+                                            <Select
+                                                value={status}
+                                                onValueChange={(value) => setStatus(
+                                                    value as CourseStatus,
+                                                )}
+                                            >
+                                                <SelectTrigger id="status">
+                                                    <SelectValue placeholder="Select status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="upcoming">
+                                                        Upcoming
+                                                    </SelectItem>
+                                                    <SelectItem value="active">
+                                                        Active
+                                                    </SelectItem>
+                                                    <SelectItem value="completed">
+                                                        Completed
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="startDate">
+                                                Start Date
+                                            </Label>
+                                            <Input id="startDate" type="date" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="endDate">End Date</Label>
+                                            <Input id="endDate" type="date" />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="instructor">
+                                                Instructor Name
+                                            </Label>
+                                            <Input
+                                                id="instructor"
+                                                placeholder="Enter instructor name"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="instructorContact">
+                                                Instructor Contact
+                                            </Label>
+                                            <Input
+                                                id="instructorContact"
+                                                placeholder="Email or phone"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="location">Location</Label>
+                                            <Input
+                                                id="location"
+                                                placeholder="Dive center or site"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="cost">Price of course ($)</Label>
+                                            <Input
+                                                id="cost"
+                                                type="number"
+                                                placeholder="Total course cost"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label htmlFor="specialNeeds">
+                                            Special Needs/Concerns
+                                        </Label>
+                                        <Textarea
+                                            id="specialNeeds"
+                                            placeholder="Note any special needs or concerns"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Course Materials</Label>
+                                        {materials.map((mat, idx) => (
+                                            <div key={idx} className="flex gap-2 mb-1">
+                                                <Input
+                                                    value={mat}
+                                                    onChange={(e) => handleMaterialChange(idx, e.target.value)}
+                                                    placeholder="Material name"
+                                                />
+                                                <Button type="button" variant="outline" size="icon" onClick={() => removeMaterialField(idx)} disabled={materials.length === 1}>
+                                                    -
+                                                </Button>
+                                                {idx === materials.length - 1 && (
+                                                    <Button type="button" variant="outline" size="icon" onClick={addMaterialField}>
+                                                        +
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Required Equipment</Label>
+                                        <div className="flex flex-col gap-2 max-h-40 overflow-y-auto border rounded p-2">
+                                            {equipmentOptions.map((eq) => (
+                                                <div key={eq.id} className="flex items-center gap-2">
+                                                    <Checkbox
+                                                        id={`equipment-${eq.id}`}
+                                                        checked={selectedEquipment.includes(eq.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            setSelectedEquipment((prev) =>
+                                                                checked
+                                                                    ? [...prev, eq.id]
+                                                                    : prev.filter((eid) => eid !== eq.id)
+                                                            );
+                                                        }}
+                                                    />
+                                                    <label htmlFor={`equipment-${eq.id}`} className="text-sm">
+                                                        {eq.type} {eq.model}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Students</Label>
+                                        <div className="mb-2">Select from customers:</div>
+                                        <div className="flex flex-col gap-1 max-h-32 overflow-y-auto border rounded p-2">
+                                            {customerOptions.map((c) => (
+                                                <div key={c.id} className="flex items-center gap-2">
+                                                    <Checkbox
+                                                        id={`student-customer-${c.id}`}
+                                                        checked={selectedCustomerIds.includes(c.id)}
+                                                        onCheckedChange={(checked) => handleCustomerSelect(c.id, Boolean(checked))}
+                                                    />
+                                                    <label htmlFor={`student-customer-${c.id}`} className="text-sm">
+                                                        {c.fullName} ({c.email})
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-2 mb-1">Add manual students:</div>
+                                        {manualStudents.map((s, idx) => (
+                                            <div key={idx} className="flex gap-2 mb-1">
+                                                <Input
+                                                    value={s.name}
+                                                    onChange={(e) => handleManualStudentChange(idx, "name", e.target.value)}
+                                                    placeholder="Name"
+                                                />
+                                                <Input
+                                                    value={s.email}
+                                                    onChange={(e) => handleManualStudentChange(idx, "email", e.target.value)}
+                                                    placeholder="Email"
+                                                />
+                                                <Button type="button" variant="outline" size="icon" onClick={() => removeManualStudent(idx)} disabled={manualStudents.length === 1}>
+                                                    -
+                                                </Button>
+                                                {idx === manualStudents.length - 1 && (
+                                                    <Button type="button" variant="outline" size="icon" onClick={addManualStudent}>
+                                                        +
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="expenses">
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label>Instructor Fee</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.instructorFee}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, instructorFee: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Assistant Fee</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.assistantFee}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, assistantFee: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>DENR Fee</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.denrFee}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, denrFee: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Tank Fee</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.tankFee}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, tankFee: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Course Materials</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.courseMaterials}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, courseMaterials: e.target.value }))}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Course Certification Fee</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="$"
+                                            value={courseExpenses.courseCertificationFee}
+                                            onChange={e => setCourseExpenses(exp => ({ ...exp, courseCertificationFee: e.target.value }))}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                     <DialogFooter>
                         <Button
                             variant="outline"
@@ -1942,6 +2086,10 @@ export default function CourseTrackerClient() {
                                     "students",
                                     JSON.stringify(buildStudentsArray()),
                                 );
+                                formData.append(
+                                    "expenses",
+                                    JSON.stringify(courseExpenses)
+                                );
                                 handleAddCourse(formData);
                             }}
                             disabled={isAddCourseLoading}
@@ -1985,6 +2133,41 @@ export default function CourseTrackerClient() {
                         <Button variant="destructive" onClick={handleDeleteCourse} disabled={isDeleting}>
                             {isDeleting ? "Deleting..." : "Delete"}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Show Expenses Modal */}
+            <Dialog open={showExpensesModal} onOpenChange={setShowExpensesModal}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Course Expenses</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2">
+                        {expensesToShow && typeof expensesToShow === 'object' && !Array.isArray(expensesToShow) && Object.values(expensesToShow).some(v => v && v !== '') ? (
+                            <>
+                                {Object.entries(expensesToShow).map(([key, value]) => (
+                                    <div key={key} className="flex justify-between border-b py-1 text-sm">
+                                        <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                                        <span>{value !== '' && value !== undefined && value !== null ? `$${value}` : '-'}</span>
+                                    </div>
+                                ))}
+                                <div className="flex justify-between border-b py-1 text-sm font-semibold">
+                                    <span>Total Expenses</span>
+                                    <span>{
+                                        '$' + Object.values(expensesToShow)
+                                            .map(x => parseFloat(x as string) || 0)
+                                            .reduce((a, b) => a + b, 0)
+                                            .toFixed(2)
+                                    }</span>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="text-muted-foreground text-sm">No expenses recorded for this course.</div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowExpensesModal(false)}>Close</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

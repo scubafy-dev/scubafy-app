@@ -135,14 +135,24 @@ const formSchema = z.object({
   description: z.string().optional(),
   diveType: z.string().optional(),
   fleetVehicleId: z.string().optional(),
-  // Expense tracking
+  // New Expense tracking fields
   expenses: z.object({
-    boatInsurance: z.string().optional(),
-    fuel: z.string().optional(),
-    crewWages: z.string().optional(),
-    foodAndSupplies: z.string().optional(),
-    fees: z.string().optional(),
-    other: z.string().optional(),
+    tankRental: z.string().optional(),
+    weightsRental: z.string().optional(),
+    boatFees: z.string().optional(),
+    diveGuidePay: z.string().optional(),
+    marineParkFee: z.string().optional(),
+    transportation: z.string().optional(),
+    diveEquipmentRental: z.string().optional(),
+    snacks: z.string().optional(),
+    compressorUse: z.string().optional(),
+    permits: z.string().optional(),
+    staffMeals: z.string().optional(),
+    fuelSurcharges: z.string().optional(),
+    boatCaptainCrewTips: z.string().optional(),
+    insurance: z.string().optional(),
+    equipmentMaintenance: z.string().optional(),
+    lastMinuteRentals: z.string().optional(),
   }),
   instructor: z.string().optional(), // Keep for backward compatibility
   selectedInstructorIds: z.array(z.string()).default([]), // New field for multiple instructors
@@ -207,14 +217,44 @@ export function AddTripForm(
       description: trip?.description ?? "",
       diveType: trip?.diveType ?? "",
       fleetVehicleId: trip?.fleetVehicleId ?? "",
-      expenses: {
-        boatInsurance: "",
-        fuel: "",
-        crewWages: "",
-        foodAndSupplies: "",
-        fees: "",
-        other: "",
-      },
+      expenses:
+        trip && typeof trip.expenses === 'object' && trip.expenses !== null && !Array.isArray(trip.expenses)
+          ? {
+              tankRental: (trip.expenses as any).tankRental ?? '',
+              weightsRental: (trip.expenses as any).weightsRental ?? '',
+              boatFees: (trip.expenses as any).boatFees ?? '',
+              diveGuidePay: (trip.expenses as any).diveGuidePay ?? '',
+              marineParkFee: (trip.expenses as any).marineParkFee ?? '',
+              transportation: (trip.expenses as any).transportation ?? '',
+              diveEquipmentRental: (trip.expenses as any).diveEquipmentRental ?? '',
+              snacks: (trip.expenses as any).snacks ?? '',
+              compressorUse: (trip.expenses as any).compressorUse ?? '',
+              permits: (trip.expenses as any).permits ?? '',
+              staffMeals: (trip.expenses as any).staffMeals ?? '',
+              fuelSurcharges: (trip.expenses as any).fuelSurcharges ?? '',
+              boatCaptainCrewTips: (trip.expenses as any).boatCaptainCrewTips ?? '',
+              insurance: (trip.expenses as any).insurance ?? '',
+              equipmentMaintenance: (trip.expenses as any).equipmentMaintenance ?? '',
+              lastMinuteRentals: (trip.expenses as any).lastMinuteRentals ?? '',
+            }
+          : {
+              tankRental: '',
+              weightsRental: '',
+              boatFees: '',
+              diveGuidePay: '',
+              marineParkFee: '',
+              transportation: '',
+              diveEquipmentRental: '',
+              snacks: '',
+              compressorUse: '',
+              permits: '',
+              staffMeals: '',
+              fuelSurcharges: '',
+              boatCaptainCrewTips: '',
+              insurance: '',
+              equipmentMaintenance: '',
+              lastMinuteRentals: '',
+            },
       instructor: trip?.instructor ?? "",
       selectedInstructorIds: [], // New field for multiple instructors
       diveMaster: trip?.diveMaster ?? "",
@@ -488,7 +528,7 @@ export function AddTripForm(
               <TabsTrigger value="vehicle">Vehicle</TabsTrigger>
               <TabsTrigger value="staff">Staff</TabsTrigger>
               <TabsTrigger value="participants">Participants</TabsTrigger>
-              {/* <TabsTrigger value="expenses">Expenses</TabsTrigger> */}
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
             </TabsList>
 
             {/* Trip Details Tab */}
@@ -1224,17 +1264,16 @@ export function AddTripForm(
                   Add expected expenses for this trip. This information will be
                   reflected in financial reports.
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="expenses.boatInsurance"
+                    name="expenses.tankRental"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Insurance</FormLabel>
+                        <FormLabel>Tank Rental</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="$0.00"
+                            placeholder="$"
                             type="number"
                             min="0"
                             step="0.01"
@@ -1245,16 +1284,281 @@ export function AddTripForm(
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
-                    name="expenses.fuel"
+                    name="expenses.weightsRental"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fuel</FormLabel>
+                        <FormLabel>Weights Rental</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="$0.00"
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.boatFees"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Boat Fees</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.diveGuidePay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dive Guide Pay</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.marineParkFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Marine Park Fee</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.transportation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Transportation (van/pickup)</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.diveEquipmentRental"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dive Equipment Rental</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.snacks"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Snacks</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.compressorUse"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Compressor Use</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.permits"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Permits / Government Fees</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.staffMeals"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Staff meals</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.fuelSurcharges"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fuel surcharges</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.boatCaptainCrewTips"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Boat captain & crew tips</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.insurance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Insurance / liability coverage</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.equipmentMaintenance"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Equipment maintenance</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="expenses.lastMinuteRentals"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last-minute rentals / rush fees</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="$"
                             type="number"
                             min="0"
                             step="0.01"
@@ -1266,91 +1570,6 @@ export function AddTripForm(
                     )}
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="expenses.crewWages"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Crew Wages</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="$0.00"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="expenses.foodAndSupplies"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Food & Supplies</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="$0.00"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="expenses.fees"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Park/Location Fees</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="$0.00"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="expenses.other"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Other Expenses</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="$0.00"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <div className="pt-2 border-t">
                   <div className="flex justify-between text-sm font-medium">
                     <span>Total Expenses:</span>

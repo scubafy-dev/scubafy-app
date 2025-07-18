@@ -30,6 +30,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { getAllEquipments } from "@/lib/equipment";
 import { getAllCustomers } from "@/lib/customers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Add types for students and customers
 interface StudentEntry { customerId?: string; name: string; email: string; }
@@ -68,6 +69,33 @@ export function EditCourseDialog(
     const [manualStudents, setManualStudents] = React.useState<StudentEntry[]>([{ name: "", email: "" }]);
     const [existingStudents, setExistingStudents] = React.useState<StudentEntry[]>([]);
     const [isUpdating, setIsUpdating] = React.useState(false);
+
+    // Add state for expenses
+    function getExpenseField(expenses: any, key: string) {
+      if (expenses && typeof expenses === 'object' && !Array.isArray(expenses)) {
+        return expenses[key] != null ? String(expenses[key]) : '';
+      }
+      return '';
+    }
+    const [editExpenses, setEditExpenses] = React.useState({
+      instructorFee: getExpenseField(selectedCourse.expenses, 'instructorFee'),
+      assistantFee: getExpenseField(selectedCourse.expenses, 'assistantFee'),
+      denrFee: getExpenseField(selectedCourse.expenses, 'denrFee'),
+      tankFee: getExpenseField(selectedCourse.expenses, 'tankFee'),
+      courseMaterials: getExpenseField(selectedCourse.expenses, 'courseMaterials'),
+      courseCertificationFee: getExpenseField(selectedCourse.expenses, 'courseCertificationFee'),
+    });
+    // Reset expenses when course changes
+    React.useEffect(() => {
+      setEditExpenses({
+        instructorFee: getExpenseField(selectedCourse.expenses, 'instructorFee'),
+        assistantFee: getExpenseField(selectedCourse.expenses, 'assistantFee'),
+        denrFee: getExpenseField(selectedCourse.expenses, 'denrFee'),
+        tankFee: getExpenseField(selectedCourse.expenses, 'tankFee'),
+        courseMaterials: getExpenseField(selectedCourse.expenses, 'courseMaterials'),
+        courseCertificationFee: getExpenseField(selectedCourse.expenses, 'courseCertificationFee'),
+      });
+    }, [selectedCourse]);
 
     React.useEffect(() => {
         async function fetchEquipment() {
@@ -166,6 +194,7 @@ export function EditCourseDialog(
         formData.append("materials", JSON.stringify(editMaterials.filter((m) => m.trim() !== "")));
         formData.append("equipmentIds", JSON.stringify(editSelectedEquipment));
         formData.append("students", JSON.stringify(buildStudentsArray()));
+        formData.append("expenses", JSON.stringify(editExpenses));
         await updateCourse(selectedCourse.id, formData);
         toast({
             title: "Course updated successfully",
@@ -181,173 +210,251 @@ export function EditCourseDialog(
             <DialogHeader>
                 <DialogTitle>Edit Course Informations</DialogTitle>
                 <DialogDescription>
-                    Create a new diving course. You can add students and dives
-                    after creating the course.
+                    Update course details, students, and expenses.
                 </DialogDescription>
             </DialogHeader>
+            <Tabs defaultValue="details" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details">
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-1 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="title">Course Title</Label>
+                                <Input
+                                    id="title"
+                                    defaultValue={selectedCourse.title || ""}
+                                    placeholder="Enter course title"
+                                />
+                            </div>
 
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Course Title</Label>
-                        <Input
-                            id="title"
-                            defaultValue={selectedCourse.title || ""}
-                            placeholder="Enter course title"
-                        />
-                    </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="level">
+                                        Certification Level
+                                    </Label>
+                                    <Select
+                                        value={level}
+                                        defaultValue={selectedCourse
+                                            .certificationLevel || "openWater"}
+                                        onValueChange={(value) =>
+                                            setLevel(
+                                                value as CourseCertificationLevel,
+                                            )}
+                                    >
+                                        <SelectTrigger id="level">
+                                            <SelectValue placeholder="Select level" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="openWater">
+                                                Open Water
+                                            </SelectItem>
+                                            <SelectItem value="advancedOpenWater">
+                                                Advanced Open Water
+                                            </SelectItem>
+                                            <SelectItem value="rescueDiver">
+                                                Rescue Diver
+                                            </SelectItem>
+                                            <SelectItem value="diveMaster">
+                                                Dive Master
+                                            </SelectItem>
+                                            <SelectItem value="instructor">
+                                                Instructor
+                                            </SelectItem>
+                                            <SelectItem value="specialtyCourse">
+                                                Specialty Course
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select
+                                        value={status}
+                                        defaultValue={selectedCourse.status ||
+                                            "upcoming"}
+                                        onValueChange={(value) =>
+                                            setStatus(
+                                                value as CourseStatus,
+                                            )}
+                                    >
+                                        <SelectTrigger id="status">
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="upcoming">
+                                                Upcoming
+                                            </SelectItem>
+                                            <SelectItem value="active">
+                                                Active
+                                            </SelectItem>
+                                            <SelectItem value="completed">
+                                                Completed
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="level">
-                                Certification Level
-                            </Label>
-                            <Select
-                                value={level}
-                                defaultValue={selectedCourse
-                                    .certificationLevel || "openWater"}
-                                onValueChange={(value) =>
-                                    setLevel(
-                                        value as CourseCertificationLevel,
-                                    )}
-                            >
-                                <SelectTrigger id="level">
-                                    <SelectValue placeholder="Select level" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="openWater">
-                                        Open Water
-                                    </SelectItem>
-                                    <SelectItem value="advancedOpenWater">
-                                        Advanced Open Water
-                                    </SelectItem>
-                                    <SelectItem value="rescueDiver">
-                                        Rescue Diver
-                                    </SelectItem>
-                                    <SelectItem value="diveMaster">
-                                        Dive Master
-                                    </SelectItem>
-                                    <SelectItem value="instructor">
-                                        Instructor
-                                    </SelectItem>
-                                    <SelectItem value="specialtyCourse">
-                                        Specialty Course
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Select
-                                value={status}
-                                defaultValue={selectedCourse.status ||
-                                    "upcoming"}
-                                onValueChange={(value) =>
-                                    setStatus(
-                                        value as CourseStatus,
-                                    )}
-                            >
-                                <SelectTrigger id="status">
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="upcoming">
-                                        Upcoming
-                                    </SelectItem>
-                                    <SelectItem value="active">
-                                        Active
-                                    </SelectItem>
-                                    <SelectItem value="completed">
-                                        Completed
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="startDate">
+                                        Start Date
+                                    </Label>
+                                    <Input
+                                        id="startDate"
+                                        defaultValue={formatDate(
+                                            selectedCourse.startDate,
+                                        )}
+                                        type="date"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="endDate">End Date</Label>
+                                    <Input
+                                        id="endDate"
+                                        defaultValue={formatDate(
+                                            selectedCourse.endDate,
+                                        )}
+                                        type="date"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="startDate">
-                                Start Date
-                            </Label>
-                            <Input
-                                id="startDate"
-                                defaultValue={formatDate(
-                                    selectedCourse.startDate,
-                                )}
-                                type="date"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="endDate">End Date</Label>
-                            <Input
-                                id="endDate"
-                                defaultValue={formatDate(
-                                    selectedCourse.endDate,
-                                )}
-                                type="date"
-                            />
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="instructor">
+                                        Instructor Name
+                                    </Label>
+                                    <Input
+                                        id="instructor"
+                                        defaultValue={selectedCourse.instructorName ||
+                                            ""}
+                                        placeholder="Enter instructor name"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="instructorContact">
+                                        Instructor Contact
+                                    </Label>
+                                    <Input
+                                        id="instructorContact"
+                                        defaultValue={selectedCourse
+                                            .instructorContact || ""}
+                                        placeholder="Email or phone"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="instructor">
-                                Instructor Name
-                            </Label>
-                            <Input
-                                id="instructor"
-                                defaultValue={selectedCourse.instructorName ||
-                                    ""}
-                                placeholder="Enter instructor name"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="instructorContact">
-                                Instructor Contact
-                            </Label>
-                            <Input
-                                id="instructorContact"
-                                defaultValue={selectedCourse
-                                    .instructorContact || ""}
-                                placeholder="Email or phone"
-                            />
-                        </div>
-                    </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="location">Location</Label>
+                                    <Input
+                                        id="location"
+                                        defaultValue={selectedCourse.location || ""}
+                                        placeholder="Dive center or site"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="cost">Cost ($)</Label>
+                                    <Input
+                                        id="cost"
+                                        type="number"
+                                        defaultValue={selectedCourse.cost?.toString() ||
+                                            "0"}
+                                        placeholder="Total course cost"
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="location">Location</Label>
-                            <Input
-                                id="location"
-                                defaultValue={selectedCourse.location || ""}
-                                placeholder="Dive center or site"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="cost">Cost ($)</Label>
-                            <Input
-                                id="cost"
-                                type="number"
-                                defaultValue={selectedCourse.cost?.toString() ||
-                                    "0"}
-                                placeholder="Total course cost"
-                            />
+                            <div className="space-y-2">
+                                <Label htmlFor="specialNeeds">
+                                    Special Needs/Concerns
+                                </Label>
+                                <Textarea
+                                    id="specialNeeds"
+                                    defaultValue={selectedCourse.specialNeeds || ""}
+                                    placeholder="Note any special needs or concerns"
+                                />
+                            </div>
                         </div>
                     </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="specialNeeds">
-                            Special Needs/Concerns
-                        </Label>
-                        <Textarea
-                            id="specialNeeds"
-                            defaultValue={selectedCourse.specialNeeds || ""}
-                            placeholder="Note any special needs or concerns"
-                        />
+                </TabsContent>
+                <TabsContent value="expenses">
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Instructor Fee</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.instructorFee}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, instructorFee: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Assistant Fee</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.assistantFee}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, assistantFee: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>DENR Fee</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.denrFee}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, denrFee: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tank Fee</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.tankFee}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, tankFee: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Course Materials</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.courseMaterials}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, courseMaterials: e.target.value }))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Course Certification Fee</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="$"
+                                    value={editExpenses.courseCertificationFee}
+                                    onChange={e => setEditExpenses(exp => ({ ...exp, courseCertificationFee: e.target.value }))}
+                                />
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                </TabsContent>
+            </Tabs>
 
             <div className="space-y-2">
                 <Label>Course Materials</Label>
@@ -524,6 +631,22 @@ export function EditCourseDialog(
                             (document.getElementById(
                                 "specialNeeds",
                             ) as HTMLTextAreaElement)?.value || "",
+                        );
+                        formData.append(
+                            "materials",
+                            JSON.stringify(editMaterials.filter((m) => m.trim() !== "")),
+                        );
+                        formData.append(
+                            "equipmentIds",
+                            JSON.stringify(editSelectedEquipment),
+                        );
+                        formData.append(
+                            "students",
+                            JSON.stringify(buildStudentsArray()),
+                        );
+                        formData.append(
+                            "expenses",
+                            JSON.stringify(editExpenses),
                         );
                         handleUpdateCourse(formData);
                     }}
