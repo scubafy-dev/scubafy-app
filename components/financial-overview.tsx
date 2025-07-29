@@ -17,7 +17,7 @@ import {
 } from "@/components/financial-charts"
 import { useDiveCenter } from "@/lib/dive-center-context"
 import { financialByCenter, allCentersFinancialData, FinancialData } from "@/lib/mock-data/financial-data"
-import { FinancialCenterComparison } from "@/components/financial-center-comparison"
+// import { FinancialCenterComparison } from "@/components/financial-center-comparison"
 
 export function FinancialOverview() {
   const [period, setPeriod] = useState("month")
@@ -66,7 +66,7 @@ export function FinancialOverview() {
             </Button>
           </div>
         </div>
-        
+
         {/* Key financial metrics summary */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
@@ -122,9 +122,9 @@ export function FinancialOverview() {
             </CardContent>
           </Card>
         </div>
-        
+
         {/* Center comparison component */}
-        <FinancialCenterComparison />
+        {/* <FinancialCenterComparison /> */}
       </div>
     )
   }
@@ -137,7 +137,7 @@ export function FinancialOverview() {
           {`Financial Overview - ${currentCenter?.name}`}
         </h2>
       </div>
-      
+
       <div className="flex flex-col md:flex-row justify-between gap-4">
         <Select value={period} onValueChange={setPeriod}>
           <SelectTrigger className="w-full md:w-[180px]">
