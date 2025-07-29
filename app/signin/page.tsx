@@ -12,9 +12,8 @@ function SingIn() {
         <button
             onClick={() =>
                 signIn("google", {
-                    callbackUrl: `/signin/role-selection?callbackUrl=${
-                        encodeURIComponent(callbackUrl || "")
-                    }`,
+                    callbackUrl: `/signin/role-selection?callbackUrl=${encodeURIComponent(callbackUrl || "")
+                        }`,
                 })}
             className="inline-flex items-center bg-white bg-opacity-90 hover:bg-opacity-100 text-gray-900 px-6 py-3 rounded-full shadow-lg transition"
         >

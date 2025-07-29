@@ -1,6 +1,8 @@
 // app/signin/page.tsx
 "use client";
 
+import { Suspense } from "react";
+
 import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -22,7 +24,7 @@ import { useSession } from "next-auth/react";
 import { getUserRole } from "@/lib/auth";
 import { useDiveCenter } from "@/lib/dive-center-context";
 
-export default function RoleSelectionClient() {
+export function RoleSelectionContent() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [role, setRole] = useState<"staff" | "manager" | null>(null);
     const [staffCode, setStaffCode] = useState<string>("");
@@ -131,10 +133,10 @@ export default function RoleSelectionClient() {
             if (data.success) {
                 console.log("Staff verified:", data.staff);
                 console.log("Dive center:", data.diveCenter);
-                
+
                 // Store staff data
                 localStorage.setItem("staffData", JSON.stringify(data.staff));
-                
+
                 // Set the staff dive center using the context function
                 const setCenterResult = await setStaffDiveCenter(data.staff.staffCode);
                 if (setCenterResult.success) {
@@ -142,7 +144,7 @@ export default function RoleSelectionClient() {
                 } else {
                     console.error("Failed to set staff dive center:", setCenterResult.message);
                 }
-                
+
                 await saveRoleToDatabase("staff", data.staff);
             } else {
                 setError(data.error || "Invalid staff code");
@@ -221,5 +223,18 @@ export default function RoleSelectionClient() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function RoleSelectionClient() {
+    return (
+        <Suspense fallback={
+            <div className="relative flex items-center justify-center h-screen bg-cover bg-center"
+                style={{ backgroundImage: 'url("/dive.jpg")' }}>
+                <div className="text-white">Loading...</div>
+            </div>
+        }>
+            <RoleSelectionContent />
+        </Suspense>
     );
 }
