@@ -29,6 +29,7 @@ export function RoleSelectionContent() {
     const [role, setRole] = useState<"staff" | "manager" | null>(null);
     const [staffCode, setStaffCode] = useState<string>("");
     const [isVerifying, setIsVerifying] = useState(false);
+    const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
     const [error, setError] = useState<string>("");
 
     const params = useSearchParams();
@@ -87,11 +88,50 @@ export function RoleSelectionContent() {
         }
     };
 
-    const handleRoleSelection = (selectedRole: "staff" | "manager") => {
+    const handleRoleSelection = async (selectedRole: "staff" | "manager") => {
         setRole(selectedRole);
         setError("");
+        
         if (selectedRole === "manager") {
-            saveRoleToDatabase("manager");
+            // Check subscription status for managers
+            if (!session?.user?.email) {
+                setError("User email not found");
+                return;
+            }
+
+            setIsCheckingSubscription(true);
+            try {
+                const response = await fetch("/api/check-subscription", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        email: session.user.email,
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    setError("Failed to check subscription status. Please try again.");
+                    return;
+                }
+
+                if (!data.hasPaidSubscription) {
+                    // Redirect to subscription required page if no paid subscription
+                    router.push("/subscription-required");
+                    return;
+                }
+
+                // If subscription is valid, proceed with role assignment
+                saveRoleToDatabase("manager");
+            } catch (error) {
+                console.error("Error checking subscription:", error);
+                setError("Failed to verify subscription. Please try again.");
+            } finally {
+                setIsCheckingSubscription(false);
+            }
         } else if (selectedRole === "staff") {
             setRole("staff");
         }
@@ -174,15 +214,17 @@ export function RoleSelectionContent() {
                     </DialogHeader>
                     <Button
                         onClick={() => handleRoleSelection("staff")}
-                        className="px-6 py-3 bg-orange-500 text-white rounded-md m-2"
+                        disabled={isCheckingSubscription}
+                        className="px-6 py-3 bg-orange-500 text-white rounded-md m-2 disabled:opacity-50"
                     >
                         Staff
                     </Button>
                     <Button
                         onClick={() => handleRoleSelection("manager")}
-                        className="px-6 py-3 bg-teal-500 text-white rounded-md m-2"
+                        disabled={isCheckingSubscription}
+                        className="px-6 py-3 bg-teal-500 text-white rounded-md m-2 disabled:opacity-50"
                     >
-                        Manager
+                        {isCheckingSubscription ? "Checking..." : "Manager"}
                     </Button>
                     {status === "loading" && (
                         <div className="flex items-center justify-center h-full">
