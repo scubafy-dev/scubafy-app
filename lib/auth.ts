@@ -31,7 +31,7 @@ export const getUserRole = async (email: string): Promise<Role | null> => {
 
 export const getStaffRole = async (email: string): Promise<string | null> => {
     try {
-        const staff = await prisma.staff.findUnique({
+        const staff = await prisma.staff.findFirst({
             where: { email },
             select: { roleTitle: true },
         });

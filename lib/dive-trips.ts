@@ -11,24 +11,22 @@ export type FullDiveTrip = Awaited<ReturnType<typeof getAllDiveTrips>>[number];
 export async function createDiveTrip(formData: any, diveCenterId: string): Promise<void> {
     console.log('DiveTrip Data', formData, diveCenterId)
     
-    // Validate fleetVehicleId first
-    const fleetVehicleId = formData.fleetVehicleId as string;
-    if (!fleetVehicleId) {
-        throw new Error("fleetVehicleId is required");
-    }
-    
-    // Check if the fleetVehicle exists
-    try {
-        const fleetVehicle = await prisma.fleetVehicle.findUnique({
-            where: { id: fleetVehicleId }
-        });
-        if (!fleetVehicle) {
-            throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+    // Validate fleetVehicleId if provided
+    const fleetVehicleId = formData.fleetVehicleId as string | undefined;
+    if (fleetVehicleId) {
+        // Check if the fleetVehicle exists
+        try {
+            const fleetVehicle = await prisma.fleetVehicle.findUnique({
+                where: { id: fleetVehicleId }
+            });
+            if (!fleetVehicle) {
+                throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+            }
+            console.log('Found fleetVehicle:', fleetVehicle);
+        } catch (error) {
+            console.error('Error validating fleetVehicle:', error);
+            throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
         }
-        console.log('Found fleetVehicle:', fleetVehicle);
-    } catch (error) {
-        console.error('Error validating fleetVehicle:', error);
-        throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
     }
     
     const requiredDefaults = {
@@ -142,36 +140,42 @@ export async function createDiveTrip(formData: any, diveCenterId: string): Promi
             expenses: formData.expenses // log for debug
         });
 
+        const createData: any = {
+            title,
+            date: new Date(dateStr),
+            location,
+            capacity,
+            booked,
+            price,
+            status,
+            diveMaster: diveMasterString,
+            description: formData.description,
+            duration: formData.duration,
+            difficulty: formData.difficulty,
+            center,
+            instructor: instructorString,
+            diveType,
+            expenses: formData.expenses ?? {},
+            participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
+            diveCenterId,
+            userId: session.user.id,
+            // Create instructor assignments
+            instructorAssignments: instructorIds.length > 0 ? {
+                create: instructorIds.map(staffId => ({ staffId }))
+            } : undefined,
+            // Create dive master assignments
+            diveMasterAssignments: diveMasterIds.length > 0 ? {
+                create: diveMasterIds.map(staffId => ({ staffId }))
+            } : undefined,
+        };
+
+        // Only include fleetVehicleId if it's provided
+        if (fleetVehicleId) {
+            createData.fleetVehicleId = fleetVehicleId;
+        }
+
         const result = await prisma.diveTrip.create({
-            data: {
-                title,
-                date: new Date(dateStr),
-                location,
-                capacity,
-                booked,
-                price,
-                status,
-                diveMaster: diveMasterString,
-                description: formData.description,
-                duration: formData.duration,
-                difficulty: formData.difficulty,
-                center,
-                instructor: instructorString,
-                fleetVehicleId,
-                diveType,
-                expenses: formData.expenses ?? {},
-                participants: participants.length > 0 ? { createMany: { data: participants } } : undefined,
-                diveCenterId,
-                userId: session.user.id,
-                // Create instructor assignments
-                instructorAssignments: instructorIds.length > 0 ? {
-                    create: instructorIds.map(staffId => ({ staffId }))
-                } : undefined,
-                // Create dive master assignments
-                diveMasterAssignments: diveMasterIds.length > 0 ? {
-                    create: diveMasterIds.map(staffId => ({ staffId }))
-                } : undefined,
-            },
+            data: createData,
         });
         
         console.log("Dive trip created successfully:", result);
@@ -280,24 +284,22 @@ export async function updateDiveTrip(id: string | null, formData: any) {
         return;
     }
 
-    // Validate fleetVehicleId first
-    const fleetVehicleId = formData.fleetVehicleId as string;
-    if (!fleetVehicleId) {
-        throw new Error("fleetVehicleId is required");
-    }
-    
-    // Check if the fleetVehicle exists
-    try {
-        const fleetVehicle = await prisma.fleetVehicle.findUnique({
-            where: { id: fleetVehicleId }
-        });
-        if (!fleetVehicle) {
-            throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+    // Validate fleetVehicleId if provided
+    const fleetVehicleId = formData.fleetVehicleId as string | undefined;
+    if (fleetVehicleId) {
+        // Check if the fleetVehicle exists
+        try {
+            const fleetVehicle = await prisma.fleetVehicle.findUnique({
+                where: { id: fleetVehicleId }
+            });
+            if (!fleetVehicle) {
+                throw new Error(`FleetVehicle with id ${fleetVehicleId} does not exist`);
+            }
+            console.log('Found fleetVehicle for update:', fleetVehicle);
+        } catch (error) {
+            console.error('Error validating fleetVehicle for update:', error);
+            throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
         }
-        console.log('Found fleetVehicle for update:', fleetVehicle);
-    } catch (error) {
-        console.error('Error validating fleetVehicle for update:', error);
-        throw new Error(`Invalid fleetVehicleId: ${fleetVehicleId}`);
     }
 
     const title = formData.title as string;
@@ -371,30 +373,39 @@ export async function updateDiveTrip(id: string | null, formData: any) {
             participants: participants
         });
 
+        // Prepare update data
+        const updateData: any = {
+            title,
+            date,
+            location,
+            capacity,
+            booked,
+            price,
+            status,
+            diveMaster: diveMasterString,
+            description: formData.description,
+            duration: formData.duration,
+            difficulty: formData.difficulty,
+            center,
+            instructor: instructorString,
+            diveType,
+            expenses: formData.expenses ?? {},
+        };
+
+        // Only include fleetVehicleId if it's provided
+        if (fleetVehicleId) {
+            updateData.fleetVehicleId = fleetVehicleId;
+        } else {
+            updateData.fleetVehicleId = null;
+        }
+
         // Update the trip main fields
         await prisma.diveTrip.update(
             {
                 where: {
                     id
                 },
-                data: {
-                    title,
-                    date,
-                    location,
-                    capacity,
-                    booked,
-                    price,
-                    status,
-                    diveMaster: diveMasterString,
-                    description: formData.description,
-                    duration: formData.duration,
-                    difficulty: formData.difficulty,
-                    center,
-                    instructor: instructorString,
-                    fleetVehicleId,
-                    diveType,
-                    expenses: formData.expenses ?? {},
-                },
+                data: updateData,
             },
         );
 
