@@ -295,6 +295,25 @@ model Task {
   @@map("tasks")
 }
 
+model UserSubscription {
+  id                 String   @id @default(uuid())
+  userId             String?
+  amount_paid        Float
+  customer_email     String
+  customer_name      String
+  hosted_invoice_url String?
+  period_end         BigInt
+  period_start       BigInt
+  status             String
+  planType           String
+  billingCycle       String
+  maxDiveCenters     Int
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("user_subscriptions")
+}
+
 model TaskAssignment {
   id        String   @id @default(uuid())
   taskId    String
