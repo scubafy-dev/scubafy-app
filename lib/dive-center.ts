@@ -89,37 +89,53 @@ export async function getAllDiveCenters(){
             where: { ownerId: session.user.id },
         });
     
-        // If no dive centers exist, check subscription and create a default one
+        // If no dive centers found for owner, check if user is a staff member
         if (!diveCenters || diveCenters.length === 0) {
-            // Check if user has a paid subscription before creating default dive center
             if (session?.user?.email) {
-                const subscription = await prisma.userSubscription.findFirst({
+                // Check if user is a staff member
+                const staff = await prisma.staff.findFirst({
                     where: {
-                        customer_email: session.user.email,
-                        status: "paid"
+                        email: session.user.email,
+                        status: "active"
                     },
-                    orderBy: {
-                        createdAt: 'desc'
+                    include: {
+                        diveCenter: true
                     }
                 });
 
-                if (subscription) {
-                    console.log("No dive centers found, creating default dive center");
-                    const defaultDiveCenter = await prisma.diveCenter.create({
-                        data: {
-                            name: "My Dive Center",
-                            location: "Default Location",
-                            email: "info@mydivecenter.com",
-                            contact: "+1 (555) 123-4567",
-                            owner: {
-                                connect: { id: session.user.id },
-                            },
-                        },
-                    });
-                    diveCenters = [defaultDiveCenter];
-                    console.log("Created default dive center:", defaultDiveCenter);
+                if (staff && staff.diveCenter) {
+                    console.log("Found staff member with dive center:", staff.diveCenter.name);
+                    diveCenters = [staff.diveCenter];
                 } else {
-                    console.log("No paid subscription found, cannot create default dive center");
+                    // Check if user has a paid subscription before creating default dive center
+                    const subscription = await prisma.userSubscription.findFirst({
+                        where: {
+                            customer_email: session.user.email,
+                            status: "paid"
+                        },
+                        orderBy: {
+                            createdAt: 'desc'
+                        }
+                    });
+
+                    if (subscription) {
+                        console.log("No dive centers found, creating default dive center");
+                        const defaultDiveCenter = await prisma.diveCenter.create({
+                            data: {
+                                name: "My Dive Center",
+                                location: "Default Location",
+                                email: "info@mydivecenter.com",
+                                contact: "+1 (555) 123-4567",
+                                owner: {
+                                    connect: { id: session.user.id },
+                                },
+                            },
+                        });
+                        diveCenters = [defaultDiveCenter];
+                        console.log("Created default dive center:", defaultDiveCenter);
+                    } else {
+                        console.log("No paid subscription found, cannot create default dive center");
+                    }
                 }
             }
         }

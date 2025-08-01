@@ -682,7 +682,7 @@ export function AddTripForm(
                           <Input
                             type="number"
                             min={1}
-                            value={field.value || 0}
+                            value={field.value}
                             onChange={field.onChange}
                           />
                         </FormControl>
