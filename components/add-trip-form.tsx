@@ -442,7 +442,7 @@ export function AddTripForm(
         } catch (e) {
           toast({
             title: "Trip creation failed",
-            description: `Please add vehicle to procceed further.`,
+            description: `Failed to create trip. Please try again.`,
             variant: "destructive",
           });
         }
@@ -682,7 +682,7 @@ export function AddTripForm(
                           <Input
                             type="number"
                             min={1}
-                            value={field.value || 0}
+                            value={field.value}
                             onChange={field.onChange}
                           />
                         </FormControl>
@@ -765,6 +765,9 @@ export function AddTripForm(
             {/* Vehicle Selection Tab */}
             <TabsContent value="vehicle">
               <div className="space-y-4">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Vehicle selection is optional. You can create a dive trip without assigning a vehicle.
+                </div>
                 <div className="flex space-x-2 pb-2">
                   <Button
                     type="button"
@@ -812,7 +815,7 @@ export function AddTripForm(
                   name="fleetVehicleId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Select Vehicle</FormLabel>
+                      <FormLabel>Select Vehicle (Optional)</FormLabel>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-2">
                         {filteredVehicles.map((vehicle) => (
                           <Card
