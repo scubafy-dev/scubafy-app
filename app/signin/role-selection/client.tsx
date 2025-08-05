@@ -112,6 +112,7 @@ export function RoleSelectionContent() {
                 });
 
                 const data = await response.json();
+                console.log("Subscription data:", data);
 
                 if (!response.ok) {
                     setError("Failed to check subscription status. Please try again.");

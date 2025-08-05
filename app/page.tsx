@@ -10,8 +10,8 @@ export default function DashboardPage() {
       <StaffAutoRedirect />
       <RequirePermission permission="overview">
         <div>
-          {/* <DashboardClient /> */}
-          <DiveTripsPage></DiveTripsPage>
+          <DashboardClient />
+          {/* <DiveTripsPage></DiveTripsPage> */}
         </div>
       </RequirePermission>
     </>

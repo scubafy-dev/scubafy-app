@@ -27,6 +27,50 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
+    async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
+      // Check subscription status for users with manager role
+      if (user.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email }
+        });
+
+        if (dbUser?.role === 'manager') {
+          // Check if user has an active subscription
+          const subscription = await prisma.userSubscription.findFirst({
+            where: {
+              customer_email: user.email,
+              status: {
+                in: ["paid", "free", "active"]
+              }
+            },
+            orderBy: {
+              createdAt: 'desc'
+            }
+          });
+
+          if (!subscription) {
+            // No subscription found for manager
+            console.log(`No subscription found for manager: ${user.email}`);
+            return `/signin/error?error=NoSubscription`;
+          }
+
+          // Check if subscription is expired
+          const currentTime = Date.now();
+          const periodEnd = Number(subscription.period_end) * 1000;
+
+          if (currentTime > periodEnd) {
+            // Subscription expired, set role to null and prevent sign in
+            console.log(`Subscription expired for manager: ${user.email}`);
+            await prisma.user.update({
+              where: { email: user.email },
+              data: { role: null }
+            });
+            return `/signin/error?error=SubscriptionExpired`;
+          }
+        }
+      }
+      return true;
+    },
     async session({ session, user }: { session: any; user: any }) {
       if (session.user) {
         session.user.id = user.id;
