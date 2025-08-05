@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if subscription is still active (not expired)
-        const currentTime = 1757008800006;
+        // const currentTime = 1757008800006;
+        const currentTime = Date.now();
         console.log('currentTime', currentTime)
         const periodEnd = Number(subscription.period_end) * 1000; // Convert to milliseconds
         console.log('periodEnd', periodEnd)
