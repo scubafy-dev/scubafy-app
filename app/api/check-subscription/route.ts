@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if subscription is still active (not expired)
-        const currentTime = Date.now();
+        const currentTime = 1757008800006;
         console.log('currentTime', currentTime)
         const periodEnd = Number(subscription.period_end) * 1000; // Convert to milliseconds
         console.log('periodEnd', periodEnd)
@@ -51,6 +51,18 @@ export async function POST(request: NextRequest) {
 
         if (currentTime > periodEnd) {
             console.log(`Subscription expired for email: ${email}, period end: ${new Date(periodEnd)}`);
+            
+            // Set user role to null when subscription expires
+            try {
+                await prisma.user.update({
+                    where: { email: email },
+                    data: { role: null }
+                });
+                console.log(`User role set to null for expired subscription: ${email}`);
+            } catch (updateError) {
+                console.error(`Error updating user role for expired subscription: ${email}`, updateError);
+            }
+            
             return NextResponse.json(
                 {
                     hasPaidSubscription: false,
