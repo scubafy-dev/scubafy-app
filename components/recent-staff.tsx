@@ -175,16 +175,6 @@ export function RecentStaff({ className }: RecentStaffProps) {
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    asChild
-                  >
-                    <Link href={`/staff/${member.id}`}>View Details</Link>
-                  </Button>
-                </div>
                 {index < staff.length - 1 && <div className="border-t my-2" />}
               </div>
             ))}

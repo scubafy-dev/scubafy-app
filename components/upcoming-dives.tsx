@@ -191,16 +191,6 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    asChild
-                  >
-                    <Link href={`/dive-trips/${dive.id}`}>View Details</Link>
-                  </Button>
-                </div>
                 {index < dives.length - 1 && <div className="border-t my-2" />}
               </div>
             ))}
