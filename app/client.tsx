@@ -1,19 +1,64 @@
 "use client";
 
 import { DashboardShell } from "@/components/dashboard-shell";
-import { RecentBookings } from "@/components/recent-bookings";
 import { UpcomingDives } from "@/components/upcoming-dives";
-import { QuickActions } from "@/components/quick-actions";
+import { RecentStaff } from "@/components/recent-staff";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+interface DashboardStats {
+  upcomingDives: number;
+  totalBookings: number;
+  activeDivers: number;
+  newDivers: number;
+  revenue: number;
+  bookingsChange: number;
+  revenueChange: number;
+}
 
 export default function DashboardClient() {
-    const { currentCenter, isAllCenters, allCentersStats } = useDiveCenter();
+    const { currentCenter, isAllCenters } = useDiveCenter();
+    const [stats, setStats] = useState<DashboardStats>({
+      upcomingDives: 0,
+      totalBookings: 0,
+      activeDivers: 0,
+      newDivers: 0,
+      revenue: 0,
+      bookingsChange: 0,
+      revenueChange: 0,
+    });
+    const [loading, setLoading] = useState(true);
 
-    // Use either the current center's stats or aggregated stats based on selection
-    const stats = isAllCenters
-        ? allCentersStats
-        : (currentCenter as any)?.stats || allCentersStats;
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                setLoading(true);
+                const params = new URLSearchParams();
+                
+                if (!isAllCenters && currentCenter) {
+                    params.append("diveCenterId", currentCenter.id);
+                } else {
+                    params.append("isAllCenters", "true");
+                }
+
+                const response = await fetch(`/api/dashboard-stats?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error("Failed to fetch dashboard stats");
+                }
+
+                const data = await response.json();
+                setStats(data);
+            } catch (error) {
+                console.error("Error fetching dashboard stats:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchStats();
+    }, [currentCenter, isAllCenters]);
 
     return (
         <DashboardShell>
@@ -40,7 +85,7 @@ export default function DashboardClient() {
                             </h3>
                         </div>
                         <div className="dashboard-card-value">
-                            {stats.totalBookings}
+                            {loading ? "..." : stats.totalBookings}
                         </div>
                         <p className="dashboard-card-subtitle">
                             +{stats.bookingsChange}% from last month
@@ -53,7 +98,7 @@ export default function DashboardClient() {
                             </h3>
                         </div>
                         <div className="dashboard-card-value">
-                            {stats.activeDivers}
+                            {loading ? "..." : stats.activeDivers}
                         </div>
                         <p className="dashboard-card-subtitle">
                             +{stats.newDivers} new this week
@@ -69,7 +114,7 @@ export default function DashboardClient() {
                             </h3>
                         </div>
                         <div className="dashboard-card-value">
-                            {stats.upcomingDives}
+                            {loading ? "..." : stats.upcomingDives}
                         </div>
                         <p className="dashboard-card-subtitle">Next 7 days</p>
                     </Link>
@@ -81,7 +126,7 @@ export default function DashboardClient() {
                             <h3 className="dashboard-card-title">Revenue</h3>
                         </div>
                         <div className="dashboard-card-value">
-                            ${stats.revenue.toLocaleString()}
+                            {loading ? "..." : `$${stats.revenue.toLocaleString()}`}
                         </div>
                         <p className="dashboard-card-subtitle">
                             +{stats.revenueChange}% from last month
@@ -91,10 +136,9 @@ export default function DashboardClient() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <UpcomingDives />
-                    <QuickActions />
+                    <RecentStaff />
                 </div>
 
-                <RecentBookings />
             </div>
         </DashboardShell>
     );
