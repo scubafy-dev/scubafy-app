@@ -1,9 +1,8 @@
 "use client";
 
 import { DashboardShell } from "@/components/dashboard-shell";
-import { RecentBookings } from "@/components/recent-bookings";
 import { UpcomingDives } from "@/components/upcoming-dives";
-import { QuickActions } from "@/components/quick-actions";
+import { RecentStaff } from "@/components/recent-staff";
 import { useDiveCenter } from "@/lib/dive-center-context";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -137,10 +136,9 @@ export default function DashboardClient() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <UpcomingDives />
-                    <QuickActions />
+                    <RecentStaff />
                 </div>
 
-                <RecentBookings />
             </div>
         </DashboardShell>
     );
