@@ -110,7 +110,9 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
             <CardDescription>
               {isAllCenters
                 ? "Upcoming dives across all centers."
-                : `You have ${dives.length} upcoming dive trips scheduled.`}
+                : currentCenter
+                ? `You have ${dives.length} upcoming dive trips scheduled.`
+                : "No dive center selected."}
             </CardDescription>
           </div>
           <Button

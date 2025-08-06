@@ -29,11 +29,13 @@ export async function createDiveCenter(formData: FormData) {
       return { success: false, error: "User email not found" };
     }
 
-    // Check if user has a paid subscription
+    // Check if user has a subscription (paid or free)
     const subscription = await prisma.userSubscription.findFirst({
       where: {
         customer_email: session.user.email,
-        status: "paid"
+        status: {
+          in: ["paid", "free", "active"]
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -41,7 +43,7 @@ export async function createDiveCenter(formData: FormData) {
     });
 
     if (!subscription) {
-      return { success: false, error: "You need a paid subscription to create dive centers" };
+      return { success: false, error: "You need a subscription to create dive centers" };
     }
 
     // Check current number of dive centers
@@ -49,11 +51,15 @@ export async function createDiveCenter(formData: FormData) {
       where: { ownerId: session.user.id },
     });
 
+    // Determine max dive centers based on subscription status
+    const maxDiveCenters = subscription.status === "free" ? 1 : subscription.maxDiveCenters;
+
     // Check if user has reached the maximum number of dive centers
-    if (subscription.maxDiveCenters && currentDiveCenters.length >= subscription.maxDiveCenters) {
+    if (maxDiveCenters && currentDiveCenters.length >= maxDiveCenters) {
+      const planType = subscription.status === "free" ? "free" : subscription.planType;
       return { 
         success: false, 
-        error: `You have reached the maximum number of dive centers (${subscription.maxDiveCenters}) for your ${subscription.planType} plan` 
+        error: `You have reached the maximum number of dive centers (${maxDiveCenters}) for your ${planType} plan` 
       };
     }
 
@@ -111,7 +117,9 @@ export async function getAllDiveCenters(){
                     const subscription = await prisma.userSubscription.findFirst({
                         where: {
                             customer_email: session.user.email,
-                            status: "paid"
+                            status: {
+                                in: ["paid", "free", "active"]
+                            }
                         },
                         orderBy: {
                             createdAt: 'desc'
@@ -134,7 +142,7 @@ export async function getAllDiveCenters(){
                         diveCenters = [defaultDiveCenter];
                         console.log("Created default dive center:", defaultDiveCenter);
                     } else {
-                        console.log("No paid subscription found, cannot create default dive center");
+                        console.log("No subscription found, cannot create default dive center");
                     }
                 }
             }

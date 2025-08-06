@@ -11,13 +11,16 @@ export default function SubscriptionRequiredPage() {
                         Subscription Required
                     </CardTitle>
                     <CardDescription className="text-gray-600">
-                        Manager access requires a paid subscription
+                        Manager access requires a subscription (free or paid)
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="text-center text-sm text-gray-600">
                         <p>
                             To access manager features and create dive centers, you need an active subscription.
+                        </p>
+                        <p className="mt-2">
+                            Free plans allow 1 dive center, while paid plans offer multiple dive centers and additional features.
                         </p>
                         <p className="mt-2">
                             Please contact us to set up your subscription or sign in with a different account.
