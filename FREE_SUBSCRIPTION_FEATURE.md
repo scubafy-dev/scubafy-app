@@ -41,7 +41,6 @@ The `UserSubscription` model already supports the "free" status in the `status` 
 4. UI clearly indicates when a user is on a free plan
 
 ## Testing
-To test this feature:
 1. Create a user subscription with `status: "free"`
 2. Sign in as a manager with that subscription
 3. Verify that only 1 dive center can be created
@@ -51,8 +50,3 @@ To test this feature:
 - Free users are limited to 1 dive center
 - They cannot access "All Dive Centers" view
 - No additional dive centers can be created beyond the first one
-
-## Recent Fixes
-- Fixed authentication route to properly handle free subscriptions without expiration checks
-- Fixed SubscriptionCheck component to consider both paid and free subscriptions
-- Added proper logging for debugging subscription issues 

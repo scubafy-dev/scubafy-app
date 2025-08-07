@@ -207,9 +207,9 @@ export function DiveCenterSelector() {
             />
             <span className="text-lg font-medium">
               {centers.length === 0 
-                ? "No Dive Centers" 
+                ? "No Dive Centers Available" 
                 : isAllCenters 
-                  ? "All Dive Centers" 
+                  ? `All Your Centers (${centers.length})` 
                   : currentCenter?.name}
             </span>
             <ChevronDown className="h-4 w-4" />
@@ -227,7 +227,7 @@ export function DiveCenterSelector() {
                 onClick={() => handleSelectCenter("all")}
                 disabled
               >
-                All Dive Centers
+                All Your Centers ({centers.length})
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {centers.map((center) => (
@@ -276,6 +276,9 @@ export function DiveCenterSelector() {
                       }
                     </span>
                   )}
+                  <span className="block mt-2 text-sm text-muted-foreground">
+                    This dive center will be owned by your account.
+                  </span>
                 </DialogDescription>
                              </DialogHeader>
                
