@@ -119,8 +119,8 @@ export function RoleSelectionContent() {
                     return;
                 }
 
-                if (!data.hasPaidSubscription) {
-                    // Redirect to subscription required page if no paid subscription
+                if (!data.hasPaidSubscription && !data.hasFreeSubscription) {
+                    // Redirect to subscription required page if no subscription at all
                     router.push("/subscription-required");
                     return;
                 }

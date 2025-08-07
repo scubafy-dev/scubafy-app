@@ -13,13 +13,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Check if user has a paid subscription
+        // Check if user has a subscription (paid or free)
         const subscription = await prisma.userSubscription.findFirst({
             where: {
                 customer_email: email,
                 status: {
                     in: ["paid", "free", "active"] // Add any other active statuses
-                } // Assuming "paid" is the status for active subscriptions
+                }
             },
             orderBy: {
                 createdAt: 'desc'
@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     hasPaidSubscription: false,
-                    message: "No paid subscription found for this email"
+                    hasFreeSubscription: false,
+                    message: "No subscription found for this email"
                 },
                 { status: 200 }
             );
@@ -67,21 +68,28 @@ export async function POST(request: NextRequest) {
             return NextResponse.json(
                 {
                     hasPaidSubscription: false,
+                    hasFreeSubscription: false,
                     message: "Subscription has expired"
                 },
                 { status: 200 }
             );
         }
 
-        console.log(`Valid subscription found for email: ${email}, plan: ${subscription.planType}`);
+        // Check if it's a free subscription
+        const isFreeSubscription = subscription.status === "free";
+        const maxDiveCenters = isFreeSubscription ? 1 : subscription.maxDiveCenters;
+
+        console.log(`Valid subscription found for email: ${email}, plan: ${subscription.planType}, status: ${subscription.status}, isFree: ${isFreeSubscription}`);
         return NextResponse.json(
             {
-                hasPaidSubscription: true,
+                hasPaidSubscription: !isFreeSubscription,
+                hasFreeSubscription: isFreeSubscription,
                 subscription: {
                     planType: subscription.planType,
                     billingCycle: subscription.billingCycle,
-                    maxDiveCenters: subscription.maxDiveCenters,
-                    periodEnd: Number(subscription.period_end)
+                    maxDiveCenters: maxDiveCenters,
+                    periodEnd: Number(subscription.period_end),
+                    status: subscription.status
                 }
             },
             { status: 200 }

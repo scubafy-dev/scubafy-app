@@ -15,10 +15,45 @@ export async function GET(request: NextRequest) {
     const diveCenterId = searchParams.get("diveCenterId")
     const isAllCenters = searchParams.get("isAllCenters") === "true"
 
+    // Get the user's dive centers (only centers owned by this manager)
+    const userDiveCenters = await prisma.diveCenter.findMany({
+      where: {
+        ownerId: session.user.id
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    })
+
+    // If user has no dive centers, return empty stats
+    if (userDiveCenters.length === 0) {
+      return NextResponse.json({
+        upcomingDives: 0,
+        totalBookings: 0,
+        activeDivers: 0,
+        newDivers: 0,
+        revenue: 0,
+        bookingsChange: 0,
+        revenueChange: 0,
+        userDiveCenters: []
+      })
+    }
+
     let whereClause: any = {}
     
     if (!isAllCenters && diveCenterId) {
+      // Verify the dive center belongs to the user
+      const userCenterIds = userDiveCenters.map(center => center.id)
+      if (!userCenterIds.includes(diveCenterId)) {
+        return NextResponse.json({ error: "Unauthorized access to dive center" }, { status: 403 })
+      }
       whereClause.diveCenterId = diveCenterId
+    } else {
+      // For "all centers" view, only show data from user's centers
+      whereClause.diveCenterId = {
+        in: userDiveCenters.map(center => center.id)
+      }
     }
 
     // Get upcoming dives count (next 7 days)
@@ -76,6 +111,7 @@ export async function GET(request: NextRequest) {
       revenue,
       bookingsChange: 12, // Placeholder
       revenueChange: 15, // Placeholder
+      userDiveCenters: userDiveCenters
     })
   } catch (error) {
     console.error("Error fetching dashboard stats:", error)

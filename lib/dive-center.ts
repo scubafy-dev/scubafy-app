@@ -29,11 +29,13 @@ export async function createDiveCenter(formData: FormData) {
       return { success: false, error: "User email not found" };
     }
 
-    // Check if user has a paid subscription
+    // Check if user has a subscription (paid or free)
     const subscription = await prisma.userSubscription.findFirst({
       where: {
         customer_email: session.user.email,
-        status: "paid"
+        status: {
+          in: ["paid", "free", "active"]
+        }
       },
       orderBy: {
         createdAt: 'desc'
@@ -41,7 +43,7 @@ export async function createDiveCenter(formData: FormData) {
     });
 
     if (!subscription) {
-      return { success: false, error: "You need a paid subscription to create dive centers" };
+      return { success: false, error: "You need a subscription to create dive centers" };
     }
 
     // Check current number of dive centers
@@ -49,11 +51,15 @@ export async function createDiveCenter(formData: FormData) {
       where: { ownerId: session.user.id },
     });
 
+    // Determine max dive centers based on subscription status
+    const maxDiveCenters = subscription.status === "free" ? 1 : subscription.maxDiveCenters;
+
     // Check if user has reached the maximum number of dive centers
-    if (subscription.maxDiveCenters && currentDiveCenters.length >= subscription.maxDiveCenters) {
+    if (maxDiveCenters && currentDiveCenters.length >= maxDiveCenters) {
+      const planType = subscription.status === "free" ? "free" : subscription.planType;
       return { 
         success: false, 
-        error: `You have reached the maximum number of dive centers (${subscription.maxDiveCenters}) for your ${subscription.planType} plan` 
+        error: `You have reached the maximum number of dive centers (${maxDiveCenters}) for your ${planType} plan` 
       };
     }
 
@@ -111,7 +117,9 @@ export async function getAllDiveCenters(){
                     const subscription = await prisma.userSubscription.findFirst({
                         where: {
                             customer_email: session.user.email,
-                            status: "paid"
+                            status: {
+                                in: ["paid", "free", "active"]
+                            }
                         },
                         orderBy: {
                             createdAt: 'desc'
@@ -134,7 +142,7 @@ export async function getAllDiveCenters(){
                         diveCenters = [defaultDiveCenter];
                         console.log("Created default dive center:", defaultDiveCenter);
                     } else {
-                        console.log("No paid subscription found, cannot create default dive center");
+                        console.log("No subscription found, cannot create default dive center");
                     }
                 }
             }
@@ -276,10 +284,68 @@ export const deleteDiveCenter = async (centerId: string) => {
         if (!existingDiveCenter) {
             throw new Error("Dive center not found or access denied");
         }
-        // Delete the dive center
-        await prisma.diveCenter.delete({
-            where: { id: centerId },
-        });
+
+        // Find all related IDs
+        const [tasks, staff, diveTrips, courses, equipment, fleetVehicles, customers] = await Promise.all([
+            prisma.task.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.staff.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.diveTrip.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.course.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.equipment.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.fleetVehicle.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+            prisma.customer.findMany({ where: { diveCenterId: centerId }, select: { id: true } }),
+        ]);
+
+        // Prepare arrays of IDs
+        const taskIds = tasks.map(t => t.id);
+        const staffIds = staff.map(s => s.id);
+        const diveTripIds = diveTrips.map(dt => dt.id);
+        const courseIds = courses.map(c => c.id);
+        const equipmentIds = equipment.map(e => e.id);
+        const fleetVehicleIds = fleetVehicles.map(fv => fv.id);
+        const customerIds = customers.map(cu => cu.id);
+
+        await prisma.$transaction([
+            // Task assignments
+            prisma.taskAssignment.deleteMany({ where: { taskId: { in: taskIds } } }),
+            // Tasks
+            prisma.task.deleteMany({ where: { id: { in: taskIds } } }),
+
+            // Staff permissions
+            prisma.staffPermission.deleteMany({ where: { staffId: { in: staffIds } } }),
+            // TripDiveMasterAssignment & TripInstructorAssignment
+            prisma.tripDiveMasterAssignment.deleteMany({ where: { tripId: { in: diveTripIds } } }),
+            prisma.tripInstructorAssignment.deleteMany({ where: { tripId: { in: diveTripIds } } }),
+            // Participants
+            prisma.participant.deleteMany({ where: { diveTripId: { in: diveTripIds } } }),
+            // DiveTrips
+            prisma.diveTrip.deleteMany({ where: { id: { in: diveTripIds } } }),
+
+            // CourseStudents
+            prisma.courseStudent.deleteMany({ where: { courseId: { in: courseIds } } }),
+            // Courses
+            prisma.course.deleteMany({ where: { id: { in: courseIds } } }),
+
+            // EquipmentRentals
+            prisma.equipmentRental.deleteMany({ where: { equipmentId: { in: equipmentIds } } }),
+            // Equipment
+            prisma.equipment.deleteMany({ where: { id: { in: equipmentIds } } }),
+
+            // VehicleCrewAssignments
+            prisma.vehicleCrewAssignment.deleteMany({ where: { vehicleId: { in: fleetVehicleIds } } }),
+            // FleetVehicles
+            prisma.fleetVehicle.deleteMany({ where: { id: { in: fleetVehicleIds } } }),
+
+            // Staff
+            prisma.staff.deleteMany({ where: { id: { in: staffIds } } }),
+
+            // Customers
+            prisma.customer.deleteMany({ where: { id: { in: customerIds } } }),
+
+            // Finally, delete the dive center itself
+            prisma.diveCenter.delete({ where: { id: centerId } }),
+        ]);
+
         // Return the updated list of dive centers
         const diveCenters = await prisma.diveCenter.findMany({
             where: { ownerId: session.user.id },

@@ -35,12 +35,16 @@ export default function SubscriptionCheck({ children }: SubscriptionCheckProps) 
                 });
 
                 const data = await response.json();
+                console.log("SubscriptionCheck - subscription data:", data);
 
-                if (!data.hasPaidSubscription) {
-                    // Redirect to subscription required page
+                if (!data.hasPaidSubscription && !data.hasFreeSubscription) {
+                    // Redirect to subscription required page only if no subscription at all
+                    console.log("SubscriptionCheck - no subscription found, redirecting to subscription-required");
                     router.push("/subscription-required");
                     return;
                 }
+
+                console.log("SubscriptionCheck - subscription valid, allowing access");
             } catch (error) {
                 console.error("Error checking subscription:", error);
                 // On error, allow access but log the issue

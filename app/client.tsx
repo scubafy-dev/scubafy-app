@@ -2,8 +2,10 @@
 
 import { DashboardShell } from "@/components/dashboard-shell";
 import { UpcomingDives } from "@/components/upcoming-dives";
-import { RecentStaff } from "@/components/recent-staff";
+import { RecentlyAddedCustomers } from "@/components/recently-added-customers";
 import { useDiveCenter } from "@/lib/dive-center-context";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -15,6 +17,10 @@ interface DashboardStats {
   revenue: number;
   bookingsChange: number;
   revenueChange: number;
+  userDiveCenters: Array<{
+    id: string;
+    name: string;
+  }>;
 }
 
 export default function DashboardClient() {
@@ -27,8 +33,10 @@ export default function DashboardClient() {
       revenue: 0,
       bookingsChange: 0,
       revenueChange: 0,
+      userDiveCenters: [],
     });
     const [loading, setLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -49,6 +57,7 @@ export default function DashboardClient() {
                 }
 
                 const data = await response.json();
+                console.log("Dashboard stats received:", data);
                 setStats(data);
             } catch (error) {
                 console.error("Error fetching dashboard stats:", error);
@@ -69,76 +78,100 @@ export default function DashboardClient() {
                     </h1>
                     <p className="text-muted-foreground text-sm mt-1">
                         {isAllCenters
-                            ? "Overview of all dive centers operations."
+                            ? `Overview of your ${stats.userDiveCenters.length} dive center${stats.userDiveCenters.length !== 1 ? 's' : ''} operations.`
                             : `Overview of ${currentCenter?.name} operations.`}
                     </p>
+                    {stats.userDiveCenters.length > 0 && (
+                        <p className="text-muted-foreground text-xs mt-1">
+                            {isAllCenters 
+                                ? `Showing data from: ${stats.userDiveCenters.map(center => center.name).join(', ')}`
+                                : `Showing data specific to ${currentCenter?.name}`
+                            }
+                        </p>
+                    )}
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Link
-                        href="/customers"
-                        className="dashboard-card hover:bg-accent transition-colors"
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="dashboard-card-title">
-                                Total Bookings
-                            </h3>
+                {stats.userDiveCenters.length === 0 ? (
+                    <div className="col-span-full">
+                        <div className="text-center py-8">
+                            <h3 className="text-lg font-semibold mb-2">No Dive Centers Found</h3>
+                            <p className="text-muted-foreground mb-4">
+                                You don't have any dive centers yet. Create your first dive center to get started.
+                            </p>
+                            <Button onClick={() => setIsDialogOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Your First Dive Center
+                            </Button>
                         </div>
-                        <div className="dashboard-card-value">
-                            {loading ? "..." : stats.totalBookings}
-                        </div>
-                        <p className="dashboard-card-subtitle">
-                            +{stats.bookingsChange}% from last month
-                        </p>
-                    </Link>
-                    <div className="dashboard-card">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="dashboard-card-title">
-                                Active Divers
-                            </h3>
-                        </div>
-                        <div className="dashboard-card-value">
-                            {loading ? "..." : stats.activeDivers}
-                        </div>
-                        <p className="dashboard-card-subtitle">
-                            +{stats.newDivers} new this week
-                        </p>
                     </div>
-                    <Link
-                        href="/dive-trips"
-                        className="dashboard-card hover:bg-accent transition-colors"
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="dashboard-card-title">
-                                Upcoming Dives
-                            </h3>
+                ) : (
+                    <>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <Link
+                                href="/customers"
+                                className="dashboard-card hover:bg-accent transition-colors"
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="dashboard-card-title">
+                                        Total Bookings
+                                    </h3>
+                                </div>
+                                <div className="dashboard-card-value">
+                                    {loading ? "..." : stats.totalBookings}
+                                </div>
+                                <p className="dashboard-card-subtitle">
+                                    +{stats.bookingsChange}% from last month
+                                </p>
+                            </Link>
+                            <div className="dashboard-card">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="dashboard-card-title">
+                                        Active Divers
+                                    </h3>
+                                </div>
+                                <div className="dashboard-card-value">
+                                    {loading ? "..." : stats.activeDivers}
+                                </div>
+                                <p className="dashboard-card-subtitle">
+                                    +{stats.newDivers} new this week
+                                </p>
+                            </div>
+                            <Link
+                                href="/dive-trips"
+                                className="dashboard-card hover:bg-accent transition-colors"
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="dashboard-card-title">
+                                        Upcoming Dives
+                                    </h3>
+                                </div>
+                                <div className="dashboard-card-value">
+                                    {loading ? "..." : stats.upcomingDives}
+                                </div>
+                                <p className="dashboard-card-subtitle">Next 7 days</p>
+                            </Link>
+                            <Link
+                                href="/finances"
+                                className="dashboard-card hover:bg-accent transition-colors"
+                            >
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="dashboard-card-title">Revenue</h3>
+                                </div>
+                                <div className="dashboard-card-value">
+                                    {loading ? "..." : `$${stats.revenue.toLocaleString()}`}
+                                </div>
+                                <p className="dashboard-card-subtitle">
+                                    +{stats.revenueChange}% from last month
+                                </p>
+                            </Link>
                         </div>
-                        <div className="dashboard-card-value">
-                            {loading ? "..." : stats.upcomingDives}
-                        </div>
-                        <p className="dashboard-card-subtitle">Next 7 days</p>
-                    </Link>
-                    <Link
-                        href="/finances"
-                        className="dashboard-card hover:bg-accent transition-colors"
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="dashboard-card-title">Revenue</h3>
-                        </div>
-                        <div className="dashboard-card-value">
-                            {loading ? "..." : `$${stats.revenue.toLocaleString()}`}
-                        </div>
-                        <p className="dashboard-card-subtitle">
-                            +{stats.revenueChange}% from last month
-                        </p>
-                    </Link>
-                </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                    <UpcomingDives />
-                    <RecentStaff />
-                </div>
-
+                                                 <div className="grid gap-4 md:grid-cols-2">
+                             <UpcomingDives />
+                             <RecentlyAddedCustomers />
+                         </div>
+                    </>
+                )}
             </div>
         </DashboardShell>
     );

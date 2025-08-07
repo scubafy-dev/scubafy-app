@@ -110,7 +110,9 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
             <CardDescription>
               {isAllCenters
                 ? "Upcoming dives across all centers."
-                : `You have ${dives.length} upcoming dive trips scheduled.`}
+                : currentCenter
+                ? `You have ${dives.length} upcoming dive trips scheduled.`
+                : "No dive center selected."}
             </CardDescription>
           </div>
           <Button
@@ -190,6 +192,16 @@ export function UpcomingDives({ className }: UpcomingDivesProps) {
                       </span>
                     </div>
                   )}
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    asChild
+                  >
+                    <Link href={`/dive-trips/${dive.id}`}>View Details</Link>
+                  </Button>
                 </div>
                 {index < dives.length - 1 && <div className="border-t my-2" />}
               </div>

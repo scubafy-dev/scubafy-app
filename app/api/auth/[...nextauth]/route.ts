@@ -54,7 +54,13 @@ export const authOptions = {
             return `/signin/error?error=NoSubscription`;
           }
 
-          // Check if subscription is expired
+          // For free subscriptions, don't check expiration
+          if (subscription.status === "free") {
+            console.log(`Free subscription found for manager: ${user.email}`);
+            return true;
+          }
+
+          // Check if subscription is expired (only for paid subscriptions)
           const currentTime = Date.now();
           const periodEnd = Number(subscription.period_end) * 1000;
 

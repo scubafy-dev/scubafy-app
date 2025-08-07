@@ -45,8 +45,10 @@ export function DiveCenterSelector() {
   // Subscription state
   const [subscriptionData, setSubscriptionData] = useState<{
     hasPaidSubscription: boolean;
+    hasFreeSubscription: boolean;
     maxDiveCenters?: number;
     planType?: string;
+    status?: string;
   } | null>(null);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
   const [isCreatingCenter, setIsCreatingCenter] = useState(false);
@@ -126,10 +128,10 @@ export function DiveCenterSelector() {
     e.preventDefault();
     
     // Check subscription before creating dive center
-    if (!subscriptionData?.hasPaidSubscription) {
+    if (!subscriptionData?.hasPaidSubscription && !subscriptionData?.hasFreeSubscription) {
       toast({
         title: "Subscription Required",
-        description: "You need a paid subscription to create dive centers.",
+        description: "You need a subscription to create dive centers.",
         variant: "destructive",
       });
       return;
@@ -183,7 +185,7 @@ export function DiveCenterSelector() {
     }
   };
 
-  const canAddDiveCenter = subscriptionData?.hasPaidSubscription && 
+  const canAddDiveCenter = (subscriptionData?.hasPaidSubscription || subscriptionData?.hasFreeSubscription) && 
     (!subscriptionData.maxDiveCenters || centers.length < subscriptionData.maxDiveCenters);
 
   return (
@@ -205,9 +207,9 @@ export function DiveCenterSelector() {
             />
             <span className="text-lg font-medium">
               {centers.length === 0 
-                ? "No Dive Centers" 
+                ? "No Dive Centers Available" 
                 : isAllCenters 
-                  ? "All Dive Centers" 
+                  ? `All Your Centers (${centers.length})` 
                   : currentCenter?.name}
             </span>
             <ChevronDown className="h-4 w-4" />
@@ -225,7 +227,7 @@ export function DiveCenterSelector() {
                 onClick={() => handleSelectCenter("all")}
                 disabled
               >
-                All Dive Centers
+                All Your Centers ({centers.length})
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {centers.map((center) => (
@@ -254,6 +256,7 @@ export function DiveCenterSelector() {
                 {subscriptionData?.maxDiveCenters && (
                   <span className="ml-auto text-xs text-muted-foreground">
                     {centers.length}/{subscriptionData.maxDiveCenters}
+                    {subscriptionData.status === "free" && " (Free)"}
                   </span>
                 )}
               </DropdownMenuItem>
@@ -267,9 +270,15 @@ export function DiveCenterSelector() {
                     : "Enter the details for the new dive center location."}
                   {subscriptionData?.maxDiveCenters && (
                     <span className="block mt-2 text-sm text-muted-foreground">
-                      You can create up to {subscriptionData.maxDiveCenters} dive centers with your {subscriptionData.planType} plan.
+                      {subscriptionData.status === "free" 
+                        ? "Free plan allows 1 dive center."
+                        : `You can create up to ${subscriptionData.maxDiveCenters} dive centers with your ${subscriptionData.planType} plan.`
+                      }
                     </span>
                   )}
+                  <span className="block mt-2 text-sm text-muted-foreground">
+                    This dive center will be owned by your account.
+                  </span>
                 </DialogDescription>
                              </DialogHeader>
                
