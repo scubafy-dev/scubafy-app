@@ -106,7 +106,7 @@ export default function DashboardClient() {
                     </div>
                 ) : (
                     <>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 grid-cols-3">
                             <Link
                                 href="/customers"
                                 className="dashboard-card hover:bg-accent transition-colors"
@@ -149,20 +149,6 @@ export default function DashboardClient() {
                                     {loading ? "..." : stats.upcomingDives}
                                 </div>
                                 <p className="dashboard-card-subtitle">Next 7 days</p>
-                            </Link>
-                            <Link
-                                href="/finances"
-                                className="dashboard-card hover:bg-accent transition-colors"
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="dashboard-card-title">Revenue</h3>
-                                </div>
-                                <div className="dashboard-card-value">
-                                    {loading ? "..." : `$${stats.revenue.toLocaleString()}`}
-                                </div>
-                                <p className="dashboard-card-subtitle">
-                                    +{stats.revenueChange}% from last month
-                                </p>
                             </Link>
                         </div>
 
